@@ -6,7 +6,7 @@ use std::{fs, io};
 
 
 
-type WordclassMap = HashMap<String, Vec<Wordclass>>;
+pub(crate) type WordclassMap = HashMap<String, Vec<Wordclass>>;
 
 /// ...
 pub fn initialize_tagger(path: &str) -> Result<WordclassMap, io::Error>

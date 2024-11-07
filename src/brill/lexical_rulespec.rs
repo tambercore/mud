@@ -1,5 +1,5 @@
 use super::wordclass::{map_pos_tag, Wordclass};
-use crate::{initialize_tagger, WordclassMap};
+use super::init_tagger::{initialize_tagger, WordclassMap};
 use super::lex_rulespec_id::{LexicalRuleID, LexicalRulespec};
 use super::lexical_ruleset::parse_lexical_ruleset;
 

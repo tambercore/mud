@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use super::contextual_ruleset::parse_contextual_ruleset;
 use super::contextual_rulespec::{contextual_rule_apply, ContextualRulespec};
 use super::wordclass::Wordclass;
-use crate::{initialize_tagger, WordclassMap};
+use super::init_tagger::{initialize_tagger, WordclassMap};
 use super::contractions::find_contractions;
 use super::lex_rulespec_id::LexicalRulespec;
 use super::lexical_ruleset::parse_lexical_ruleset;
