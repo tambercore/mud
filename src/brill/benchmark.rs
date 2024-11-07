@@ -10,7 +10,7 @@ use super::conllu_parser::{parse_conllu_file, UPOS}; // Import your custom parse
 use super::brill_tagger::tag_sentence;
 use super::contextual_rulespec::ContextualRulespec;
 use super::lex_rulespec_id::LexicalRulespec;
-use crate::WordclassMap;
+use super::init_tagger::WordclassMap;
 
 
 pub fn wordclass_to_upos(wordclass: &Wordclass) -> UPOS {
