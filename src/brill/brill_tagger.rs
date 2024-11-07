@@ -1,13 +1,12 @@
 use std::collections::HashMap;
-use crate::rs_contextual_ruleset::parse_contextual_ruleset;
-use crate::rs_contextual_rulespec::{contextual_rule_apply, ContextualRulespec};
-use crate::rs_wordclass::Wordclass;
+use super::contextual_ruleset::parse_contextual_ruleset;
+use super::contextual_rulespec::{contextual_rule_apply, ContextualRulespec};
+use super::wordclass::Wordclass;
 use crate::{initialize_tagger, WordclassMap};
-use crate::rs_contractions::find_contractions;
-use crate::rs_lex_rulespec_id::LexicalRulespec;
-use crate::rs_lexical_ruleset::parse_lexical_ruleset;
-//use crate::rs_lexical_ruleset::parse_lexical_ruleset;
-use crate::rs_lexical_rulespec::lexical_rule_apply;
+use super::contractions::find_contractions;
+use super::lex_rulespec_id::LexicalRulespec;
+use super::lexical_ruleset::parse_lexical_ruleset;
+use super::lexical_rulespec::lexical_rule_apply;
 
 
 /// Function to tag a `sentence` using lexical and contextual rules.

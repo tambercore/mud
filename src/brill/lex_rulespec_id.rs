@@ -1,7 +1,7 @@
 
 use std::{fmt};
 use std::io::{Error, ErrorKind};
-use crate::rs_wordclass::{Wordclass};
+use super::wordclass::{Wordclass};
 
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]

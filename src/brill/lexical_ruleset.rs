@@ -2,8 +2,8 @@ use std::collections::{HashSet};
 use std::fs::read_to_string;
 use std::io;
 use std::io::Error;
-use crate::rs_lex_rulespec_id::{map_lexical_rule_id, LexicalRulespec};
-use crate::rs_wordclass::{map_pos_tag, Wordclass};
+use super::lex_rulespec_id::{map_lexical_rule_id, LexicalRulespec};
+use super::wordclass::{map_pos_tag, Wordclass};
 
 /// ...
 pub fn parse_lexical_ruleset(path: &str) -> Result<Vec<LexicalRulespec>, io::Error>

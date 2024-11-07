@@ -1,7 +1,7 @@
-use crate::rs_wordclass::{map_pos_tag, Wordclass};
+use super::wordclass::{map_pos_tag, Wordclass};
 use crate::{initialize_tagger, WordclassMap};
-use crate::rs_lex_rulespec_id::{LexicalRuleID, LexicalRulespec};
-use crate::rs_lexical_ruleset::parse_lexical_ruleset;
+use super::lex_rulespec_id::{LexicalRuleID, LexicalRulespec};
+use super::lexical_ruleset::parse_lexical_ruleset;
 
 /// Function to check if the word at `current_index` has suffix `suffix` and is not yet tagged.
 pub fn has_suffix(sentence: &Vec<(String, Wordclass)>, current_index: i32, suffix: &str) -> bool {

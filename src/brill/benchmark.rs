@@ -5,55 +5,55 @@ use std::io::BufWriter;
 use csv::ReaderBuilder;
 use serde::{Deserialize, Serialize};
 //use std::fs::File;
-use crate::rs_wordclass::Wordclass;
-use crate::rs_conllu_parser::parse_conllu_file; // Import your custom parser
-use crate::rs_brill_tagger::tag_sentence;
-use crate::rs_contextual_rulespec::ContextualRulespec;
-use crate::rs_lex_rulespec_id::LexicalRulespec;
+use super::wordclass::Wordclass;
+use super::conllu_parser::{parse_conllu_file, UPOS}; // Import your custom parser
+use super::brill_tagger::tag_sentence;
+use super::contextual_rulespec::ContextualRulespec;
+use super::lex_rulespec_id::LexicalRulespec;
 use crate::WordclassMap;
 
 
-pub fn wordclass_to_upos(wordclass: &Wordclass) -> crate::rs_conllu_parser::UPOS {
+pub fn wordclass_to_upos(wordclass: &Wordclass) -> UPOS {
     match wordclass {
-        Wordclass::CC    => crate::rs_conllu_parser::UPOS::CCONJ, // Coordinating conjunction
-        Wordclass::CD    => crate::rs_conllu_parser::UPOS::NUM,   // Cardinal number
-        Wordclass::DT    => crate::rs_conllu_parser::UPOS::DET,   // Determiner
-        Wordclass::FW    => crate::rs_conllu_parser::UPOS::X,     // Foreign word
-        Wordclass::IN    => crate::rs_conllu_parser::UPOS::SCONJORADP,   // Preposition or subordinating conjunction
-        Wordclass::JJ    => crate::rs_conllu_parser::UPOS::ADJ,   // Adjective
-        Wordclass::JJR   => crate::rs_conllu_parser::UPOS::ADJ,   // Comparative adjective
-        Wordclass::JJS   => crate::rs_conllu_parser::UPOS::ADJ,   // Superlative adjective
-        Wordclass::LS    => crate::rs_conllu_parser::UPOS::X,     // List marker
-        Wordclass::MD    => crate::rs_conllu_parser::UPOS::VERB,   // Modal verb
-        Wordclass::NN    => crate::rs_conllu_parser::UPOS::NOUN,  // Noun
-        Wordclass::NNS   => crate::rs_conllu_parser::UPOS::NOUN,  // Plural noun
-        Wordclass::NNP   => crate::rs_conllu_parser::UPOS::PROPN,  // Proper noun
-        Wordclass::NNPS  => crate::rs_conllu_parser::UPOS::PROPN,  // Plural proper noun
-        Wordclass::PDT   => crate::rs_conllu_parser::UPOS::DET,   // Predeterminer
-        Wordclass::POS   => crate::rs_conllu_parser::UPOS::PART,  // Possessive ending
-        Wordclass::RB    => crate::rs_conllu_parser::UPOS::ADV,   // Adverb
-        Wordclass::RBR   => crate::rs_conllu_parser::UPOS::ADV,   // Comparative adverb
-        Wordclass::RBS   => crate::rs_conllu_parser::UPOS::ADV,   // Superlative adverb
-        Wordclass::RP    => crate::rs_conllu_parser::UPOS::PART,  // Particle
-        Wordclass::SYM   => crate::rs_conllu_parser::UPOS::SYM,   // Symbol
-        Wordclass::TO    => crate::rs_conllu_parser::UPOS::PART,  // Infinitive marker (to)
-        Wordclass::UH    => crate::rs_conllu_parser::UPOS::INTJ,  // Interjection
-        Wordclass::VB    => crate::rs_conllu_parser::UPOS::VERB,   // Verb
-        Wordclass::VBD   => crate::rs_conllu_parser::UPOS::VERB,   // Past tense verb
-        Wordclass::VBG   => crate::rs_conllu_parser::UPOS::VERB,   // Gerund/Present participle
-        Wordclass::VBN   => crate::rs_conllu_parser::UPOS::VERB,   // Past participle
-        Wordclass::WDT   => crate::rs_conllu_parser::UPOS::PRON,   // Wh-determiner
-        Wordclass::WPR   => crate::rs_conllu_parser::UPOS::PRON,   // Wh-pronoun
-        Wordclass::WPO   => crate::rs_conllu_parser::UPOS::PRON,   // Wh-other pronoun
-        Wordclass::WRB   => crate::rs_conllu_parser::UPOS::ADV,    // Wh-adverb
-        Wordclass::PUNC  => crate::rs_conllu_parser::UPOS::PUNCT,  // Punctuation
-        Wordclass::EX    => crate::rs_conllu_parser::UPOS::ADV,    // Existential "there"
-        Wordclass::PRPO  => crate::rs_conllu_parser::UPOS::PRON,   // Possessive pronoun
-        Wordclass::PRPE  => crate::rs_conllu_parser::UPOS::PRON,   // Personal pronoun
-        Wordclass::VBP   => crate::rs_conllu_parser::UPOS::VERB,    // Present tense verb
-        Wordclass::VBZ   => crate::rs_conllu_parser::UPOS::VERB,    // 3rd-person singular verb
-        Wordclass::NUM   => crate::rs_conllu_parser::UPOS::NUM,    // Numeral
-        Wordclass::ANY   => crate::rs_conllu_parser::UPOS::PROPN,   // Ambiguous, may need clarification in usage
+        Wordclass::CC    => UPOS::CCONJ, // Coordinating conjunction
+        Wordclass::CD    => UPOS::NUM,   // Cardinal number
+        Wordclass::DT    => UPOS::DET,   // Determiner
+        Wordclass::FW    => UPOS::X,     // Foreign word
+        Wordclass::IN    => UPOS::SCONJORADP,   // Preposition or subordinating conjunction
+        Wordclass::JJ    => UPOS::ADJ,   // Adjective
+        Wordclass::JJR   => UPOS::ADJ,   // Comparative adjective
+        Wordclass::JJS   => UPOS::ADJ,   // Superlative adjective
+        Wordclass::LS    => UPOS::X,     // List marker
+        Wordclass::MD    => UPOS::VERB,   // Modal verb
+        Wordclass::NN    => UPOS::NOUN,  // Noun
+        Wordclass::NNS   => UPOS::NOUN,  // Plural noun
+        Wordclass::NNP   => UPOS::PROPN,  // Proper noun
+        Wordclass::NNPS  => UPOS::PROPN,  // Plural proper noun
+        Wordclass::PDT   => UPOS::DET,   // Predeterminer
+        Wordclass::POS   =>UPOS::PART,  // Possessive ending
+        Wordclass::RB    => UPOS::ADV,   // Adverb
+        Wordclass::RBR   => UPOS::ADV,   // Comparative adverb
+        Wordclass::RBS   => UPOS::ADV,   // Superlative adverb
+        Wordclass::RP    => UPOS::PART,  // Particle
+        Wordclass::SYM   => UPOS::SYM,   // Symbol
+        Wordclass::TO    => UPOS::PART,  // Infinitive marker (to)
+        Wordclass::UH    => UPOS::INTJ,  // Interjection
+        Wordclass::VB    => UPOS::VERB,   // Verb
+        Wordclass::VBD   => UPOS::VERB,   // Past tense verb
+        Wordclass::VBG   => UPOS::VERB,   // Gerund/Present participle
+        Wordclass::VBN   => UPOS::VERB,   // Past participle
+        Wordclass::WDT   => UPOS::PRON,   // Wh-determiner
+        Wordclass::WPR   => UPOS::PRON,   // Wh-pronoun
+        Wordclass::WPO   => UPOS::PRON,   // Wh-other pronoun
+        Wordclass::WRB   => UPOS::ADV,    // Wh-adverb
+        Wordclass::PUNC  => UPOS::PUNCT,  // Punctuation
+        Wordclass::EX    => UPOS::ADV,    // Existential "there"
+        Wordclass::PRPO  => UPOS::PRON,   // Possessive pronoun
+        Wordclass::PRPE  => UPOS::PRON,   // Personal pronoun
+        Wordclass::VBP   => UPOS::VERB,    // Present tense verb
+        Wordclass::VBZ   => UPOS::VERB,    // 3rd-person singular verb
+        Wordclass::NUM   => UPOS::NUM,    // Numeral
+        Wordclass::ANY   => UPOS::PROPN,   // Ambiguous, may need clarification in usage
     }
 }
 
@@ -146,7 +146,7 @@ pub fn benchmark_pos_tagger(conllu_filepath: &str, lexical_ruleset: &Vec<Lexical
         println!("\nSentence {} (of {}) match score: {:.2}\n", i + 1, total_sentences, sentence_score);
         println!("{}", "=".repeat(80));
 
-        if sentence_count > max_sentences { break; }
+        //if sentence_count > max_sentences { break; }
     }
 
     // Calculate the average score
