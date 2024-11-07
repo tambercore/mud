@@ -13,7 +13,8 @@ pub struct CCGNode {
 }
 
 pub fn english_to_ccg() -> Result<CCGNode, Box<dyn std::error::Error>> {
-    let file_path = "data/ccg_parsed_sentence.json";
+    let file_path = "data/temp_ccg_parsed_sentence.json";
+
     Command::new("data/lambeq/lambeq_env/Scripts/python.exe")
         .arg("data/lambeq/run_lambeq.py")
         .output()
