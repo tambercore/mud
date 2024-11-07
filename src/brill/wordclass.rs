@@ -62,6 +62,7 @@ pub enum Wordclass {
     WRB,    // Wh-adverb
     PUNC,   // Punctuation
     ANY,    // Any, used in contextual rules.
+    NUM,
 }
 
 impl fmt::Display for Wordclass {
@@ -104,6 +105,7 @@ impl fmt::Display for Wordclass {
             Wordclass::WPO => "Possessive wh-pronoun",
             Wordclass::WRB => "Wh-adverb",
             Wordclass::PUNC => "Punctuation",
+            Wordclass::NUM => "Numeric",
             Wordclass::ANY => "Any!",
 
         };
@@ -154,6 +156,10 @@ pub fn map_pos_tag(tag: &str) -> Option<Wordclass> {
         "," => Some(Wordclass::PUNC),
         "!" => Some(Wordclass::PUNC),
         ";" => Some(Wordclass::PUNC),
+        "(" => Some(Wordclass::PUNC),
+        ")" => Some(Wordclass::PUNC),
+        "-" => Some(Wordclass::PUNC),
+        ":" => Some(Wordclass::PUNC),
         tag if tag.contains("|") => Some(Wordclass::ANY),
         _ => None,
     }

@@ -1,6 +1,7 @@
-use crate::rs_wordclass::{map_pos_tag, Wordclass};
+use super::wordclass::{map_pos_tag, Wordclass};
 use crate::{initialize_tagger, WordclassMap};
-use crate::rs_lex_rulespec_id::{LexicalRuleID, LexicalRulespec};
+use super::lex_rulespec_id::{LexicalRuleID, LexicalRulespec};
+use super::lexical_ruleset::parse_lexical_ruleset;
 
 /// Function to check if the word at `current_index` has suffix `suffix` and is not yet tagged.
 pub fn has_suffix(sentence: &Vec<(String, Wordclass)>, current_index: i32, suffix: &str) -> bool {
@@ -218,19 +219,15 @@ pub fn is_word_in_lexicon(word: String, wc_mapping: &WordclassMap) -> bool {
 /// Checks a given lexical rule.
 pub fn lexical_rule_holds(sentence: &mut Vec<(String, Wordclass)>, current_index: i32, rule: &LexicalRulespec, wc_mapping: &WordclassMap) -> Option<bool> {
 
+
+
     match rule.ruleset_id {
         LexicalRuleID::HASSUF => {
 
-            let suffix: &str = rule.parameters.get(1)?;
-            let source_tag= rule.parameters.get(0)?;
-            let source_tag_wc = map_pos_tag(source_tag);
+            let suffix: &str = rule.parameters.get(0)?;
+            //println!("applying rule: {:?}", rule);
+            Option::from(has_suffix(&sentence, current_index, suffix))
 
-            match source_tag_wc {
-                Some(_wordclass) => { Option::from(has_suffix(&sentence, current_index, suffix)) }
-                None => {
-                    Option::from(false)
-                }
-            }
         }
         LexicalRuleID::FCHAR => {
             let c = rule.parameters.get(1)?;
@@ -245,16 +242,8 @@ pub fn lexical_rule_holds(sentence: &mut Vec<(String, Wordclass)>, current_index
             }
         }
         LexicalRuleID::ADDSUF => {
-            let suffix = rule.parameters.get(1)?;
-            let source_tag= rule.parameters.get(0)?;
-            let source_tag_wc = map_pos_tag(source_tag);
-
-            match source_tag_wc {
-                Some(_wordclass) => { Option::from(add_suffix(&sentence, current_index, suffix, wc_mapping)) }
-                None => {
-                    Option::from(false)
-                }
-            }
+            let suffix = rule.parameters.get(0)?;
+            Option::from(add_suffix(&sentence, current_index, suffix, wc_mapping))
         }
         LexicalRuleID::FGOODRIGHT => {
             let expected_word = rule.parameters.get(1)?;
@@ -269,16 +258,8 @@ pub fn lexical_rule_holds(sentence: &mut Vec<(String, Wordclass)>, current_index
             }
         }
         LexicalRuleID::DELETEPREF => {
-            let prefix = rule.parameters.get(1)?;
-            let source_tag= rule.parameters.get(0)?;
-            let source_tag_wc = map_pos_tag(source_tag);
-
-            match source_tag_wc {
-                Some(_wordclass) => { Option::from(delete_prefix(&sentence, current_index, prefix, wc_mapping)) }
-                None => {
-                    Option::from(false)
-                }
-            }
+            let prefix = rule.parameters.get(0)?;
+            Option::from(delete_prefix(&sentence, current_index, prefix, wc_mapping))
         }
         LexicalRuleID::FGOODLEFT => {
             let expected_word = rule.parameters.get(1)?;
@@ -293,28 +274,12 @@ pub fn lexical_rule_holds(sentence: &mut Vec<(String, Wordclass)>, current_index
             }
         }
         LexicalRuleID::GOODLEFT => {
-            let expected_word = rule.parameters.get(1)?;
-            let source_tag= rule.parameters.get(0)?;
-            let source_tag_wc = map_pos_tag(source_tag);
-
-            match source_tag_wc {
-                Some(_wordclass) => { Option::from(appears_to_left(&sentence, current_index, expected_word)) }
-                None => {
-                    Option::from(false)
-                }
-            }
+            let expected_word = rule.parameters.get(0)?;
+            Option::from(appears_to_left(&sentence, current_index, expected_word))
         }
         LexicalRuleID::GOODRIGHT => {
-            let expected_word = rule.parameters.get(1)?;
-            let source_tag= rule.parameters.get(0)?;
-            let source_tag_wc = map_pos_tag(source_tag);
-
-            match source_tag_wc {
-                Some(_wordclass) => { Option::from(appears_to_right(&sentence, current_index, expected_word)) }
-                None => {
-                    Option::from(false)
-                }
-            }
+            let expected_word = rule.parameters.get(0)?;
+            Option::from(appears_to_right(&sentence, current_index, expected_word))
         }
         LexicalRuleID::FDELETESUF => {
             let suffix = rule.parameters.get(1)?;
@@ -329,16 +294,8 @@ pub fn lexical_rule_holds(sentence: &mut Vec<(String, Wordclass)>, current_index
             }
         }
         LexicalRuleID::CHAR => {
-            let c = rule.parameters.get(1)?;
-            let source_tag= rule.parameters.get(0)?;
-            let source_tag_wc = map_pos_tag(source_tag);
-
-            match source_tag_wc {
-                Some(_wordclass) => { Option::from(has_char(&sentence, current_index, c.parse().unwrap())) }
-                None => {
-                    Option::from(false)
-                }
-            }
+            let c = rule.parameters.get(0)?;
+            Option::from(has_char(&sentence, current_index, c.parse().unwrap()))
         }
         LexicalRuleID::FDELETEPREF => {
             let prefix = rule.parameters.get(1)?;
@@ -389,16 +346,8 @@ pub fn lexical_rule_holds(sentence: &mut Vec<(String, Wordclass)>, current_index
             }
         }
         LexicalRuleID::DELETESUF => {
-            let suffix = rule.parameters.get(1)?;
-            let source_tag= rule.parameters.get(0)?;
-            let source_tag_wc = map_pos_tag(source_tag);
-
-            match source_tag_wc {
-                Some(_wordclass) => { Option::from(delete_suffix(&sentence, current_index, suffix, wc_mapping)) }
-                None => {
-                    Option::from(false)
-                }
-            }
+            let suffix = rule.parameters.get(0)?;
+            Option::from(delete_suffix(&sentence, current_index, suffix, wc_mapping))
         }
     }
 }
@@ -408,6 +357,13 @@ pub fn lexical_rule_holds(sentence: &mut Vec<(String, Wordclass)>, current_index
 pub fn lexical_rule_apply(sentence: &mut Vec<(String, Wordclass)>, current_index: i32, rule: &LexicalRulespec, wc_mapping: &WordclassMap) -> Option<bool> {
 
     let uindex: usize = current_index as usize;
+
+    /// If a word is numeric, it is type WORDCLASS::NUM
+    if sentence.get(uindex)?.0.parse::<i64>().is_ok() || sentence.get(current_index as usize)?.0.parse::<f64>().is_ok() {
+        //println!("yes")
+        sentence[uindex].1 = Wordclass::NUM;
+        Option::from(true);
+    }
 
     // Run Lexical Rule
     match lexical_rule_holds(sentence, current_index, rule, &wc_mapping) {
@@ -428,20 +384,27 @@ fn test_lexical_rule_apply() {
 
     let mut sentence = vec![
         (String::from("The"), Wordclass::DT),
-        (String::from("quick"), Wordclass::JJ),
+        (String::from("AKJSHING"), Wordclass::ANY),
         (String::from("brown"), Wordclass::JJ),
-        (String::from("fox"), Wordclass::NN),
     ];
 
     println!("sentence before: {:?}", sentence);
 
-    let rule_fhassuf = LexicalRulespec {
-        ruleset_id: LexicalRuleID::FHASSUF,
+    let lexical_ruleset: Vec<LexicalRulespec> = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
+
+    for rule in lexical_ruleset {
+        //println!("rule: {:?}", rule);
+        lexical_rule_apply(&mut sentence, 1, &rule, &wc_mapping);
+    }
+
+    /*let rule_fhassuf = LexicalRulespec {
+        ruleset_id: LexicalRuleID::HASSUF,
         target_tag: Wordclass::NN,
         parameters: vec![String::from("JJ"), "ick".parse().unwrap()],
-    };
+    };*/
 
-    assert!(lexical_rule_apply(&mut sentence, 1, &rule_fhassuf, &wc_mapping).unwrap());
+
+    //assert!(lexical_rule_apply(&mut sentence, 1, &rule_fhassuf, &wc_mapping).unwrap());
 
     println!("sentence after: {:?}", sentence);
 

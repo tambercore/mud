@@ -1,6 +1,6 @@
 use std::fmt;
-use crate::rs_rulespec_id::RulespecID;
-use crate::rs_wordclass::{map_pos_tag, Wordclass};
+use super::rulespec_id::RulespecID;
+use super::wordclass::{map_pos_tag, Wordclass};
 
 
 /// Function to check if the tag at index - 1 is equal to `tag` in a sentence.

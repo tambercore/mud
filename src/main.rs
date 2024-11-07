@@ -1,24 +1,18 @@
-mod rs_wordclass;
-mod rs_contextual_ruleset;
-mod rs_rulespec_id;
-mod rs_contextual_rulespec;
-mod rs_lex_rulespec_id;
-mod rs_lexical_ruleset;
-mod rs_lexical_rulespec;
-mod rs_contractions;
-mod rs_benchmark;
-mod rs_brill_tagger;
-mod rs_conllu_parser;
+mod brill;
+use brill::wordclass::*;
+use brill::contextual_rulespec::*;
+use brill::contextual_ruleset::*;
+use brill::benchmark::benchmark_pos_tagger;
+use brill::lex_rulespec_id::LexicalRulespec;
+use brill::lexical_ruleset::parse_lexical_ruleset;
 
 use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Write};
-use rs_wordclass::*;
-use rs_contextual_rulespec::*;
-use rs_contextual_ruleset::*;
-use rs_benchmark::benchmark_pos_tagger;
-use crate::rs_lex_rulespec_id::LexicalRulespec;
-use crate::rs_lexical_ruleset::parse_lexical_ruleset;
+
+
+
+
 
 type WordclassMap = HashMap<String, Vec<Wordclass>>;
 

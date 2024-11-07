@@ -1,8 +1,8 @@
 use std::fs::read_to_string;
-use crate::rs_wordclass::{map_pos_tag, Wordclass};
+use super::wordclass::{map_pos_tag, Wordclass};
 use std::io::{Error, ErrorKind};
-use crate::rs_rulespec_id::*;
-use crate::rs_contextual_rulespec::*;
+use super::rulespec_id::*;
+use super::contextual_rulespec::*;
 use std::collections::HashMap;
 
 /// ...
