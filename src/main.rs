@@ -1,5 +1,6 @@
 mod ccg;
 mod brill;
+mod montague;
 
 use std::io::{self, Write};
 use std::process::Command;
