@@ -34,6 +34,7 @@ pub enum CCGCategory {
         right: Box<CCGCategory>, // Right category in the composition.
         operator: CCGOperator,   // The composition operator (either `Forward` or `Backward`).
     },
+    V,
 }
 
 /// Implementation for `Deserialize` to parse CCG categories from JSON strings.
@@ -99,22 +100,15 @@ impl CCGCategory {
 }
 
 /// Helper function to parse composed categories from a string.
-///
 /// A composed category is in the form of "(left_category operator right_category)".
 fn parse_composed_category(value: &str) -> Option<(&str, &str, &str)> {
-    let trimmed_value = value.trim();
-    if trimmed_value.starts_with('(') && trimmed_value.ends_with(')') {
-        let inside = &trimmed_value[1..trimmed_value.len() - 1].trim();
-        if let Some(pos) = find_operator_position_outside_parentheses(inside) {
-            let (left, remainder) = inside.split_at(pos);
-            let (operator, right) = remainder.split_at(1);
-            return Some((left.trim(), operator, right.trim()));
-        } else {
-            return Some((inside.trim(), "", ""));
-        }
-    }
+    // If the value is a simple category like (s) or (s\np), remove the outer parentheses
+    let value = if is_simple_parentheses(value) {
+        &value[1..value.len() - 1]  // Slice to remove the first and last character
+    } else {
+        value
+    };
 
-    // If there's no parentheses, look for the operator directly.
     if let Some(pos) = find_operator_position_outside_parentheses(value) {
         let (left, remainder) = value.split_at(pos);
         let (operator, right) = remainder.split_at(1);
@@ -124,15 +118,29 @@ fn parse_composed_category(value: &str) -> Option<(&str, &str, &str)> {
     }
 }
 
+/// Checks if the string is a simple category surrounded by parentheses (e.g., (s) or (s\np))
+fn is_simple_parentheses(value: &str) -> bool {
+    // A simple parenthesized category should not contain any operators and should not be empty
+    if value.starts_with('(') && value.ends_with(')') {
+        let inner = &value[1..value.len() - 1]; // Remove the outer parentheses
+        !inner.contains('(') && !inner.contains(')')
+    } else {
+        false
+    }
+}
+
 /// Finds the position of an operator (`/` or `\`) that is outside of parentheses.
-///
-/// The function ensures the operator is not inside any parentheses by tracking open and close parentheses.
+/// The operator is considered outside of parentheses if the string starts with `(`
+/// and ends with `)` and there is a matching parenthesis pair around the operator.
 fn find_operator_position_outside_parentheses(value: &str) -> Option<usize> {
     let mut paren_count = 0;
+
+    // Iterate over each character in the string
     for (i, c) in value.char_indices() {
         match c {
-            '(' => paren_count += 1,
-            ')' => paren_count -= 1,
+            '(' => paren_count += 1,   // Increment count on encountering '('
+            ')' => paren_count -= 1,   // Decrement count on encountering ')'
+            // If it's an operator and we are outside parentheses
             '/' | '\\' if paren_count == 0 => return Some(i),
             _ => {}
         }
@@ -146,6 +154,7 @@ pub enum CCGRule {
     L,  // Leftward composition rule.
     FA, // Forward application rule.
     BA, // Backward application rule.
+    U, // Unary rule.
 }
 
 impl fmt::Display for CCGRule {
@@ -155,6 +164,7 @@ impl fmt::Display for CCGRule {
             CCGRule::L => "L",
             CCGRule::FA => "FA",
             CCGRule::BA => "BA",
+            CCGRule::U => "U"
         })
     }
 }
@@ -178,6 +188,7 @@ impl fmt::Display for CCGCategory {
             CCGCategory::S => write!(f, "S"),
             CCGCategory::NP => write!(f, "NP"),
             CCGCategory::N => write!(f, "N"),
+            CCGCategory::V => write!(f, "V"),
             CCGCategory::Composed { ref left, ref right, ref operator } => {
                 write!(f, "({} {} {})", left, operator, right)
             }
