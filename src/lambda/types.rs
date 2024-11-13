@@ -6,7 +6,7 @@ use std::fmt;
 #[derive(Clone, Debug)]
 pub enum LambdaEntity {
     Application(Box<LambdaEntity>, Box<LambdaEntity>),      // Application of two expressions
-    Abstraction(String, Box<LambdaEntity>),                 // Lambda abstraction, e.g., λx.M
+    Abstraction(String, Box<LambdaEntity>),                 // Lambda abstraction, e.g., λx.x + 1
     Variable(String),                                       // Variable, e.g., x
 }
 

@@ -1,49 +1,49 @@
 use crate::lambda::types::*;
 use crate::lambda::reduce::*;
 
-// Helper function to get Church TRUE
-fn get_church_true() -> LambdaEntity {
-    LambdaEntity::Abstraction(
-        "t".to_string(),
-        Box::new(LambdaEntity::Abstraction(
-            "f".to_string(),
-            Box::new(LambdaEntity::Variable("t".to_string())),
-        )),
-    )
-}
-
-// Helper function to get Church FALSE
-fn get_church_false() -> LambdaEntity {
-    LambdaEntity::Abstraction(
-        "t".to_string(),
-        Box::new(LambdaEntity::Abstraction(
-            "f".to_string(),
-            Box::new(LambdaEntity::Variable("f".to_string())),
-        )),
-    )
-}
-
-// Define Church-encoded AND
-fn get_church_and() -> LambdaEntity {
-    LambdaEntity::Abstraction(
-        "p".to_string(),
-        Box::new(LambdaEntity::Abstraction(
-            "q".to_string(),
-            Box::new(LambdaEntity::Application(
-                Box::new(LambdaEntity::Application(
-                    Box::new(LambdaEntity::Variable("p".to_string())),
-                    Box::new(LambdaEntity::Variable("q".to_string())),
-                )),
-                Box::new(get_church_false()),
-            )),
-        )),
-    )
-}
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Helper function to get Church TRUE
+    fn get_church_true() -> LambdaEntity {
+        LambdaEntity::Abstraction(
+            "t".to_string(),
+            Box::new(LambdaEntity::Abstraction(
+                "f".to_string(),
+                Box::new(LambdaEntity::Variable("t".to_string())),
+            )),
+        )
+    }
+
+    // Helper function to get Church FALSE
+    fn get_church_false() -> LambdaEntity {
+        LambdaEntity::Abstraction(
+            "t".to_string(),
+            Box::new(LambdaEntity::Abstraction(
+                "f".to_string(),
+                Box::new(LambdaEntity::Variable("f".to_string())),
+            )),
+        )
+    }
+
+    // Define Church-encoded AND
+    fn get_church_and() -> LambdaEntity {
+        LambdaEntity::Abstraction(
+            "p".to_string(),
+            Box::new(LambdaEntity::Abstraction(
+                "q".to_string(),
+                Box::new(LambdaEntity::Application(
+                    Box::new(LambdaEntity::Application(
+                        Box::new(LambdaEntity::Variable("p".to_string())),
+                        Box::new(LambdaEntity::Variable("q".to_string())),
+                    )),
+                    Box::new(get_church_false()),
+                )),
+            )),
+        )
+    }
 
     fn is_church_true(entity: &LambdaEntity) -> bool {
         // Check if the entity matches the structure of Church True
