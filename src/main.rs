@@ -8,13 +8,50 @@ use lambda::reduce::*;
 
 fn main() {
     // Example expression: (λ"arg". arg) applied to "y"
-    let expr = LambdaEntity::Application(
+    // Define your expression
+    // Church-encoded TRUE: λt. λf. t
+    let church_true = LambdaEntity::Abstraction(
+        "t".to_string(),
         Box::new(LambdaEntity::Abstraction(
-            "x".to_string(),  // Using i32 as an example Any type
-            Box::new(LambdaEntity::Variable(("x".to_string()))),
+            "f".to_string(),
+            Box::new(LambdaEntity::Variable("t".to_string())),
         )),
-        Box::new(LambdaEntity::Variable(("5".to_string()))),
     );
+
+    // Church-encoded FALSE: λt. λf. f
+    let church_false = LambdaEntity::Abstraction(
+        "t".to_string(),
+        Box::new(LambdaEntity::Abstraction(
+            "f".to_string(),
+            Box::new(LambdaEntity::Variable("f".to_string())),
+        )),
+    );
+
+    // Church-encoded AND: λp. λq. p q FALSE
+    let church_and = LambdaEntity::Abstraction(
+        "p".to_string(),
+        Box::new(LambdaEntity::Abstraction(
+            "q".to_string(),
+            Box::new(LambdaEntity::Application(
+                Box::new(LambdaEntity::Application(
+                    Box::new(LambdaEntity::Variable("p".to_string())),
+                    Box::new(LambdaEntity::Variable("q".to_string())),
+                )),
+                Box::new(church_false.clone()),
+            )),
+        )),
+    );
+
+    // Applying AND to TRUE and TRUE (should hold true)
+    let expr = LambdaEntity::Application(
+        Box::new(LambdaEntity::Application(
+            Box::new(church_and),
+            Box::new(church_true.clone()),
+        )),
+        Box::new(church_true),
+    );
+
+
 
     println!("Expression: {}", expr);
 

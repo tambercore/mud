@@ -1,34 +1,30 @@
-
 use crate::lambda::types::*;
-use crate::lambda::types::LambdaEntity::Variable;
+use crate::lambda::types::LambdaEntity::{Application, Abstraction, Variable};
+
 
 fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -> LambdaEntity {
     match expression {
-        LambdaEntity::Application(left, right) => {
-            // Recursively substitute the left and right parts, returning the owned value
+        Application(left, right) => {
             let left_substituted = _substitute(left, source, target);
             let right_substituted = _substitute(right, source, target);
-            LambdaEntity::Application(
-                Box::new(left_substituted), // No need for clone, we move the values here
-                Box::new(right_substituted),
-            )
+            Application(Box::new(left_substituted), Box::new(right_substituted))
         }
-        LambdaEntity::Abstraction(variable, subexpr) => {
+        Abstraction(variable, subexpr) => {
             if *variable == source {
-                // If the variable matches, return the abstraction as it is
-                LambdaEntity::Abstraction(variable.clone(), subexpr.clone())
+                // If the variable in the abstraction matches `source`, return the abstraction unchanged.
+                Abstraction(variable.clone(), subexpr.clone())
             } else {
-                // Otherwise, recursively substitute in the subexpression
+                // Otherwise, perform substitution in the body of the abstraction.
                 let subexpr_substituted = _substitute(subexpr, source, target);
-                LambdaEntity::Abstraction(variable.clone(), Box::new(subexpr_substituted))
+                Abstraction(variable.clone(), Box::new(subexpr_substituted))
             }
         }
-        LambdaEntity::Variable(variable) => {
-            if *variable == source {
-                // Return a new Variable with the target value
-                LambdaEntity::Variable(target.to_string())
+        Variable(variable) => {
+            // Substitute the variable if it matches `source`; otherwise, return as is.
+            if variable == source {
+                target.clone()
             } else {
-                expression.clone() // Clone the original variable if no match
+                Variable(variable.clone())
             }
         }
     }
@@ -36,20 +32,31 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
 
 fn substitute(expression: &LambdaEntity, target: &LambdaEntity) -> LambdaEntity {
     match expression {
-        LambdaEntity::Abstraction(variable, subexpr) => {
-            // Perform substitution for the abstraction
+        Abstraction(variable, subexpr) => {
+            // Apply substitution to the body of the abstraction.
             _substitute(subexpr, variable, target)
         }
-        LambdaEntity::Application(_, _) => expression.clone(), // Clone the application
-        LambdaEntity::Variable(_) => expression.clone(), // Clone the variable
+        Application(_, _) | Variable(_) => expression.clone(),
     }
 }
 
 pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
     match expression {
-        LambdaEntity::Application(expr, term) => {
-            return substitute(expr, term)
+        Application(expr, term) => {
+            // Reduce the function (expr) and argument (term) before applying substitution.
+            let reduced_expr = reduce(expr);
+            let reduced_term = reduce(term);
+
+            // Pattern match on `reduced_expr` directly, without dereferencing.
+            if let Abstraction(var, body) = reduced_expr {
+                let substituted_body = _substitute(&body, &var, &reduced_term);
+                reduce(&substituted_body)
+            } else {
+                // If `reduced_expr` is not an abstraction, return the application as is.
+                Application(Box::new(reduced_expr), Box::new(reduced_term))
+            }
         }
-        _ => expression.clone()
+        // If the expression is not an application, return it as is.
+        _ => expression.clone(),
     }
 }
