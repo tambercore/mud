@@ -1,9 +1,18 @@
-from lambeq import BobcatParser
+import sys
 import json
+from lambeq import BobcatParser
+
+# Ensure we get the sentence from the command line arguments.
+if len(sys.argv) < 2:
+    print("Usage: python run_lambeq.py <sentence>")
+    sys.exit(1)
+
+sentence = sys.argv[1]  # The sentence passed from Rust
 
 parser = BobcatParser()
-tree = parser.sentence2tree('This is a test sentence')
+tree = parser.sentence2tree(sentence)  # Use the sentence argument
 tree_json = json.dumps(tree.to_json())
-with open ("data/temp_ccg_parsed_sentence.json", "w") as f:
-        f.write(tree_json)
 
+# Write the JSON output to the file.
+with open("data/temp_ccg_parsed_sentence.json", "w") as f:
+    f.write(tree_json)

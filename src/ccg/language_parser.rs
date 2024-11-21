@@ -1,35 +1,43 @@
-use std::process::Command;
-use std::fs::File;
-use std::io::Read;
-use serde::Deserialize;
+use std::{process::Command, fs::File, io::Read};
+use serde_json::Error as SerdeError;
+use crate::brill::wordclass::Wordclass;
+use super::ccg_types::{CCGNode, add_tags};
 
-#[derive(Debug, Deserialize)]
-pub struct CCGNode {
-    #[serde(rename = "type")]
-    node_type: String,
-    pub(crate) rule: Option<String>,
-    pub(crate) text: Option<String>,
-    pub(crate) children: Option<Vec<CCGNode>>,
-}
-
-pub fn english_to_ccg() -> Result<CCGNode, Box<dyn std::error::Error>> {
-    let file_path = "data/temp_ccg_parsed_sentence.json";
-
-    Command::new("data/lambeq/lambeq_env/Scripts/python.exe")
+/// Runs a Python script to process an English sentence and parses the result into a CCG node.
+///
+/// This function assumes the presence of a virtual environment with `lambeq` installed and
+/// the necessary Python script located at `data/lambeq/run_lambeq.py`.
+/// After executing the Python script, it reads and deserializes the CCG JSON result from `data/temp_ccg_parsed_sentence.json`.
+///
+/// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the process fails.
+pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordclass)>) -> CCGNode {
+    // Pass the sentence to the Python script as a command line argument.
+    let output = Command::new("data/lambeq/lambeq_env/Scripts/python.exe")
         .arg("data/lambeq/run_lambeq.py")
+        .arg(sentence) // Pass sentence as argument to Python script
         .output()
-        .expect("Failed to execute Python command. Ensure a venv, named `lambeq_env`, is installed at data/lambeq/lambeq_env.\
-        Ensure that `lambeq` is correctly installed inside the venv.");
+        .map_err(|_| "Failed to execute Python command. Ensure the virtual environment and lambeq are properly installed.");
 
-    Ok(read_json(file_path)?)
+    // Read and parse the resulting JSON file into a CCGNode.
+    let original_tree = read_json("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
+    add_tags(original_tree, vec_of_words_to_tags)
 }
+/// Reads a JSON file and attempts to deserialize it into a `CCGNode`.
+///
+/// # Arguments
+/// * `file_path` - The path to the JSON file to read.
+///
+/// # Returns
+/// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the file can't be read or parsed.
+fn read_json(file_path: &str) -> Result<CCGNode, String> {
+    let mut content = String::new();
 
-fn read_json(file_path: &str) -> Result<CCGNode, Box<dyn std::error::Error>> {
-    let mut file = File::open(file_path)?;
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)?;
+    // Open the file and read its content into a string.
+    File::open(file_path)
+        .map_err(|e| format!("Failed to open file: {}", e))?
+        .read_to_string(&mut content)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
 
-    let root: CCGNode = serde_json::from_str(&contents)?;
-    Ok(root)
+    // Deserialize the JSON content into a CCGNode.
+    serde_json::from_str(&content).map_err(|e: SerdeError| format!("Failed to parse CCG from JSON: {}", e))
 }
-

@@ -1,10 +1,11 @@
 mod ccg;
 mod brill;
-mod lambda;
+mod montague;
 
-use std::io::{Write};
+use std::io::{self, Write};
 
-
-fn main() {
-    println!("Hello World!")
+fn main() -> io::Result<()> {
+    let b = get_meanings("murder");
+    println!("{:?}", b);
+    return;
 }
