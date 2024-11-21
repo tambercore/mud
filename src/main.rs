@@ -5,7 +5,7 @@ mod montague;
 use std::io::{self, Write};
 
 fn main() -> io::Result<()> {
-
-
-    Ok(())
+    let b = get_meanings("murder");
+    println!("{:?}", b);
+    return;
 }
