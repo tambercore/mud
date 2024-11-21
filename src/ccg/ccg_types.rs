@@ -252,3 +252,21 @@ fn find_operator_position_outside_parentheses(value: &str) -> Option<usize> {
 }
 
 
+/// Recursively extracts terminal nodes (nodes with `text`) from a CCGNode tree.
+pub fn get_terminal_nodes(node: &CCGNode) -> Vec<&CCGNode> {
+    let mut terminals = Vec::new();
+
+    // If the current node has text, it's a terminal node.
+    if node.text.is_some() {
+        terminals.push(node);
+    }
+
+    // If the node has children, recursively collect terminal nodes from them.
+    if let Some(children) = &node.children {
+        for child in children {
+            terminals.extend(get_terminal_nodes(child));
+        }
+    }
+
+    terminals
+}
