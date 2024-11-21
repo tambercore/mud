@@ -39,8 +39,11 @@ fn run() {
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 
-    let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples);
-    println!("{}", ccg);
+    let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
+
+    let montague_representation = map_words_to_montague(vec_of_word_tag_tuples.clone(), ccg);
+
+    println!("{:?}", montague_representation);
 }
 
 /// Map word tag pairs to their corresponding montague grammar representation using the CCG tree.
