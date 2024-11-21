@@ -4,6 +4,8 @@ use crate::lambda::reduce::*;
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::PartialEq;
+    use crate::montague::expression::Expression;
     use super::*;
 
     // Helper function to get Church TRUE
@@ -12,7 +14,7 @@ mod tests {
             "t".to_string(),
             Box::new(LambdaEntity::Abstraction(
                 "f".to_string(),
-                Box::new(LambdaEntity::Variable("t".to_string())),
+                Box::new(LambdaEntity::Variable(Box::from(Expression::Variable("t".to_string())))),
             )),
         )
     }
@@ -23,7 +25,7 @@ mod tests {
             "t".to_string(),
             Box::new(LambdaEntity::Abstraction(
                 "f".to_string(),
-                Box::new(LambdaEntity::Variable("f".to_string())),
+                Box::new(LambdaEntity::Variable(Box::from(Expression::Variable("f".to_string())))),
             )),
         )
     }
@@ -36,14 +38,15 @@ mod tests {
                 "q".to_string(),
                 Box::new(LambdaEntity::Application(
                     Box::new(LambdaEntity::Application(
-                        Box::new(LambdaEntity::Variable("p".to_string())),
-                        Box::new(LambdaEntity::Variable("q".to_string())),
+                        Box::new(LambdaEntity::Variable(Box::from(Expression::Variable("p".to_string())))),
+                        Box::new(LambdaEntity::Variable(Box::from(Expression::Variable("q".to_string())))),
                     )),
                     Box::new(get_church_false()),
                 )),
             )),
         )
     }
+
 
     fn is_church_true(entity: &LambdaEntity) -> bool {
         // Check if the entity matches the structure of Church True
@@ -54,7 +57,9 @@ mod tests {
                         if param2 == "f" {
                             // Check if the body of the second abstraction is the variable "t"
                             if let LambdaEntity::Variable(ref var) = **body2 {
-                                return var == "t";
+                                if let Expression::Variable(ref inner_var) = **var {
+                                    return inner_var == "t";
+                                }
                             }
                         }
                     }
@@ -74,7 +79,9 @@ mod tests {
                         if param2 == "f" {
                             // Check if the body of the second abstraction is the variable "f"
                             if let LambdaEntity::Variable(ref var) = **body2 {
-                                return var == "f";
+                                if let Expression::Variable(ref inner_var) = **var {
+                                    return inner_var == "f";
+                                }
                             }
                         }
                     }
@@ -166,6 +173,29 @@ mod tests {
             result,
             "Expected Church False, but got {}",
             expr
+        );
+    }
+
+    #[test]
+    fn test_expression_application() {
+
+        let lhs = LambdaEntity::Abstraction("x".to_string(),
+                                            Box::from((LambdaEntity::Abstraction("y".to_string(),
+                                                                                 Box::from((LambdaEntity::Variable(Box::from(Expression::Predicate("Likes".to_string(), vec!["y".to_string(), "x".to_string()])))))
+                                            )))
+        );
+
+        let rhs = LambdaEntity::Variable(Box::from(Expression::Variable("gouda".to_string())));
+
+        let expr = LambdaEntity::Application(Box::from(lhs), Box::from(rhs));
+        let reduced_expr = reduce(&expr);
+
+        let target_expr = LambdaEntity::Abstraction("y".to_string(), Box::from((LambdaEntity::Variable(Box::from(Expression::Predicate("Likes".to_string(), vec!["y".to_string(), "gouda".to_string()]))))));
+
+        assert_eq!(
+            reduced_expr, target_expr,
+            "Expected {:?}, but got {:?}",
+            target_expr, reduced_expr
         );
     }
 

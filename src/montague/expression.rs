@@ -2,6 +2,7 @@ use std::fmt;
 use crate::montague::expression::Expression::Predicate;
 
 type Variable = String;
+#[derive(Clone, Debug)]
 pub enum Expression {
     Conjunction(Box<Expression>, Box<Expression>),
     ExistentialQuantifier(Variable, Box<Expression>),
@@ -27,6 +28,17 @@ impl fmt::Display for Expression {
     }
 }
 
+impl PartialEq for Expression {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Expression::Variable(v1), Expression::Variable(v2)) => v1 == v2,
+            (Expression::Predicate(pred1, args1), Expression::Predicate(pred2, args2)) => {
+                pred1 == pred2 && args1 == args2
+            }
+            _ => false,
+        }
+    }
+}
 #[test]
 fn test_expression_printing() {
     let expr = Expression::ExistentialQuantifier("x".to_string() ,
