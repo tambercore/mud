@@ -159,6 +159,12 @@ impl fmt::Display for CCGNode {
             String::new()
         };
 
+        let class_str = if let Some(class) = &self.class {
+            format!(" ({})", class)
+        } else {
+            String::new()
+        };
+
         let text_str = if let Some(text) = &self.text {
             format!(": {}", text)
         } else {
@@ -172,8 +178,28 @@ impl fmt::Display for CCGNode {
             String::new()
         };
 
-        write!(f, "{}{}{}{}", category_str, rule_str, text_str, children_str)
+        write!(f, "{}{}{}{}{}", category_str, rule_str, text_str, class_str, children_str)
     }
+}
+
+
+/// Given a tree, add POS tags to nodes containing words.
+pub(crate) fn add_tags(mut tree: CCGNode, words_to_tags: Vec<(String, Wordclass)>) -> CCGNode {
+    if let Some(ref text) = tree.text {
+        // Check if the current node has a word that matches one in `words_to_tags`.
+        if let Some((_, tag)) = words_to_tags.iter().find(|(word, _)| word == text) {
+            tree.class = Some(tag.clone());
+        }
+    }
+
+    // If the node has children, recursively apply `add_tags` to them.
+    if let Some(children) = &mut tree.children {
+        for child in children {
+            *child = add_tags(child.clone(), words_to_tags.clone());
+        }
+    }
+
+    tree
 }
 
 /// Helper function to parse composed categories from a string.

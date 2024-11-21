@@ -22,7 +22,7 @@ pub enum UPOS {
     X,        // Other
 }
  */
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq, serde::Deserialize)]
 pub enum Wordclass {
     CC,     // Coordinating conjunction
     CD,     // Cardinal number
