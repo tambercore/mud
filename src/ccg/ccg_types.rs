@@ -1,5 +1,6 @@
 use serde::{Deserialize, Deserializer, de::Error};
 use std::fmt;
+use crate::brill::wordclass::Wordclass;
 
 /// Enum representing CCG operators used in category composition.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -99,6 +100,82 @@ impl CCGCategory {
     }
 }
 
+/// Enum representing CCG parsing rules.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub enum CCGRule {
+    L,  // Leftward composition rule.
+    FA, // Forward application rule.
+    BA, // Backward application rule.
+    U, // Unary rule.
+}
+
+impl fmt::Display for CCGRule {
+    /// Formats the CCG rule as a string (`L`, `FA`, or `BA`).
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            CCGRule::L => "L",
+            CCGRule::FA => "FA",
+            CCGRule::BA => "BA",
+            CCGRule::U => "U"
+        })
+    }
+}
+
+/// Struct representing a CCG node in a parse tree.
+///
+/// A node contains a category, an optional rule, optional text, and optional child nodes.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct CCGNode {
+    #[serde(rename = "type")]
+    pub category: CCGCategory,      // The category of the node (e.g., S, NP, N, or composed category).
+    pub rule: Option<CCGRule>,     // The rule applied to the node (e.g., `L`, `FA`, `BA`).
+    pub text: Option<String>,      // Optional text associated with the node.
+    pub class: Option<Wordclass>,   // Wordclass of terminal node
+    pub children: Option<Vec<CCGNode>>, // Optional child nodes of the current node.
+}
+
+impl fmt::Display for CCGCategory {
+    /// Formats the CCG category as a string (e.g., `S`, `NP`, `N`, or a composed category).
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            CCGCategory::S => write!(f, "S"),
+            CCGCategory::NP => write!(f, "NP"),
+            CCGCategory::N => write!(f, "N"),
+            CCGCategory::V => write!(f, "V"),
+            CCGCategory::Composed { ref left, ref right, ref operator } => {
+                write!(f, "({} {} {})", left, operator, right)
+            }
+        }
+    }
+}
+
+impl fmt::Display for CCGNode {
+    /// Formats the CCG node as a string, including category, rule, text, and children.
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let category_str = format!("{}", self.category);
+        let rule_str = if let Some(rule) = &self.rule {
+            format!(" ({})", rule)
+        } else {
+            String::new()
+        };
+
+        let text_str = if let Some(text) = &self.text {
+            format!(": {}", text)
+        } else {
+            String::new()
+        };
+
+        let children_str = if let Some(children) = &self.children {
+            let children_display: Vec<String> = children.iter().map(|child| format!("{}", child)).collect();
+            format!("\nChildren: [{}]", children_display.join(", "))
+        } else {
+            String::new()
+        };
+
+        write!(f, "{}{}{}{}", category_str, rule_str, text_str, children_str)
+    }
+}
+
 /// Helper function to parse composed categories from a string.
 /// A composed category is in the form of "(left_category operator right_category)".
 fn parse_composed_category(value: &str) -> Option<(&str, &str, &str)> {
@@ -148,77 +225,4 @@ fn find_operator_position_outside_parentheses(value: &str) -> Option<usize> {
     None
 }
 
-/// Enum representing CCG parsing rules.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-pub enum CCGRule {
-    L,  // Leftward composition rule.
-    FA, // Forward application rule.
-    BA, // Backward application rule.
-    U, // Unary rule.
-}
 
-impl fmt::Display for CCGRule {
-    /// Formats the CCG rule as a string (`L`, `FA`, or `BA`).
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match *self {
-            CCGRule::L => "L",
-            CCGRule::FA => "FA",
-            CCGRule::BA => "BA",
-            CCGRule::U => "U"
-        })
-    }
-}
-
-/// Struct representing a CCG node in a parse tree.
-///
-/// A node contains a category, an optional rule, optional text, and optional child nodes.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct CCGNode {
-    #[serde(rename = "type")]
-    pub category: CCGCategory,      // The category of the node (e.g., S, NP, N, or composed category).
-    pub rule: Option<CCGRule>,     // The rule applied to the node (e.g., `L`, `FA`, `BA`).
-    pub text: Option<String>,      // Optional text associated with the node.
-    pub children: Option<Vec<CCGNode>>, // Optional child nodes of the current node.
-}
-
-impl fmt::Display for CCGCategory {
-    /// Formats the CCG category as a string (e.g., `S`, `NP`, `N`, or a composed category).
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            CCGCategory::S => write!(f, "S"),
-            CCGCategory::NP => write!(f, "NP"),
-            CCGCategory::N => write!(f, "N"),
-            CCGCategory::V => write!(f, "V"),
-            CCGCategory::Composed { ref left, ref right, ref operator } => {
-                write!(f, "({} {} {})", left, operator, right)
-            }
-        }
-    }
-}
-
-impl fmt::Display for CCGNode {
-    /// Formats the CCG node as a string, including category, rule, text, and children.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let category_str = format!("{}", self.category);
-        let rule_str = if let Some(rule) = &self.rule {
-            format!(" ({})", rule)
-        } else {
-            String::new()
-        };
-
-        let text_str = if let Some(text) = &self.text {
-            format!(": {}", text)
-        } else {
-            String::new()
-        };
-
-        let children_str = if let Some(children) = &self.children {
-            let children_display: Vec<String> = children.iter().map(|child| format!("{}", child)).collect();
-            format!("\nChildren: [{}]", children_display.join(", "))
-        } else {
-            String::new()
-        };
-
-        write!(f, "{}{}{}{}", category_str, rule_str, text_str, children_str)
-    }
-}
