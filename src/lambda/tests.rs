@@ -5,6 +5,7 @@ use crate::lambda::reduce::*;
 #[cfg(test)]
 mod tests {
     use std::cmp::PartialEq;
+    use crate::lambda::types::LambdaEntity::Variable;
     use crate::montague::expression::Expression;
     use super::*;
 
@@ -192,11 +193,27 @@ mod tests {
 
         let target_expr = LambdaEntity::Abstraction("y".to_string(), Box::from((LambdaEntity::Variable(Box::from(Expression::Predicate("Likes".to_string(), vec!["y".to_string(), "gouda".to_string()]))))));
 
+        println!("target expr: {target_expr}");
+
         assert_eq!(
             reduced_expr, target_expr,
             "Expected {:?}, but got {:?}",
             target_expr, reduced_expr
         );
+
+        let lhs = LambdaEntity::Variable(Box::from(Expression::Variable("John".to_string())));
+
+        let final_expr = LambdaEntity::Application(Box::from(target_expr), Box::from(lhs));
+        let final_expr_reduced = reduce(&final_expr);
+        let target = LambdaEntity::Variable(Box::from(Expression::Predicate("Likes".to_string(), vec!["John".to_string(), "gouda".to_string()])));
+
+        assert_eq!(
+            final_expr_reduced, target,
+            "Expected {:?}, but got {:?}",
+            final_expr_reduced, target
+        );
     }
+
+
 
 }
