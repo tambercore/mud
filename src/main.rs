@@ -1,16 +1,10 @@
 mod ccg;
 mod brill;
-mod lambda;
-mod wordnet;
+mod montague;
 
-use std::io::{Write};
+use std::io::{self, Write};
 
-fn main() {
-    use wordnet::interface::*;
-    init_wordnet();
-    let a = get_meanings("wank");
-    println!("{:?}", a);
-
+fn main() -> io::Result<()> {
     let b = get_meanings("murder");
     println!("{:?}", b);
     return;

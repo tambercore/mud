@@ -9,4 +9,4 @@ pub mod lexical_ruleset;
 pub mod lexical_rulespec;
 pub mod rulespec_id;
 pub mod wordclass;
-mod init_tagger;
+pub mod init_tagger;
