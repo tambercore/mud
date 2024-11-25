@@ -33,7 +33,7 @@ pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNo
             // Wrap the predicate in abstractions for each argument
             let mut final_expression = expression;
 
-            for i in (1..=num_arguments).rev() {
+            for i in (1..=num_arguments) {
                 let arg_name = format!("x{}", i);
 
                 // Wrap the current expression in an abstraction
