@@ -1,9 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
 use serde_json::Value;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
+use crate::wordnet::postag::WordnetTag;
 use crate::wordnet::wordnode::Wordnode;
 
 // Define a static singleton for word meanings
@@ -30,7 +31,7 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
 
         // Split the gloss by semicolon and take the part before the first semicolon
         let meaning = gloss.split(';')
-            .next()            // Take the first part before the semicolon (preprocess the definition)
+            .next()     // Take the first part before the semicolon (preprocess the definition)
             .unwrap_or(gloss)  // If there's no semicolon, use the whole gloss
             .trim()            // Trim any surrounding whitespace
             .to_string();
@@ -53,7 +54,7 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
             // Create the Wordnode
             let word_definition = Wordnode {
                 meaning: meaning.clone(),
-                pos: pos.to_string(),
+                pos: WordnetTag::from(pos),
                 id: id.to_string(),
                 synonyms: filtered_synonyms, // Add the filtered synonyms here
             };
@@ -78,4 +79,27 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
 pub fn get_meanings(word: &str) -> Option<Vec<Wordnode>> {
     let meanings = WORD_MEANINGS.lock().unwrap();
     meanings.get(word).cloned()
+}
+
+
+// Function to print all unique POS tags after WordNet initialization
+pub fn print_unique_pos_tags() {
+    init_wordnet();
+    let meanings = WORD_MEANINGS.lock().unwrap();
+
+    // Use a HashSet to store unique POS tags
+    let mut pos_tags = HashSet::new();
+
+    // Iterate through all Wordnodes and collect the POS tags
+    for wordnode_list in meanings.values() {
+        for wordnode in wordnode_list {
+            pos_tags.insert(wordnode.pos.clone());
+        }
+    }
+
+    // Print all unique POS tags
+    println!("Unique POS tags:");
+    for pos in pos_tags {
+        println!("{}", pos);
+    }
 }

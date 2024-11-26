@@ -1,9 +1,10 @@
 use std::fmt;
+use crate::wordnet::postag::WordnetTag;
 
 #[derive(Debug, Clone)]
 pub struct Wordnode {
     pub(crate) meaning: String,
-    pub(crate) pos: String,
+    pub(crate) pos: WordnetTag,
     pub(crate) id: String,
     pub(crate) synonyms: Vec<String>,
 }
