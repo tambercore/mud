@@ -50,9 +50,9 @@ pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNo
             Ok(Abstraction(Box::from(Variable(Box::from(Var(String::from("P"))))),
                            Box::from(Abstraction(Box::from(Variable(Box::from(Var(String::from("Q"))))),
                                                  Box::from(Variable(Box::from(ExistentialQuantifier(String::from("x"), Box::from(Variable(Box::from(Conjunction(
-                                                     Box::from(Variable(Box::from(Predicate(Variable(Box::from(Var(String::from("P")))), vec![String::from("x")])))),
-                                                     Box::from(Variable(Box::from(Predicate(Variable(Box::from(Var(String::from("Q")))), vec![String::from("x")]))
-                                                 ))))))))))))))
+                                                     Box::from(Application(Box::from(Variable(Box::from(Var(String::from("P"))))), Box::from(Variable(Box::from(Var(String::from("x"))))))),
+                                                     Box::from(Application(Box::from(Variable(Box::from(Var(String::from("Q"))))), Box::from(Variable(Box::from(Var(String::from("x")))))))
+                                                 ))))))))))))
         },
 
         _ => Err(String::from("not yet implemented"))

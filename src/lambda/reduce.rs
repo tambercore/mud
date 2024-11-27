@@ -7,31 +7,31 @@ use crate::montague::expression::Expression::{Conjunction, Var};
 fn _substitute(expression: &LambdaEntity, source: &LambdaEntity, target: &LambdaEntity) -> LambdaEntity {
     match expression {
         // If the node is an `Application`, recursively substitute on both sides
-        LambdaEntity::Application(left, right) => {
+        Application(left, right) => {
             let left_substituted = _substitute(left, source, target);
             let right_substituted = _substitute(right, source, target);
-            LambdaEntity::Application(Box::new(left_substituted), Box::new(right_substituted))
+            reduce(&Application(Box::new(left_substituted), Box::new(right_substituted)))
         }
 
         // If the variable in the abstraction matches `source`, return it unchanged; otherwise, substitute in the body
-        LambdaEntity::Abstraction(variable, subexpr) => {
+        Abstraction(variable, subexpr) => {
             if *variable == Box::from(source.clone()) {
-                LambdaEntity::Abstraction(variable.clone(), subexpr.clone())
+                Abstraction(variable.clone(), subexpr.clone())
             } else {
                 let subexpr_substituted = _substitute(subexpr, source, target);
-                LambdaEntity::Abstraction(variable.clone(), Box::new(subexpr_substituted))
+                Abstraction(variable.clone(), Box::new(subexpr_substituted))
             }
         }
 
         // Handle substitution in variables or expressions
-        LambdaEntity::Variable(variable) => {
+        Variable(variable) => {
             // Substitute variables and their content
             match *variable.clone() {
-                Expression::Var(inner_var) => {
+                Var(inner_var) => {
                     if Variable(Box::from(Var(String::from(inner_var)))) == source.clone() {
                         target.clone()
                     } else {
-                        LambdaEntity::Variable(variable.clone())
+                        Variable(variable.clone())
                     }
                 }
                 Expression::Predicate(name, args) => {
@@ -48,9 +48,9 @@ fn _substitute(expression: &LambdaEntity, source: &LambdaEntity, target: &Lambda
                         substituted_name = target.clone();
                     }
 
-                    LambdaEntity::Variable(Box::from(Expression::Predicate(substituted_name, substituted_args)))
+                    Variable(Box::from(Expression::Predicate(substituted_name, substituted_args)))
                 }
-                Expression::Conjunction(lhs, rhs) => {
+                Conjunction(lhs, rhs) => {
 
                     println!("found conjunction with lhs {:?} and rhs {:?}. source: {:?}. target: {:?}", lhs, rhs, source, target);
 

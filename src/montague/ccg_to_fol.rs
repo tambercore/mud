@@ -1,4 +1,4 @@
-use crate::ccg::ccg_types::{get_terminal_nodes, CCGNode, CCGRule};
+use crate::ccg::ccg_types::{get_terminal_nodes, CCGCategory, CCGNode, CCGRule};
 use crate::ccg::language_parser::english_to_ccg;
 use crate::brill::brill_tagger::tag_sentence;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
@@ -55,22 +55,22 @@ fn run() {
 
 
 
-    println!("REDUCED FOL: {}", fol);
+    println!("REDUCED FOL: {:?}", fol);
 }
 
 /// Reduce individual FOL words into the complete FOL sentence representation using rules from the CCG tree.
-fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CCGNode) -> LambdaEntity {
+fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CCGNode) -> Result<LambdaEntity, String> {
     fn apply_montague_recursively(
         node: &CCGNode,
         terminals_to_fol: &Vec<(String, LambdaEntity)>,
-    ) -> LambdaEntity {
+    ) -> Result<LambdaEntity, String> {
         // Base case: If the node is a terminal, return its Montague term
         if node.children == None {
             if let Some(ref text) = node.text {
                 // Find the corresponding Montague term for the terminal
                 if let Some((_, lambda_entity)) = terminals_to_fol.iter().find(|(word, _)| word == text) {
                     //println!("BASE CASE, TERMINAL: {:?}", lambda_entity.clone());
-                    return lambda_entity.clone();
+                    return Ok(lambda_entity.clone());
                 }
             }
             panic!("Terminal node without a corresponding Montague term.");
@@ -85,20 +85,34 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
         // Combine child terms based on the CCG rule
         match node.clone().rule {
             Some(CCGRule::FA) => {
-                // Forward Application: function comes first, then argument
-                let function_term = apply_montague_recursively(&children[0], terminals_to_fol);
-                let argument_term = apply_montague_recursively(&children[1], terminals_to_fol);
+                // Forward Application: A \ B
+                // if one of the children == b then apply
+
+                let target_type = node.clone().category;
+                // check if child 1 is a composed category of FA
+                match children[0].category {
+                    CCGCategory::Composed { .. } => {}
+                    _ => {
+                        match children[1].category {
+                            CCGCategory::Composed { .. } => {}
+                            _ => {return Err(String::from("One category must be composed for FA"));}
+                        }
+                    }
+                }
+
+                let function_term = apply_montague_recursively(&children[0], terminals_to_fol)?;
+                let argument_term = apply_montague_recursively(&children[1], terminals_to_fol)?;
                 let applied_terms = LambdaEntity::Application(Box::new(function_term), Box::new(argument_term));
                 //println!("FA: {:?}", applied_terms);
-                reduce(&applied_terms)
+                Ok(reduce(&applied_terms))
             }
             Some(CCGRule::BA) => {
                 // Backward Application: argument comes first, then function
                 let argument_term = apply_montague_recursively(&children[0], terminals_to_fol);
                 let function_term = apply_montague_recursively(&children[1], terminals_to_fol);
-                let applied_terms = LambdaEntity::Application(Box::new(function_term), Box::new(argument_term));
+                let applied_terms = LambdaEntity::Application(Box::new(function_term?), Box::new(argument_term?));
                 println!("BA: {:?}", applied_terms);
-                reduce(&applied_terms)
+                Ok(reduce(&applied_terms))
             }
             Some(CCGRule::U) => {
                 // Unary rule (e.g., type raising)
@@ -112,7 +126,7 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
     }
 
     // Start recursive application from the root of the CCG tree
-    apply_montague_recursively(ccg_tree, terminals_to_fol)
+    Ok(apply_montague_recursively(ccg_tree, terminals_to_fol)?)
 }
 
 /// Map word tag pairs to their corresponding montague grammar representation using the CCG tree.
