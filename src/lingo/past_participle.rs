@@ -71,11 +71,14 @@ fn get_past_participle(verb: String) -> String {
         let chars: Vec<char> = verb[verb.len() - 3..].chars().collect();
         if chars.len() == 3 {
             let (first, second, third) = (chars[0], chars[1], chars[2]);
-            if first.is_consonant() && second.is_vowel() && third.is_consonant() {
+
+            // Check if the pattern is CVC and the final consonant is not "p" or "t"
+            if first.is_consonant() && second.is_vowel() && third.is_consonant() && !matches!(third, 'p' | 't') {
                 return format!("{}{}ed", &verb[..verb.len() - 1], third);
             }
         }
     }
+
 
     // Rule 4: Verbs ending in "c" add "ked"
     if verb.ends_with("c") {
@@ -89,19 +92,4 @@ fn get_past_participle(verb: String) -> String {
 
     // Default rule: Add "ed" for other regular verbs
     format!("{}ed", verb)
-}
-
-
-
-fn main() {
-    // Example usage of the get_past_participle function
-    let verbs = vec![
-        "eat", "play", "write", "try", "see", "dance", "rape",
-        "begin", "take", "do", "stop", "hop", "run", "cry",
-        "fly", "jump", "lie", "study", "apologize", "fax", "mix"
-    ];
-
-    for verb in verbs {
-        println!("{} -> {}", verb, get_past_participle(verb.to_string()));
-    }
 }
