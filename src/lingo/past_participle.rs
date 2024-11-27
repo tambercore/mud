@@ -1,16 +1,57 @@
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{self, BufRead};
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
 
-pub(crate) fn get_past_participle(verb: String) -> String {
-    // Step 1: Irregular verbs
-    let mut irregular_verbs = HashMap::new();
-    irregular_verbs.insert("eat", "eaten");
-    irregular_verbs.insert("go", "gone");
-    irregular_verbs.insert("write", "written");
-    irregular_verbs.insert("see", "seen");
 
-    // Check if the verb is irregular
-    if let Some(&past_participle) = irregular_verbs.get(verb.as_str()) {
-        return past_participle.to_string();
+
+trait CharExtensions {
+    fn is_consonant(self) -> bool;
+    fn is_vowel(self) -> bool;
+}
+
+impl CharExtensions for char {
+    fn is_consonant(self) -> bool {
+        self.is_alphabetic() && !self.is_vowel()
+    }
+
+    fn is_vowel(self) -> bool {
+        matches!(self, 'a' | 'e' | 'i' | 'o' | 'u' | 'A' | 'E' | 'I' | 'O' | 'U')
+    }
+}
+
+
+
+
+// Static variable to hold the irregular verb mappings
+static IRREGULAR_VERBS: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    let file = File::open("data/irregular_verbs.txt").expect("File not found");
+    let reader = io::BufReader::new(file);
+
+    // Read each line from the file and process it
+    for line in reader.lines() {
+        let line = line.expect("Failed to read line");
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() == 3 {
+            let (normal, _, past_participle) = (parts[0], parts[1], parts[2]);
+            map.insert(normal.to_string(), past_participle.to_string());
+        }
+    }
+
+    Mutex::new(map) // Wrapping HashMap in a Mutex for thread-safety
+});
+
+
+
+// Function to get the past participle of a verb
+pub
+fn get_past_participle(verb: String) -> String {
+    // Step 1: Check if the verb is irregular and return the past participle from the static map
+    let map = IRREGULAR_VERBS.lock().expect("Failed to lock map");
+    if let Some(past_participle) = map.get(verb.as_str()) {
+        return past_participle.clone();
     }
 
     // Step 2: Rule-based system for regular verbs
@@ -25,25 +66,42 @@ pub(crate) fn get_past_participle(verb: String) -> String {
         return format!("{}ied", &verb[..verb.len() - 1]);
     }
 
-    // Rule 3: Verbs with a single vowel followed by a single consonant (CVC) double the final consonant before adding "ed"
-    let len = verb.len();
-    if len >= 3 {
-        let (penultimate, last) = verb[len - 2..].chars().collect::<Vec<char>>()[..2];
-        if penultimate.is_vowel() && last.is_consonant() && verb[len - 3..].chars().last().unwrap().is_consonant() {
-            return format!("{}{}ed", &verb[..len - 1], last);
+    // Rule 3: Verbs with a CVC pattern (Consonant-Vowel-Consonant) double the final consonant
+    if verb.len() >= 3 {
+        let chars: Vec<char> = verb[verb.len() - 3..].chars().collect();
+        if chars.len() == 3 {
+            let (first, second, third) = (chars[0], chars[1], chars[2]);
+            if first.is_consonant() && second.is_vowel() && third.is_consonant() {
+                return format!("{}{}ed", &verb[..verb.len() - 1], third);
+            }
         }
     }
 
-    // Rule 4: Verbs ending with "c" add "ked" (e.g., panic -> panicked)
+    // Rule 4: Verbs ending in "c" add "ked"
     if verb.ends_with("c") {
         return format!("{}ked", verb);
     }
 
-    // Rule 5: Verbs ending in "e" followed by consonants double the final consonant before adding "ed" (e.g., "hop" -> "hopped")
+    // Rule 5: Verbs ending with specific consonants add "ped"
     if verb.ends_with("p") || verb.ends_with("t") || verb.ends_with("d") {
         return format!("{}ped", verb);
     }
 
     // Default rule: Add "ed" for other regular verbs
     format!("{}ed", verb)
+}
+
+
+
+fn main() {
+    // Example usage of the get_past_participle function
+    let verbs = vec![
+        "eat", "play", "write", "try", "see", "dance", "rape",
+        "begin", "take", "do", "stop", "hop", "run", "cry",
+        "fly", "jump", "lie", "study", "apologize", "fax", "mix"
+    ];
+
+    for verb in verbs {
+        println!("{} -> {}", verb, get_past_participle(verb.to_string()));
+    }
 }
