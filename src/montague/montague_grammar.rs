@@ -41,6 +41,15 @@ pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNo
             }
 
             Ok(final_expression)
+        },
+
+        Wordclass::CC => {
+            match ccg_tag.category {
+                CCGCategory::CONJ => {
+                    Err(String::from("not implemented conjunction yet"))
+                },
+                _ => Err(String::from("CC expects CONJ rule (others may exist but are not implemented)."))
+            }
         }
         _ => Err(String::from("not yet implemented"))
     }
@@ -48,7 +57,6 @@ pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNo
 
 
 /// Helper function to count the number of arguments in a CCGNode
-/// Helper function to count the number of FA and BA rules in a CCGNode tree
 fn count_rules(ccg_tag: &CCGNode) -> Result<usize, String> {
     let mut application_count = 0;
 

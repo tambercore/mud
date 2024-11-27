@@ -36,6 +36,7 @@ pub enum CCGCategory {
         operator: CCGOperator,   // The composition operator (either `Forward` or `Backward`).
     },
     V,
+    CONJ,
 }
 
 /// Implementation for `Deserialize` to parse CCG categories from JSON strings.
@@ -52,6 +53,7 @@ impl<'de> Deserialize<'de> for CCGCategory {
             "s" => Ok(CCGCategory::S),
             "np" => Ok(CCGCategory::NP),
             "n" => Ok(CCGCategory::N),
+            "conj" => Ok(CCGCategory::CONJ),
             _ => {
                 // If it's not a simple category, attempt to parse it as a composed category.
                 if let Some((left_str, op, right_str)) = parse_composed_category(value.as_str()) {
@@ -82,6 +84,7 @@ impl CCGCategory {
             "s" => Ok(CCGCategory::S),
             "np" => Ok(CCGCategory::NP),
             "n" => Ok(CCGCategory::N),
+            "conj" => Ok(CCGCategory::CONJ),
             _ => {
                 // Try to parse as a composed category.
                 if let Some((left_str, op, right_str)) = parse_composed_category(value) {
@@ -107,16 +110,18 @@ pub enum CCGRule {
     FA, // Forward application rule.
     BA, // Backward application rule.
     U, // Unary rule.
+    CONJ, // conjunction rule.
 }
 
 impl fmt::Display for CCGRule {
-    /// Formats the CCG rule as a string (`L`, `FA`, or `BA`).
+    /// Formats the CCG rule as a string.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", match *self {
             CCGRule::L => "L",
             CCGRule::FA => "FA",
             CCGRule::BA => "BA",
-            CCGRule::U => "U"
+            CCGRule::U => "U",
+            CCGRule::CONJ => "CONJ",
         })
     }
 }
@@ -142,6 +147,7 @@ impl fmt::Display for CCGCategory {
             CCGCategory::NP => write!(f, "NP"),
             CCGCategory::N => write!(f, "N"),
             CCGCategory::V => write!(f, "V"),
+            CCGCategory::CONJ => write!(f, "CONJ"),
             CCGCategory::Composed { ref left, ref right, ref operator } => {
                 write!(f, "({} {} {})", left, operator, right)
             }

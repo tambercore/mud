@@ -35,7 +35,7 @@ fn run() {
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-    let sentence = "Stacy loves brie";
+    let sentence = "John likes gouda";
 
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -48,10 +48,12 @@ fn run() {
     // map words to their montague grammar representation
     let montague_representation = map_words_to_montague(vec_of_word_tag_tuples.clone(), &ccg);
 
+    println!("{:?}", montague_representation);
+
     // reduce the montague grammar into a single fol expression
     let fol = reduce_montague(&montague_representation, &ccg);
 
-    println!("{:?}", montague_representation);
+
 
     println!("REDUCED FOL: {:?}", fol);
 }

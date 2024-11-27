@@ -1,5 +1,5 @@
 use crate::lambda::types::*;
-use crate::lambda::types::LambdaEntity::{Application, Abstraction, Variable};
+use crate::lambda::types::LambdaEntity::{Application, Abstraction};
 use crate::montague::expression::Expression;
 
 fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -> LambdaEntity {
@@ -114,7 +114,7 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
 /// Function to reduce a lambda expression using a normal-order reduction strategy, i.e.
 /// leftmost, outermost reduction. This uses the recursive `substitute` func defined above.
 pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
-    match expression {
+    let expr2 = match expression {
         Application(expr, term) => {
             // Reduce the function (expr) and argument (term) before applying substitution.
             let reduced_expr = reduce(expr);
@@ -131,5 +131,6 @@ pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
         }
         // If the expression is not an application, return it as is.
         _ => expression.clone(),
-    }
+    };
+    expr2
 }
