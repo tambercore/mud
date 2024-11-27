@@ -3,15 +3,16 @@ use crate::brill::wordclass::Wordclass::*;
 use crate::ccg::ccg_types::{CCGCategory, CCGNode, CCGOperator};
 use crate::ccg::ccg_types::CCGCategory::*;
 use crate::lambda::types::LambdaEntity;
-use crate::montague::expression::Expression;
+use crate::lambda::types::LambdaEntity::*;
+use crate::montague::expression::Expression::*;
 
 /// Given a (word, POS TAG), return the corresponding montague grammar representation
 ///
 /// // JOHN : NNP, LIKES: VBZ, GOUDA: NN
 pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNode) -> Result<LambdaEntity, String> {
     match (pos_tag, ccg_tag.clone().category, word.clone().as_str()) {
-        (NNP, ..) => Ok(LambdaEntity::Variable(Box::from(Expression::Var(word)))),
-        (NN, ..) => Ok(LambdaEntity::Variable(Box::from(Expression::Var(word)))),
+        (NNP, ..) => Ok(Variable(Box::from(Var(word)))),
+        (NN, ..) => Ok(Variable(Box::from(Var(word)))),
         (VBZ, ..) => {
             // Extract the number of arguments from the CCGNode
             println!("tagging verb {}", ccg_tag);
@@ -30,7 +31,7 @@ pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNo
             }
 
             // Create a base predicate
-            let expression = LambdaEntity::Variable(Box::from(Expression::Predicate(word, arguments)));
+            let expression = Variable(Box::from(Predicate(word, arguments)));
 
             // Wrap the predicate in abstractions for each argument
             let mut final_expression = expression;
@@ -39,7 +40,7 @@ pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNo
                 let arg_name = format!("x{}", i);
 
                 // Wrap the current expression in an abstraction
-                final_expression = LambdaEntity::Abstraction(arg_name, Box::from(final_expression));
+                final_expression = Abstraction(arg_name, Box::from(final_expression));
             }
 
             Ok(final_expression)
