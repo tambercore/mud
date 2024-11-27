@@ -2,25 +2,21 @@ mod ccg;
 mod brill;
 mod montague;
 mod wordnet;
+mod lingo;
 
 use std::io::{self, Write};
+use crate::lingo::past_participle::get_past_participle;
 
 fn main() {
+    // Example usage of the get_past_participle function
+    let verbs = vec![
+        "eat", "play", "write", "try", "see", "dance", "lick",
+        "begin", "take", "do", "stop", "hop", "run", "cry",
+        "fly", "jump", "lie", "study", "apologize", "fax", "mix",
+        "tickle", "pickle", "push", "kick"
+    ];
 
-    use crate::wordnet::interface::*;
-
-    // Initialize WordNet
-    if let Err(e) = init_wordnet() {
-        eprintln!("Error initializing WordNet: {}", e);
-        return;
-    }
-
-    // Retrieve meanings for "dog"
-    if let Some(meanings) = get_meanings("good") {
-        for meaning in meanings {
-            println!("{}", meaning);
-        }
-    } else {
-        println!("No meanings found for 'dog'.");
+    for verb in verbs {
+        println!("{} -> {}", verb, get_past_participle(verb.to_string()));
     }
 }

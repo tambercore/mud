@@ -106,7 +106,7 @@ pub enum CCGRule {
     L,  // Leftward composition rule.
     FA, // Forward application rule.
     BA, // Backward application rule.
-    U, // Unary rule.
+    U,  // Unary rule.
 }
 
 impl fmt::Display for CCGRule {
