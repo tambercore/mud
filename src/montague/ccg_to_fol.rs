@@ -69,7 +69,7 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
             if let Some(ref text) = node.text {
                 // Find the corresponding Montague term for the terminal
                 if let Some((_, lambda_entity)) = terminals_to_fol.iter().find(|(word, _)| word == text) {
-                    println!("BASE CASE, TERMINAL: {:?}", lambda_entity.clone());
+                    //println!("BASE CASE, TERMINAL: {:?}", lambda_entity.clone());
                     return lambda_entity.clone();
                 }
             }
@@ -89,7 +89,7 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
                 let function_term = apply_montague_recursively(&children[0], terminals_to_fol);
                 let argument_term = apply_montague_recursively(&children[1], terminals_to_fol);
                 let applied_terms = LambdaEntity::Application(Box::new(function_term), Box::new(argument_term));
-                println!("REDUCING APPLIED TERM (FA): {:?}", applied_terms);
+                //println!("REDUCING APPLIED TERM (FA): {:?}", applied_terms);
                 reduce(&applied_terms)
             }
             Some(CCGRule::BA) => {
@@ -97,14 +97,14 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
                 let argument_term = apply_montague_recursively(&children[0], terminals_to_fol);
                 let function_term = apply_montague_recursively(&children[1], terminals_to_fol);
                 let applied_terms = LambdaEntity::Application(Box::new(function_term), Box::new(argument_term));
-                println!("REDUCING APPLIED TERM (BA): {:?}", applied_terms);
+                //println!("REDUCING APPLIED TERM (BA): {:?}", applied_terms);
                 reduce(&applied_terms)
             }
             Some(CCGRule::U) => {
                 // Unary rule (e.g., type raising)
                 let inner_term = apply_montague_recursively(&children[0], terminals_to_fol);
                 // Handle unary transformations if necessary (e.g., type raising)
-                println!("HANDLING UNARY: {:?}", inner_term);
+                //println!("HANDLING UNARY: {:?}", inner_term);
                 inner_term // Currently no transformation applied
             }
             _ => panic!("Unknown or unsupported CCG rule: {:?}", node.rule),
