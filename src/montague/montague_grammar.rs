@@ -12,7 +12,7 @@ use crate::montague::expression::Expression::*;
 pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNode) -> Result<LambdaEntity, String> {
     match (pos_tag, ccg_tag.clone().category, word.clone().as_str()) {
         (NNP, ..) => Ok(Variable(Box::from(Var(word)))),
-        (NN, ..) => Ok(Variable(Box::from(Var(word)))),
+        (NN, ..) => Ok(Abstraction(String::from("x"), Box::from(Variable(Box::from(Predicate(word, vec![String::from("x")])))))),
         (VBZ, ..) => {
             // Extract the number of arguments from the CCGNode
             //println!("tagging verb {}", ccg_tag);
@@ -50,8 +50,11 @@ pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNo
             Ok(Abstraction(String::from("P"),
                            Box::from(Abstraction(String::from("Q"),
                                                  Box::from(Variable(Box::from(ExistentialQuantifier(String::from("x"), Box::from(Conjunction(
+
+
                 Box::from(Predicate(String::from("P"), vec![String::from("x")])),
-                Box::from(Predicate(String::from("Q"), vec![String::from("x")]))))))))))))
+                Box::from(Predicate(String::from("Q"), vec![String::from("x")]))
+                                                 ))))))))))
         },
 
         _ => Err(String::from("not yet implemented"))

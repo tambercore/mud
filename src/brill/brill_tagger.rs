@@ -31,7 +31,7 @@ pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, cont
     // After applying all rules, change any `Wordclass::ANY` tags to `Wordclass::NN`
     sentence_to_tag.iter_mut().for_each(|(_, tag)| {
         if *tag == Wordclass::ANY {
-            *tag = Wordclass::NN;
+            *tag = Wordclass::NNP;
         }
     });
 

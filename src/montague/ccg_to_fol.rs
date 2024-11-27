@@ -89,7 +89,7 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
                 let function_term = apply_montague_recursively(&children[0], terminals_to_fol);
                 let argument_term = apply_montague_recursively(&children[1], terminals_to_fol);
                 let applied_terms = LambdaEntity::Application(Box::new(function_term), Box::new(argument_term));
-                //println!("REDUCING APPLIED TERM (FA): {:?}", applied_terms);
+                //println!("FA: {:?}", applied_terms);
                 reduce(&applied_terms)
             }
             Some(CCGRule::BA) => {
@@ -97,7 +97,7 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
                 let argument_term = apply_montague_recursively(&children[0], terminals_to_fol);
                 let function_term = apply_montague_recursively(&children[1], terminals_to_fol);
                 let applied_terms = LambdaEntity::Application(Box::new(function_term), Box::new(argument_term));
-                //println!("REDUCING APPLIED TERM (BA): {:?}", applied_terms);
+                println!("BA: {:?}", applied_terms);
                 reduce(&applied_terms)
             }
             Some(CCGRule::U) => {

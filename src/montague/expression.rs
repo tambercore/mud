@@ -1,13 +1,12 @@
 use std::fmt;
 use crate::montague::expression::Expression::Predicate;
 
-type Variable = String;
 #[derive(Clone, Debug)]
 pub enum Expression {
     Conjunction(Box<Expression>, Box<Expression>),
-    ExistentialQuantifier(Variable, Box<Expression>),
-    Var(Variable),
-    Predicate(Variable, Vec<Variable>),
+    ExistentialQuantifier(String, Box<Expression>),
+    Var(String),
+    Predicate(String, Vec<String>),
 }
 
 impl fmt::Display for Expression {
