@@ -7,21 +7,9 @@ mod lingo;
 use std::io::{self, Write};
 
 fn main() {
+    let verbs = vec!["eat", "play", "write", "try", "see", "dance", "rape"];
 
-    use crate::wordnet::interface::*;
-
-    // Initialize WordNet
-    if let Err(e) = init_wordnet() {
-        eprintln!("Error initializing WordNet: {}", e);
-        return;
-    }
-
-    // Retrieve meanings for "dog"
-    if let Some(meanings) = get_meanings("good") {
-        for meaning in meanings {
-            println!("{}", meaning);
-        }
-    } else {
-        println!("No meanings found for 'dog'.");
+    for verb in verbs {
+        println!("{} -> {}", verb, crate::lingo::past_participle::get_past_participle(verb.parse().unwrap()));
     }
 }
