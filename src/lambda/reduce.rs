@@ -25,7 +25,7 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
         LambdaEntity::Variable(variable) => {
             // Substitute variables and their content
             match *variable.clone() {
-                Expression::Variable(inner_var) => {
+                Expression::Var(inner_var) => {
                     if inner_var == source {
                         target.clone()
                     } else {
@@ -43,12 +43,12 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
                 Expression::Conjunction(lhs, rhs) => {
                     // Substitute within both sides of a conjunction
                     let lhs_substituted = _substitute(
-                        &LambdaEntity::Variable(Box::new(Expression::Variable(lhs.to_string()))),
+                        &LambdaEntity::Variable(Box::new(Expression::Var(lhs.to_string()))),
                         source,
                         target,
                     );
                     let rhs_substituted = _substitute(
-                        &LambdaEntity::Variable(Box::new(Expression::Variable(rhs.to_string()))),
+                        &LambdaEntity::Variable(Box::new(Expression::Var(rhs.to_string()))),
                         source,
                         target,
                     );
@@ -56,11 +56,11 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
                     // Ensure both are Expression::Variable before creating a Conjunction
                     if let LambdaEntity::Variable(boxed_lhs) = lhs_substituted {
                         if let LambdaEntity::Variable(boxed_rhs) = rhs_substituted {
-                            if let Expression::Variable(lhs_var) = *boxed_lhs {
-                                if let Expression::Variable(rhs_var) = *boxed_rhs {
+                            if let Expression::Var(lhs_var) = *boxed_lhs {
+                                if let Expression::Var(rhs_var) = *boxed_rhs {
                                     LambdaEntity::Variable(Box::new(Expression::Conjunction(
-                                        Box::new(Expression::Variable(lhs_var)),
-                                        Box::new(Expression::Variable(rhs_var)),
+                                        Box::new(Expression::Var(lhs_var)),
+                                        Box::new(Expression::Var(rhs_var)),
                                     )))
                                 } else {
                                     panic!("Right-hand side substitution did not result in Expression::Variable");

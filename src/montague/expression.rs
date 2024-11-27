@@ -6,7 +6,7 @@ type Variable = String;
 pub enum Expression {
     Conjunction(Box<Expression>, Box<Expression>),
     ExistentialQuantifier(Variable, Box<Expression>),
-    Variable(Variable),
+    Var(Variable),
     Predicate(Variable, Vec<Variable>),
 }
 
@@ -15,7 +15,7 @@ impl fmt::Display for Expression {
         match self {
             Expression::Conjunction(lhs, rhs) => write!(f, "({} ∧ {})", lhs, rhs),
             Expression::ExistentialQuantifier(var, expr) => write!(f, "∃{}.{}", var, expr),
-            Expression::Variable(name) => write!(f, "{}", name),
+            Expression::Var(name) => write!(f, "{}", name),
             Expression::Predicate(name, args) => {
                 if args.is_empty() {
                     write!(f, "{}", name)
@@ -31,7 +31,7 @@ impl fmt::Display for Expression {
 impl PartialEq for Expression {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Expression::Variable(v1), Expression::Variable(v2)) => v1 == v2,
+            (Expression::Var(v1), Expression::Var(v2)) => v1 == v2,
             (Expression::Predicate(pred1, args1), Expression::Predicate(pred2, args2)) => {
                 pred1 == pred2 && args1 == args2
             }

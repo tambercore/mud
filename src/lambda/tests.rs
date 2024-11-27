@@ -15,7 +15,7 @@ mod tests {
             "t".to_string(),
             Box::new(LambdaEntity::Abstraction(
                 "f".to_string(),
-                Box::new(LambdaEntity::Variable(Box::from(Expression::Variable("t".to_string())))),
+                Box::new(LambdaEntity::Variable(Box::from(Expression::Var("t".to_string())))),
             )),
         )
     }
@@ -26,7 +26,7 @@ mod tests {
             "t".to_string(),
             Box::new(LambdaEntity::Abstraction(
                 "f".to_string(),
-                Box::new(LambdaEntity::Variable(Box::from(Expression::Variable("f".to_string())))),
+                Box::new(LambdaEntity::Variable(Box::from(Expression::Var("f".to_string())))),
             )),
         )
     }
@@ -39,8 +39,8 @@ mod tests {
                 "q".to_string(),
                 Box::new(LambdaEntity::Application(
                     Box::new(LambdaEntity::Application(
-                        Box::new(LambdaEntity::Variable(Box::from(Expression::Variable("p".to_string())))),
-                        Box::new(LambdaEntity::Variable(Box::from(Expression::Variable("q".to_string())))),
+                        Box::new(LambdaEntity::Variable(Box::from(Expression::Var("p".to_string())))),
+                        Box::new(LambdaEntity::Variable(Box::from(Expression::Var("q".to_string())))),
                     )),
                     Box::new(get_church_false()),
                 )),
@@ -58,7 +58,7 @@ mod tests {
                         if param2 == "f" {
                             // Check if the body of the second abstraction is the variable "t"
                             if let LambdaEntity::Variable(ref var) = **body2 {
-                                if let Expression::Variable(ref inner_var) = **var {
+                                if let Expression::Var(ref inner_var) = **var {
                                     return inner_var == "t";
                                 }
                             }
@@ -80,7 +80,7 @@ mod tests {
                         if param2 == "f" {
                             // Check if the body of the second abstraction is the variable "f"
                             if let LambdaEntity::Variable(ref var) = **body2 {
-                                if let Expression::Variable(ref inner_var) = **var {
+                                if let Expression::Var(ref inner_var) = **var {
                                     return inner_var == "f";
                                 }
                             }
@@ -186,7 +186,7 @@ mod tests {
                                             )))
         );
 
-        let rhs = LambdaEntity::Variable(Box::from(Expression::Variable("gouda".to_string())));
+        let rhs = LambdaEntity::Variable(Box::from(Expression::Var("gouda".to_string())));
 
         let expr = LambdaEntity::Application(Box::from(lhs), Box::from(rhs));
         let reduced_expr = reduce(&expr);
@@ -201,7 +201,7 @@ mod tests {
             target_expr, reduced_expr
         );
 
-        let lhs = LambdaEntity::Variable(Box::from(Expression::Variable("John".to_string())));
+        let lhs = LambdaEntity::Variable(Box::from(Expression::Var("John".to_string())));
 
         let final_expr = LambdaEntity::Application(Box::from(target_expr), Box::from(lhs));
         let final_expr_reduced = reduce(&final_expr);

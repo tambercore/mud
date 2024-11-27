@@ -1,5 +1,7 @@
 use crate::brill::wordclass::Wordclass;
+use crate::brill::wordclass::Wordclass::*;
 use crate::ccg::ccg_types::{CCGCategory, CCGNode, CCGOperator};
+use crate::ccg::ccg_types::CCGCategory::*;
 use crate::lambda::types::LambdaEntity;
 use crate::montague::expression::Expression;
 
@@ -7,10 +9,10 @@ use crate::montague::expression::Expression;
 ///
 /// // JOHN : NNP, LIKES: VBZ, GOUDA: NN
 pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNode) -> Result<LambdaEntity, String> {
-    match pos_tag {
-        Wordclass::NNP => Ok(LambdaEntity::Variable(Box::from(Expression::Variable(word)))),
-        Wordclass::NN => Ok(LambdaEntity::Variable(Box::from(Expression::Variable(word)))),
-        Wordclass::VBZ => {
+    match (pos_tag, ccg_tag.clone().category, word.clone().as_str()) {
+        (NNP, ..) => Ok(LambdaEntity::Variable(Box::from(Expression::Var(word)))),
+        (NN, ..) => Ok(LambdaEntity::Variable(Box::from(Expression::Var(word)))),
+        (VBZ, ..) => {
             // Extract the number of arguments from the CCGNode
             println!("tagging verb {}", ccg_tag);
             let num_arguments = count_rules(&ccg_tag)?;
@@ -43,14 +45,10 @@ pub fn map_word_to_expression(word: String, pos_tag: &Wordclass, ccg_tag: &CCGNo
             Ok(final_expression)
         },
 
-        Wordclass::CC => {
-            match ccg_tag.category {
-                CCGCategory::CONJ => {
-                    Err(String::from("not implemented conjunction yet"))
-                },
-                _ => Err(String::from("CC expects CONJ rule (others may exist but are not implemented)."))
-            }
-        }
+        (DT, _ , "a") => {
+            Err(String::from("not done"))
+        },
+
         _ => Err(String::from("not yet implemented"))
     }
 }
