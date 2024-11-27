@@ -1,8 +1,10 @@
+use std::cmp::PartialEq;
 use crate::lambda::types::*;
-use crate::lambda::types::LambdaEntity::{Application, Abstraction};
+use crate::lambda::types::LambdaEntity::*;
 use crate::montague::expression::Expression;
+use crate::montague::expression::Expression::{Conjunction, Var};
 
-fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -> LambdaEntity {
+fn _substitute(expression: &LambdaEntity, source: &LambdaEntity, target: &LambdaEntity) -> LambdaEntity {
     match expression {
         // If the node is an `Application`, recursively substitute on both sides
         LambdaEntity::Application(left, right) => {
@@ -13,7 +15,7 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
 
         // If the variable in the abstraction matches `source`, return it unchanged; otherwise, substitute in the body
         LambdaEntity::Abstraction(variable, subexpr) => {
-            if *variable == source {
+            if *variable == Box::from(source.clone()) {
                 LambdaEntity::Abstraction(variable.clone(), subexpr.clone())
             } else {
                 let subexpr_substituted = _substitute(subexpr, source, target);
@@ -26,59 +28,55 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
             // Substitute variables and their content
             match *variable.clone() {
                 Expression::Var(inner_var) => {
-                    if inner_var == source {
+                    if Variable(Box::from(Var(String::from(inner_var)))) == source.clone() {
                         target.clone()
                     } else {
                         LambdaEntity::Variable(variable.clone())
                     }
                 }
                 Expression::Predicate(name, args) => {
+
                     // Substitute within predicate arguments
                     let substituted_args: Vec<_> = args
                         .iter()
-                        .map(|arg| if arg == source { target.to_string() } else { arg.clone() })
+                        .map(|arg| if Variable(Box::from(Var(String::from(arg)))) == source.clone() { target.to_string() } else { arg.clone() })
                         .collect();
-                    LambdaEntity::Variable(Box::from(Expression::Predicate(name.clone(), substituted_args)))
+
+                    let mut substituted_name = name.clone();
+
+                    if name == source.clone() {
+                        substituted_name = target.clone();
+                    }
+
+                    LambdaEntity::Variable(Box::from(Expression::Predicate(substituted_name, substituted_args)))
                 }
                 Expression::Conjunction(lhs, rhs) => {
+
+                    println!("found conjunction with lhs {:?} and rhs {:?}. source: {:?}. target: {:?}", lhs, rhs, source, target);
+
                     // Substitute within both sides of a conjunction
                     let lhs_substituted = _substitute(
-                        &LambdaEntity::Variable(Box::new(Expression::Var(lhs.to_string()))),
+                        &*lhs,
                         source,
                         target,
                     );
                     let rhs_substituted = _substitute(
-                        &LambdaEntity::Variable(Box::new(Expression::Var(rhs.to_string()))),
+                        &*rhs,
                         source,
                         target,
                     );
 
-                    // Ensure both are Expression::Variable before creating a Conjunction
-                    if let LambdaEntity::Variable(boxed_lhs) = lhs_substituted {
-                        if let LambdaEntity::Variable(boxed_rhs) = rhs_substituted {
-                            if let Expression::Var(lhs_var) = *boxed_lhs {
-                                if let Expression::Var(rhs_var) = *boxed_rhs {
-                                    LambdaEntity::Variable(Box::new(Expression::Conjunction(
-                                        Box::new(Expression::Var(lhs_var)),
-                                        Box::new(Expression::Var(rhs_var)),
-                                    )))
-                                } else {
-                                    panic!("Right-hand side substitution did not result in Expression::Variable");
-                                }
-                            } else {
-                                panic!("Left-hand side substitution did not result in Expression::Variable");
-                            }
-                        } else {
-                            panic!("Right-hand side substitution did not result in LambdaEntity::Variable");
-                        }
-                    } else {
-                        panic!("Left-hand side substitution did not result in LambdaEntity::Variable");
-                    }
+                    println!("lhs substituted: {:?} rhs substituted: {:?}", lhs_substituted, rhs_substituted);
+
+                    Variable(Box::new(Conjunction(Box::from(lhs_substituted), Box::from(rhs_substituted))))
                 }
 
                 Expression::ExistentialQuantifier(var, expr) => {
+
+                    println!("found existential quantifier with var {} and expr {:?}. source: {:?}. target: {:?}", var, expr, source, target);
+
                     // If the bound variable matches `source`, skip substitution
-                    if var == source {
+                    if Variable(Box::from(Var(String::from(var.clone())))) == source.clone() {
                         LambdaEntity::Variable(Box::new(Expression::ExistentialQuantifier(
                             var.clone(),
                             expr.clone(),
@@ -86,20 +84,16 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
                     } else {
                         // Substitute within the inner expression
                         let substituted_expr = _substitute(
-                            &LambdaEntity::Variable(Box::new(*expr.clone())),
+                            &*expr,
                             source,
                             target,
                         );
 
-                        // Ensure the substitution result is a valid expression before wrapping it back
-                        if let LambdaEntity::Variable(substituted_box) = substituted_expr {
-                            LambdaEntity::Variable(Box::new(Expression::ExistentialQuantifier(
-                                var.clone(),
-                                substituted_box,
-                            )))
-                        } else {
-                            panic!("Substitution did not result in a valid LambdaEntity::Variable");
-                        }
+                        LambdaEntity::Variable(Box::new(Expression::ExistentialQuantifier(
+                            var.clone(),
+                            Box::from(substituted_expr.clone()),
+                        )))
+
                     }
                 }
 
@@ -132,5 +126,6 @@ pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
         // If the expression is not an application, return it as is.
         _ => expression.clone(),
     };
+    println!("reduced expr: {:?}", expr2);
     expr2
 }

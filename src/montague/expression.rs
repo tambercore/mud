@@ -1,13 +1,14 @@
 use std::fmt;
-use crate::montague::expression::Expression::Predicate;
+use crate::lambda::types::LambdaEntity;
+use crate::lambda::types::LambdaEntity::*;
+use crate::montague::expression::Expression::{Predicate, Var};
 
-type Variable = String;
 #[derive(Clone, Debug)]
 pub enum Expression {
-    Conjunction(Box<Expression>, Box<Expression>),
-    ExistentialQuantifier(Variable, Box<Expression>),
-    Var(Variable),
-    Predicate(Variable, Vec<Variable>),
+    Conjunction(Box<LambdaEntity>, Box<LambdaEntity>),
+    ExistentialQuantifier(String, Box<LambdaEntity>),
+    Var(String),
+    Predicate(LambdaEntity, Vec<String>),
 }
 
 impl fmt::Display for Expression {
@@ -42,10 +43,10 @@ impl PartialEq for Expression {
 #[test]
 fn test_expression_printing() {
     let expr = Expression::ExistentialQuantifier("x".to_string() ,
-    Box::new(Expression::Conjunction(
-        Box::new(Predicate("cheese".to_string(), vec!["x".to_string()])),
-        Box::new(Predicate("likes".to_string(), vec!["John".to_string(), "x".to_string()])
-    ))));
+                                                 Box::from(Variable(Box::new(Expression::Conjunction(
+                                                     Box::new(Variable(Box::from(Predicate(Variable(Box::from(Var("cheese".to_string()))), vec!["x".to_string()])))),
+                                                     Box::new(Variable(Box::from(Predicate(Variable(Box::from(Var("likes".to_string()))), vec!["John".to_string(), "x".to_string()]))))
+                                                     )))));
 
     println!("{}", expr)
 }

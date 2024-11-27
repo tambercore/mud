@@ -35,7 +35,7 @@ fn run() {
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-    let sentence = "a man sleeps";
+    let sentence = "John likes gouda";
 
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -55,7 +55,7 @@ fn run() {
 
 
 
-    println!("REDUCED FOL: {:?}", fol);
+    println!("REDUCED FOL: {}", fol);
 }
 
 /// Reduce individual FOL words into the complete FOL sentence representation using rules from the CCG tree.
@@ -89,7 +89,7 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
                 let function_term = apply_montague_recursively(&children[0], terminals_to_fol);
                 let argument_term = apply_montague_recursively(&children[1], terminals_to_fol);
                 let applied_terms = LambdaEntity::Application(Box::new(function_term), Box::new(argument_term));
-                //println!("REDUCING APPLIED TERM (FA): {:?}", applied_terms);
+                //println!("FA: {:?}", applied_terms);
                 reduce(&applied_terms)
             }
             Some(CCGRule::BA) => {
@@ -97,7 +97,7 @@ fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CC
                 let argument_term = apply_montague_recursively(&children[0], terminals_to_fol);
                 let function_term = apply_montague_recursively(&children[1], terminals_to_fol);
                 let applied_terms = LambdaEntity::Application(Box::new(function_term), Box::new(argument_term));
-                //println!("REDUCING APPLIED TERM (BA): {:?}", applied_terms);
+                println!("BA: {:?}", applied_terms);
                 reduce(&applied_terms)
             }
             Some(CCGRule::U) => {

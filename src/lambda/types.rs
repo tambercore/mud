@@ -7,7 +7,7 @@ use crate::montague::expression::Expression;
 #[derive(Clone, Debug)]
 pub enum LambdaEntity {
     Application(Box<LambdaEntity>, Box<LambdaEntity>),      // Application of two expressions
-    Abstraction(String, Box<LambdaEntity>),                 // Lambda abstraction, e.g., λx.x + 1
+    Abstraction(Box<LambdaEntity>, Box<LambdaEntity>),                 // Lambda abstraction, e.g., λx.x + 1
     Variable(Box<Expression>),                                       // Variable, e.g., x
 }
 
