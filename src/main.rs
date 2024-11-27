@@ -2,6 +2,7 @@ mod ccg;
 mod brill;
 mod montague;
 mod wordnet;
+mod langutils;
 
 use std::io::{self, Write};
 
