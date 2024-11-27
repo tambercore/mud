@@ -28,13 +28,29 @@ pub fn apply_conjugation_rules(verb: String) -> String {
         }
     }
 
-
     // Handle verbs ending in "c" add "ked"
     if verb.ends_with("c") {
         return format!("{}ked", verb);
     }
 
-    // Handle verbs ending with specific consonants add "ped"
+    // Handle verbs with a CVC pattern (Consonant-Vowel-Consonant) double the final consonant
+    if verb.len() >= 3 {
+        let chars: Vec<char> = verb[verb.len() - 3..].chars().collect();
+        if chars.len() == 3 {
+            let (first, second, third) = (chars[0], chars[1], chars[2]);
+
+            // Check if the pattern is CVC and the final consonant should be doubled
+            // Exclude certain consonants (e.g., "p" from "jump")
+            if first.is_consonant() && second.is_vowel() && third.is_consonant() {
+                // Check for doubling consonant rule: avoid doubling if final consonant is "p" or specific exclusions
+                if !matches!(third, 'p') {
+                    return format!("{}{}ed", &verb[..verb.len() - 1], third);
+                }
+            }
+        }
+    }
+
+    // Handle verbs ending with specific consonants (p, t, d) add "ped"
     if verb.ends_with("p") || verb.ends_with("t") || verb.ends_with("d") {
         return format!("{}ped", verb);
     }

@@ -65,6 +65,7 @@ hit hit hit
 hold held held
 hurt hurt hurt
 is was were
+jump jumped jumped
 keep kept kept
 kneel knelt knelt
 knit knit knit

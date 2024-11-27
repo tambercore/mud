@@ -3,8 +3,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
-
-
+use crate::lingo::verb_conjugation::apply_conjugation_rules;
 
 /// Static variable to hold the irregular verb mappings, parsed from `data/irregular_verbs.txt`.
 static IRREGULAR_VERBS: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
