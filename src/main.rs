@@ -16,7 +16,7 @@ fn main() {
     }
 
     // Retrieve meanings for "dog"
-    if let Some(meanings) = get_meanings("murder") {
+    if let Some(meanings) = get_meanings("good") {
         for meaning in meanings {
             println!("{}", meaning);
         }

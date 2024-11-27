@@ -7,6 +7,7 @@ use std::sync::Mutex;
 use crate::wordnet::postag::WordnetTag;
 use crate::wordnet::wordnode::Wordnode;
 
+
 // Define a static singleton for word meanings
 static WORD_MEANINGS: Lazy<Mutex<HashMap<String, Vec<Wordnode>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
@@ -29,12 +30,8 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
         let gloss = synset.get("gloss").and_then(|g| g.as_str()).unwrap_or("");
         let pos = synset.get("pos").and_then(|p| p.as_str()).unwrap_or("");
 
-        // Split the gloss by semicolon and take the part before the first semicolon
-        let meaning = gloss.split(';')
-            .next()     // Take the first part before the semicolon (preprocess the definition)
-            .unwrap_or(gloss)  // If there's no semicolon, use the whole gloss
-            .trim()            // Trim any surrounding whitespace
-            .to_string();
+        // Split the gloss by semicolon and take the part before the first semicolon, basically process the definition
+        let meaning = gloss.split(';').next().unwrap_or(gloss).trim().to_string();
 
         // Collect all the synonyms (other words in the same synset)
         let synonyms: Vec<String> = words.iter()
@@ -51,12 +48,12 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
                 .cloned()
                 .collect();
 
-            // Create the Wordnode
+            // Create the Wordnode, here `synonyms` refers to a vector of indexes.
             let word_definition = Wordnode {
                 meaning: meaning.clone(),
                 pos: WordnetTag::from(pos),
                 id: id.to_string(),
-                synonyms: filtered_synonyms, // Add the filtered synonyms here
+                synonyms: filtered_synonyms,
             };
 
             // Insert the Wordnode into the vector for each word
@@ -74,32 +71,8 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 
-
 // Access the meanings from the singleton
 pub fn get_meanings(word: &str) -> Option<Vec<Wordnode>> {
     let meanings = WORD_MEANINGS.lock().unwrap();
     meanings.get(word).cloned()
-}
-
-
-// Function to print all unique POS tags after WordNet initialization
-pub fn print_unique_pos_tags() {
-    init_wordnet();
-    let meanings = WORD_MEANINGS.lock().unwrap();
-
-    // Use a HashSet to store unique POS tags
-    let mut pos_tags = HashSet::new();
-
-    // Iterate through all Wordnodes and collect the POS tags
-    for wordnode_list in meanings.values() {
-        for wordnode in wordnode_list {
-            pos_tags.insert(wordnode.pos.clone());
-        }
-    }
-
-    // Print all unique POS tags
-    println!("Unique POS tags:");
-    for pos in pos_tags {
-        println!("{}", pos);
-    }
 }
