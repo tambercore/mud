@@ -3,25 +3,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
-
-
-
-trait CharExtensions {
-    fn is_consonant(self) -> bool;
-    fn is_vowel(self) -> bool;
-}
-
-impl CharExtensions for char {
-    fn is_consonant(self) -> bool {
-        self.is_alphabetic() && !self.is_vowel()
-    }
-
-    fn is_vowel(self) -> bool {
-        matches!(self, 'a' | 'e' | 'i' | 'o' | 'u' | 'A' | 'E' | 'I' | 'O' | 'U')
-    }
-}
-
-
+use crate::lingo::consonants::*;
 
 
 // Static variable to hold the irregular verb mappings
