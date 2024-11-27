@@ -24,19 +24,3 @@ fn print_nodes_with_text(node: &CCGNode) {
     }
 }
 
-
-#[test]
-fn run() {
-    let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
-    let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
-    let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
-
-    let sentence = "John likes cheese"; // Likes(John, Cheese)
-
-    // retrieve words and their corresponding pos tags
-    let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
-
-    let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples);
-    println!("{}", ccg);
-    // let fol = ccg_to_fol(ccg);
-}
