@@ -13,7 +13,7 @@ fn main() {
         "eat", "play", "write", "try", "see", "dance", "lick",
         "begin", "take", "do", "stop", "hop", "run", "cry",
         "fly", "jump", "lie", "study", "apologize", "fax", "mix",
-        "tickle", "pickle", "push", "kick", "wrote"
+        "tickle", "pickle", "push", "kick"
     ];
 
     for verb in verbs {

@@ -3,16 +3,16 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
-use crate::lingo::consonants::*;
 
 
-// Static variable to hold the irregular verb mappings
+
+/// Static variable to hold the irregular verb mappings, parsed from `data/irregular_verbs.txt`.
 static IRREGULAR_VERBS: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
     let mut map = HashMap::new();
     let file = File::open("data/irregular_verbs.txt").expect("File not found");
     let reader = io::BufReader::new(file);
 
-    // Read each line from the file and process it
+    // Parse the file
     for line in reader.lines() {
         let line = line.expect("Failed to read line");
         let parts: Vec<&str> = line.split_whitespace().collect();
@@ -27,51 +27,54 @@ static IRREGULAR_VERBS: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
 
 
 
-// Function to get the past participle of a verb
-pub
-fn get_past_participle(verb: String) -> String {
-    // Step 1: Check if the verb is irregular and return the past participle from the static map
+/// Function to get the past participle of a verb
+pub fn get_past_participle(verb: String) -> String {
+
+    // Checking if the word is irregular, as the rules don't apply to irregular verbs.
     let map = IRREGULAR_VERBS.lock().expect("Failed to lock map");
     if let Some(past_participle) = map.get(verb.as_str()) {
         return past_participle.clone();
     }
 
-    // Step 2: Rule-based system for regular verbs
+    // The verb is regular, so we can apply generic conjugation rules.
+    return apply_conjugation_rules(verb);
+}
 
-    // Rule 1: Verbs ending in "e" simply add "d"
-    if verb.ends_with('e') {
-        return format!("{}d", verb);
+
+
+#[test]
+fn test_get_past_participle() {
+    // Create a vector of test cases with verbs and their expected past participles
+    let test_cases = vec![
+        ("eat", "eaten"),
+        ("play", "played"),
+        ("write", "written"),
+        ("try", "tried"),
+        ("see", "seen"),
+        ("dance", "danced"),
+        ("lick", "licked"),
+        ("begin", "begun"),
+        ("take", "taken"),
+        ("do", "done"),
+        ("stop", "stopped"),
+        ("hop", "hopped"),
+        ("run", "run"),
+        ("cry", "cried"),
+        ("fly", "flown"),
+        ("jump", "jumped"),
+        ("lie", "lain"),
+        ("study", "studied"),
+        ("apologize", "apologized"),
+        ("fax", "faxed"),
+        ("mix", "mixed"),
+        ("tickle", "tickled"),
+        ("pickle", "pickled"),
+        ("push", "pushed"),
+        ("kick", "kicked"),
+    ];
+
+    // Iterate through the test cases and assert the expected result
+    for (verb, expected_participle) in test_cases {
+        assert_eq!(get_past_participle(verb.to_string()), expected_participle);
     }
-
-    // Rule 2: Verbs ending in consonant + "y" (excluding some exceptions) change "y" to "ied"
-    if verb.ends_with("y") && !verb.ends_with("ay") && !verb.ends_with("ey") && !verb.ends_with("iy") && !verb.ends_with("oy") && !verb.ends_with("uy") {
-        return format!("{}ied", &verb[..verb.len() - 1]);
-    }
-
-    // Rule 3: Verbs with a CVC pattern (Consonant-Vowel-Consonant) double the final consonant
-    if verb.len() >= 3 {
-        let chars: Vec<char> = verb[verb.len() - 3..].chars().collect();
-        if chars.len() == 3 {
-            let (first, second, third) = (chars[0], chars[1], chars[2]);
-
-            // Check if the pattern is CVC and the final consonant is not "p" or "t"
-            if first.is_consonant() && second.is_vowel() && third.is_consonant() && !matches!(third, 'p' | 't') {
-                return format!("{}{}ed", &verb[..verb.len() - 1], third);
-            }
-        }
-    }
-
-
-    // Rule 4: Verbs ending in "c" add "ked"
-    if verb.ends_with("c") {
-        return format!("{}ked", verb);
-    }
-
-    // Rule 5: Verbs ending with specific consonants add "ped"
-    if verb.ends_with("p") || verb.ends_with("t") || verb.ends_with("d") {
-        return format!("{}ped", verb);
-    }
-
-    // Default rule: Add "ed" for other regular verbs
-    format!("{}ed", verb)
 }
