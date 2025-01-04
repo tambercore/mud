@@ -252,7 +252,7 @@ fn is_simple_parentheses(value: &str) -> bool {
 
 
 /// Finds the position of an operator (`/` or `\`) that is outside of parentheses.
-/// The operator is considered outside of parentheses if the string starts with `(`
+/// The operato r is considered outside of parentheses if the string starts with `(`
 /// and ends with `)` and there is a matching parenthesis pair around the operator.
 fn find_operator_position_outside_parentheses(value: &str) -> Option<usize> {
     let mut paren_count = 0;
