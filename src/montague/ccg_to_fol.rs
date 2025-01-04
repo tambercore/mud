@@ -31,7 +31,6 @@ fn print_nodes_with_text(node: &CCGNode) {
     }
 }
 
-
 #[test]
 fn run() {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
