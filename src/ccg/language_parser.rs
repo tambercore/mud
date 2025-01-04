@@ -11,8 +11,18 @@ use super::ccg_types::{CCGNode, add_tags};
 ///
 /// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the process fails.
 pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordclass)>) -> CCGNode {
-    // Pass the sentence to the Python script as a command line argument.
-    let output = Command::new("data/lambeq/lambeq_env/Scripts/python.exe")
+
+    // Determine the Python executable path based on the OS
+    let python_executable = if cfg!(target_os = "windows") {
+        "data/lambeq/lambeq_env/Scripts/python.exe"
+    } else if cfg!(target_os = "macos") {
+        "data/lambeq/lambeq_env/bin/python3" // Adjust path for macOS
+    } else {
+        "data/lambeq/lambeq_env/bin/python3" // or whatever linux uses.
+    };
+
+    // Pass the sentence to the Python script as a command line argument
+    let output = Command::new(python_executable)
         .arg("data/lambeq/run_lambeq.py")
         .arg(sentence) // Pass sentence as argument to Python script
         .output()
@@ -22,12 +32,10 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
     let original_tree = read_json("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
     add_tags(original_tree, vec_of_words_to_tags)
 }
+
+
 /// Reads a JSON file and attempts to deserialize it into a `CCGNode`.
 ///
-/// # Arguments
-/// * `file_path` - The path to the JSON file to read.
-///
-/// # Returns
 /// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the file can't be read or parsed.
 fn read_json(file_path: &str) -> Result<CCGNode, String> {
     let mut content = String::new();
