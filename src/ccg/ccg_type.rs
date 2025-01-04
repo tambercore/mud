@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
-enum CCGType {
+pub enum CCGType {
     ForwardsFunctor(Box<CCGType>, Box<CCGType>),
     BackwardsFunctor(Box<CCGType>, Box<CCGType>),
     Conjunction,
