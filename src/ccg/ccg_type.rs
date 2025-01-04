@@ -5,6 +5,7 @@ pub enum CCGType {
     ForwardsFunctor(Box<CCGType>, Box<CCGType>),
     BackwardsFunctor(Box<CCGType>, Box<CCGType>),
     Conjunction,
+    ConjunctionTag,
     Noun,
     NounPhrase,
     PrepositionalPhrase,
