@@ -22,6 +22,7 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
     let original_tree = read_json("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
     add_tags(original_tree, vec_of_words_to_tags)
 }
+
 /// Reads a JSON file and attempts to deserialize it into a `CCGNode`.
 ///
 /// # Arguments

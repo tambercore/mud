@@ -157,5 +157,5 @@ fn test_tag_sentence() {
     let contextual_ruleset: HashMap<Wordclass, Vec<ContextualRulespec>> = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping: WordclassMap = initialize_tagger("data/lexicon.txt").unwrap();
 
-    tag_sentence("John likes gouda", &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
+    tag_sentence("All ravens are black", &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 }
