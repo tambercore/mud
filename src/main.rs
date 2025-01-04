@@ -11,8 +11,11 @@ use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::initialize_tagger;
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::ccg::language_parser::english_to_ccg;
+use crate::ccg::ccg_type_parser::*;
 use crate::lingo::past_participle::get_past_participle;
 
+
+/*
 fn main() {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
@@ -31,4 +34,30 @@ fn main() {
     let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
 
     println!("ccg: {}", ccg);
+}*/
+
+// For testing purposes
+fn main() {
+    let input1 = "N\\NP";
+    let expected1 = crate::ccg::ccg_type_parser::CCGType::BackwardsFunctor(
+        Box::new(crate::ccg::ccg_type_parser::CCGType::Noun),
+        Box::new(crate::ccg::ccg_type_parser::CCGType::NounPhrase),
+    );
+    let result1 = crate::ccg::ccg_type_parser::parse_category(input1).unwrap().1;
+    assert_eq!(result1, expected1);
+    println!("Parsed '{}': {:?}", input1, result1);
+
+    let input2 = "(N\\NP)\\NP";
+    let expected2 = crate::ccg::ccg_type_parser::CCGType::BackwardsFunctor(
+        Box::new(crate::ccg::ccg_type_parser::CCGType::BackwardsFunctor(
+            Box::new(crate::ccg::ccg_type_parser::CCGType::Noun),
+            Box::new(crate::ccg::ccg_type_parser::CCGType::NounPhrase),
+        )),
+        Box::new(crate::ccg::ccg_type_parser::CCGType::NounPhrase),
+    );
+    let result2 = crate::ccg::ccg_type_parser::parse_category(input2).unwrap().1;
+    assert_eq!(result2, expected2);
+    println!("Parsed '{}': {:?}", input2, result2);
+
+    // Add more test cases as needed
 }

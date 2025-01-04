@@ -123,6 +123,7 @@ impl fmt::Display for CCGType {
             CCGType::ForwardsFunctor(left, right) => write!(f, "({} / {})", left, right),
             CCGType::BackwardsFunctor(left, right) => write!(f, "({} \\ {})", left, right),
             CCGType::Conjunction => write!(f, "Conjunction"),
+            CCGType::ConjunctionTag => write!(f, "ConjunctionTag"),
             CCGType::Noun => write!(f, "Noun"),
             CCGType::NounPhrase => write!(f, "Noun Phrase"),
             CCGType::PrepositionalPhrase => write!(f, "Prepositional Phrase"),
