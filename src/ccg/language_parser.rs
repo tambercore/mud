@@ -3,6 +3,8 @@ use serde_json::Error as SerdeError;
 use crate::brill::wordclass::Wordclass;
 use super::ccg_types::{CCGNode, add_tags};
 
+
+
 /// Runs a Python script to process an English sentence and parses the result into a CCG node.
 ///
 /// This function assumes the presence of a virtual environment with `lambeq` installed and
@@ -29,14 +31,16 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
         .map_err(|_| "Failed to execute Python command. Ensure the virtual environment and lambeq are properly installed.");
 
     // Read and parse the resulting JSON file into a CCGNode.
-    let original_tree = read_json("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
+    let original_tree = ccgnode_parse("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
     add_tags(original_tree, vec_of_words_to_tags)
 }
+
+
 
 /// Reads a JSON file and attempts to deserialize it into a `CCGNode`.
 ///
 /// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the file can't be read or parsed.
-fn read_json(file_path: &str) -> Result<CCGNode, String> {
+fn ccgnode_parse(file_path: &str) -> Result<CCGNode, String> {
     let mut content = String::new();
 
     // Open the file and read its content into a string.

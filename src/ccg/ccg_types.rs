@@ -2,6 +2,7 @@ use serde::{Deserialize, Deserializer, de::Error};
 use std::fmt;
 use crate::brill::wordclass::Wordclass;
 
+
 /// Enum representing CCG operators used in category composition.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub enum CCGOperator {
@@ -12,6 +13,7 @@ pub enum CCGOperator {
     Backward, // The backward operator (used in backward composition).
 }
 
+
 impl fmt::Display for CCGOperator {
     /// Formats the CCG operator as a string (`/` or `\`).
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -21,6 +23,7 @@ impl fmt::Display for CCGOperator {
         })
     }
 }
+
 
 /// Enum representing different CCG categories, including simple and composed categories.
 #[derive(Debug, Clone, PartialEq)]
@@ -38,6 +41,7 @@ pub enum CCGCategory {
     V,
     CONJ,
 }
+
 
 /// Implementation for `Deserialize` to parse CCG categories from JSON strings.
 impl<'de> Deserialize<'de> for CCGCategory {
@@ -76,6 +80,7 @@ impl<'de> Deserialize<'de> for CCGCategory {
     }
 }
 
+
 impl CCGCategory {
     /// Helper function to convert a string into a CCGCategory.
     /// This function handles both simple and composed categories.
@@ -103,6 +108,7 @@ impl CCGCategory {
     }
 }
 
+
 /// Enum representing CCG parsing rules.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub enum CCGRule {
@@ -112,6 +118,7 @@ pub enum CCGRule {
     U, // Unary rule.
     CONJ, // conjunction rule.
 }
+
 
 impl fmt::Display for CCGRule {
     /// Formats the CCG rule as a string.
@@ -126,6 +133,7 @@ impl fmt::Display for CCGRule {
     }
 }
 
+
 /// Struct representing a CCG node in a parse tree.
 ///
 /// A node contains a category, an optional rule, optional text, and optional child nodes.
@@ -138,6 +146,7 @@ pub struct CCGNode {
     pub class: Option<Wordclass>,   // Wordclass of terminal node
     pub children: Option<Vec<CCGNode>>, // Optional child nodes of the current node.
 }
+
 
 impl fmt::Display for CCGCategory {
     /// Formats the CCG category as a string (e.g., `S`, `NP`, `N`, or a composed category).
@@ -154,6 +163,7 @@ impl fmt::Display for CCGCategory {
         }
     }
 }
+
 
 impl fmt::Display for CCGNode {
     /// Formats the CCG node as a string, including category, rule, text, and children.
@@ -208,6 +218,7 @@ pub(crate) fn add_tags(mut tree: CCGNode, words_to_tags: Vec<(String, Wordclass)
     tree
 }
 
+
 /// Helper function to parse composed categories from a string.
 /// A composed category is in the form of "(left_category operator right_category)".
 fn parse_composed_category(value: &str) -> Option<(&str, &str, &str)> {
@@ -227,6 +238,7 @@ fn parse_composed_category(value: &str) -> Option<(&str, &str, &str)> {
     }
 }
 
+
 /// Checks if the string is a simple category surrounded by parentheses (e.g., (s) or (s\np))
 fn is_simple_parentheses(value: &str) -> bool {
     // A simple parenthesized category should not contain any operators and should not be empty
@@ -237,6 +249,7 @@ fn is_simple_parentheses(value: &str) -> bool {
         false
     }
 }
+
 
 /// Finds the position of an operator (`/` or `\`) that is outside of parentheses.
 /// The operator is considered outside of parentheses if the string starts with `(`

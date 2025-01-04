@@ -51,20 +51,7 @@ fn run() {
 
     println!("ccg: {}", ccg);
 
-    //Sreturn;
-
-    // map words to their montague grammar representation
-    // todo : implement rest of ccgtypes
-    let montague_representation = map_words_to_montague(vec_of_word_tag_tuples.clone(), &ccg);
-
-    println!("{:?}", montague_representation);
-
-    // reduce the montague grammar into a single fol expression
-    let fol = reduce_montague(&montague_representation, &ccg);
-
-
-
-    println!("REDUCED FOL: {:?}", fol);
+    return;
 }
 
 /// Reduce individual FOL words into the complete FOL sentence representation using rules from the CCG tree.
