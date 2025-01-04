@@ -1,6 +1,7 @@
 mod ccg;
 mod brill;
 mod montague;
+mod lambda;
 mod wordnet;
 mod lingo;
 
@@ -30,6 +31,4 @@ fn main() {
     let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
 
     println!("ccg: {}", ccg);
-
-    return;
 }
