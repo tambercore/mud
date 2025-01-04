@@ -9,6 +9,7 @@ use crate::ccg::ccg_types::CCGOperator::{Backward, Forward};
 use crate::ccg::ccg_types::CCGRule::FA;
 use crate::lambda::reduce::reduce;
 use crate::lambda::types::LambdaEntity;
+use crate::lambda::types::LambdaEntity::Variable;
 use crate::montague::montague_grammar::map_word_to_expression;
 
 fn ccg_to_fol(ccg: CCGNode) {
@@ -51,9 +52,10 @@ fn run() {
 
     println!("ccg: {}", ccg);
 
-    return;
+    //Sreturn;
 
     // map words to their montague grammar representation
+    // todo : implement rest of ccgtypes
     let montague_representation = map_words_to_montague(vec_of_word_tag_tuples.clone(), &ccg);
 
     println!("{:?}", montague_representation);
@@ -68,114 +70,8 @@ fn run() {
 
 /// Reduce individual FOL words into the complete FOL sentence representation using rules from the CCG tree.
 fn reduce_montague(terminals_to_fol: &Vec<(String, LambdaEntity)>, ccg_tree: &CCGNode) -> Result<LambdaEntity, String> {
-    fn apply_montague_recursively(
-        node: &CCGNode,
-        terminals_to_fol: &Vec<(String, LambdaEntity)>,
-    ) -> Result<LambdaEntity, String> {
-        // Base case: If the node is a terminal, return its Montague term
-        if node.children == None {
-            if let Some(ref text) = node.text {
-                // Find the corresponding Montague term for the terminal
-                if let Some((_, lambda_entity)) = terminals_to_fol.iter().find(|(word, _)| word == text) {
-                    //println!("BASE CASE, TERMINAL: {:?}", lambda_entity.clone());
-                    return Ok(lambda_entity.clone());
-                }
-            }
-            panic!("Terminal node without a corresponding Montague term.");
-        }
-
-        // Recursive case: Process child nodes
-        let children = node
-            .children
-            .as_ref()
-            .expect("Non-terminal node without children.");
-
-        // Combine child terms based on the CCG rule
-        match node.clone().rule {
-            Some(FA) => {
-                println!("doing forward application on {:?}: children {:?} and {:?}\n",  node.category, children[0].category, children[1].category);
-
-                // Forward Application: A \ B
-
-                let target_category = node.clone().category;
-
-                match (children[0].clone().category, children[1].clone().category) {
-
-                    (CCGCategory::Composed {left, right, operator }, c) => {
-                        println!("matched FA case 1. operator = {}. {:?} = {:?} and {:?} = {:?}", operator, left, target_category, right, c);
-
-                        if operator == Forward {
-                            if *right == c && *left == target_category {
-                                let function_term = apply_montague_recursively(&children[0], terminals_to_fol);
-                                let argument_term = apply_montague_recursively(&children[1], terminals_to_fol);
-                                let applied_terms = LambdaEntity::Application(Box::new(function_term?), Box::new(argument_term?));
-                                return Ok(reduce(&applied_terms))
-                            }
-                        }
-                    }
-                    (c, CCGCategory::Composed {left, right, operator }) => {
-                        println!("matched FA case 2. operator = {}. {:?} = {:?} and {:?} = {:?}", operator, left, target_category, right, c);
-
-                        if operator == Forward {
-                            if *right == c && *left == target_category {
-                                let function_term = apply_montague_recursively(&children[1], terminals_to_fol);
-                                let argument_term = apply_montague_recursively(&children[0], terminals_to_fol);
-                                let applied_terms = LambdaEntity::Application(Box::new(function_term?), Box::new(argument_term?));
-                                return Ok(reduce(&applied_terms))
-                            }
-                        }   
-                    }
-                    _ => return Err(String::from("FA: One category must be composed"))
-                }
-                Err(String::from("FA: Target category not found"))
-            }
-            Some(CCGRule::BA) => {
-
-                println!("doing backward application on {:?}: children {:?} and {:?}\n",  node.category, children[0].category, children[1].category);
-                // Backward Application
-                let target_category = node.clone().category;
-
-                match (children[0].clone().category, children[1].clone().category) {
-
-                    (CCGCategory::Composed {left, right, operator }, c) => {
-                        if operator == Backward {
-                            println!("matched BA case 1. operator = {}. {:?} = {:?} and {:?} = {:?}", operator, left, target_category, right, c);
-                            if *right == c && *left == target_category {
-                                let function_term = apply_montague_recursively(&children[0], terminals_to_fol);
-                                let argument_term = apply_montague_recursively(&children[1], terminals_to_fol);
-                                let applied_terms = LambdaEntity::Application(Box::new(function_term?), Box::new(argument_term?));
-                                return Ok(reduce(&applied_terms))
-                            }
-                        }
-                    }
-                    (c, CCGCategory::Composed {left, right, operator }) => {
-                        if operator == Backward {
-                            println!("matched BA case 2. operator = {}. {:?} = {:?} and {:?} = {:?}", operator, left, target_category, right, c);
-                            if *right == c && *left == target_category {
-                                let function_term = apply_montague_recursively(&children[1], terminals_to_fol);
-                                let argument_term = apply_montague_recursively(&children[0], terminals_to_fol);
-                                let applied_terms = LambdaEntity::Application(Box::new(function_term?), Box::new(argument_term?));
-                                return Ok(reduce(&applied_terms))
-                            }
-                        }
-                    }
-                    _ => return Err(String::from("BA: One category must be composed"))
-                }
-                Err(String::from("BA: Target category not found"))
-            }
-            Some(CCGRule::U) => {
-                // Unary rule (e.g., type raising)
-                let inner_term = apply_montague_recursively(&children[0], terminals_to_fol);
-                // Handle unary transformations if necessary (e.g., type raising)
-                //println!("HANDLING UNARY: {:?}", inner_term);
-                inner_term // Currently no transformation applied
-            }
-            _ => panic!("Unknown or unsupported CCG rule: {:?}", node.rule),
-        }
-    }
-
-    // Start recursive application from the root of the CCG tree
-    Ok(apply_montague_recursively(ccg_tree, terminals_to_fol)?)
+    // TODO
+    Err("not implemented".parse().unwrap())
 }
 
 /// Map word tag pairs to their corresponding montague grammar representation using the CCG tree.
