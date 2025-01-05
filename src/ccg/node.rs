@@ -1,9 +1,9 @@
 use serde::{Deserialize, Deserializer};
 use serde::de::{self, MapAccess, Visitor};
 use std::fmt;
-use crate::ccg::ccg_word::CCGWord;
-use super::ccg_rule::CCGRule;
-use super::ccg_type::CCGType;
+use crate::ccg::word::CCGWord;
+use super::rule::CCGRule;
+use super::r#type::CCGType;
 use ascii_tree::{Tree::*, Tree, write_tree};
 
 

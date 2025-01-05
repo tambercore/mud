@@ -1,8 +1,8 @@
 use std::fmt;
 use serde::{Deserialize, Deserializer};
 use crate::brill::wordclass::Wordclass;
-use crate::ccg::ccg_type::CCGType;
-use crate::ccg::ccg_type_parser::parse_category;
+use crate::ccg::r#type::CCGType;
+use crate::ccg::type_parser::parse_category;
 
 #[derive(Debug, Clone)]
 pub struct CCGWord {

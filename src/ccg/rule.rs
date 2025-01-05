@@ -96,7 +96,7 @@ impl fmt::Display for CCGRule {
 #[test]
 fn test_json_parsing() {
 
-    let tree = crate::ccg::language_parser::ccgnode_parse("data/CCG_parse_test.json").expect("Failed to read tree");
+    let tree = crate::ccg::sentence_parser::ccgnode_parse("data/CCG_parse_test.json").expect("Failed to read tree");
     println!("{:?}", tree)
 
 

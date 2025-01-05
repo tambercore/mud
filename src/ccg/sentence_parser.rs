@@ -1,7 +1,7 @@
 use std::{process::Command, fs::File, io::Read};
 use serde_json::Error as SerdeError;
 use crate::brill::wordclass::Wordclass;
-use super::ccg_node::{CCGNode};
+use super::node::{CCGNode};
 
 
 

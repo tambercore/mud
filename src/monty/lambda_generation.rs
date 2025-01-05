@@ -1,2 +1,2 @@
-use crate::ccg::ccg_node::CCGNode;
+use crate::ccg::node::CCGNode;
 
