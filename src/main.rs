@@ -1,6 +1,5 @@
 mod ccg;
 mod brill;
-mod montague;
 mod lambda;
 mod wordnet;
 mod lingo;
