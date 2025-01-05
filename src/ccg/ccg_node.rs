@@ -4,6 +4,7 @@ use std::fmt;
 use crate::ccg::ccg_word::CCGWord;
 use super::ccg_rule::CCGRule;
 use super::ccg_type::CCGType;
+use ascii_tree::{Tree::*, Tree, write_tree};
 
 
 #[derive(Debug, Clone, Deserialize)]
@@ -22,29 +23,19 @@ pub struct CCGNode {
 
 impl fmt::Display for CCGNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Write the node type
-        write!(f, "Type: {}", self.node_type)?;
-
-        // If there's a word, write it
-        if let Some(ref word) = self.word {
-            write!(f, ", Word: {}", word)?;
+        fn to_ascii_tree(node: &CCGNode) -> Tree {
+            let title = format!("{:?} ({:?})", node.node_type, node.rule);
+            let children = if let Some(children) = &node.children {
+                children.iter().map(|child| to_ascii_tree(child)).collect()
+            } else {
+                vec![]
+            };
+            Node(title, children)
         }
 
-        // Write the rule
-        write!(f, ", Rule: {}", self.rule)?;
-
-        // If there are children, recursively format them
-        if !self.children.clone().unwrap().is_empty() {
-            write!(f, ", Children: [")?;
-            for (i, child) in self.children.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?; // Add comma between children
-                }
-                write!(f, "{:?}", child)?; // Recursive call
-            }
-            write!(f, "]")?;
-        }
-
-        Ok(())
+        let ascii_tree = to_ascii_tree(self);
+        let mut output = String::new();
+        write_tree(&mut output, &ascii_tree).map_err(|_| fmt::Error)?;
+        write!(f, "{}", output)
     }
 }
