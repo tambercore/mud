@@ -1,34 +1,32 @@
+use crate::ccg::category::CCGType;
 use crate::ccg::node::CCGNode;
-use crate::ccg::rule::CCGRule;
 use crate::lambda::types::*;
 
-fn ccg_to_lambda (root: CCGNode) -> LambdaEntity {
-    match root.rule {
-
-        CCGRule::BackwardApplication => {
-            return LambdaEntity::Application(ccg_to_lambda(root[0]), ccg_to_lambda(root[1])))
+fn build_functor_type(_type: CCGType) -> LambdaEntity {
+    match _type {
+        CCGType::ForwardsFunctor(left, right) => {
+            panic!("");
+            // return LambdaEntity::Abstraction(build_functor_type(*left), build_functor_type(*right));
         }
-
-        CCGRule::ForwardApplication => {
-
+        CCGType::BackwardsFunctor(left, right) => {
+            panic!("")
         }
-
-        CCGRule::BackwardComposition => {}
-        CCGRule::BackwardCrossedComposition => {}
-        CCGRule::BackwardTypeRaising => {}
-        CCGRule::Conjunction => {}
-        CCGRule::ForwardComposition => {}
-        CCGRule::ForwardCrossedComposition => {}
-        CCGRule::ForwardTypeRaising => {}
-        CCGRule::GeneralizedBackwardComposition => {}
-        CCGRule::GeneralizedBackwardCrossedComposition => {}
-        CCGRule::GeneralizedForwardComposition => {}
-        CCGRule::GeneralizedForwardCrossedComposition => {}
-        CCGRule::Lexical => {}
-        CCGRule::RemovePunctuationLeft => {}
-        CCGRule::RemovePunctuationRight => {}
-        CCGRule::Unary => {}
-        CCGRule::Unknown => {}
+        _ => { panic!("Expected a functor type, got other.") }
     }
-    LambdaEntity::Variable("test".to_string())
 }
+
+fn ccg_to_lambda (root: CCGNode) -> LambdaEntity {
+    panic!("");
+    //match root.node_type {
+    //    CCGType::ForwardsFunctor(_, _) | CCGType::BackwardsFunctor(_, _) => { build_functor_type(root) }
+    //    _ => LambdaEntity::Variable(root.node_type.to_string()),
+    //}
+}
+
+// (S -> NP) -> (S -> NP)
+// \lambda (\lambda S . NP) . (\lambda S . NP)
+
+// S -> NP
+// \lambda x:S . y:NP
+
+// \lambda x:S . y

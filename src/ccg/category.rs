@@ -29,19 +29,25 @@ impl<'de> Deserialize<'de> for CCGType {
 }
 
 
+impl CCGType {
+    pub fn to_string(&self) -> String {
+        match self {
+            CCGType::ForwardsFunctor(left, right) => format!("({} / {})", left.to_string(), right.to_string()),
+            CCGType::BackwardsFunctor(left, right) => format!("({} \\ {})", left.to_string(), right.to_string()),
+            CCGType::Conjunction => "CONJ".to_string(),
+            CCGType::ConjunctionTag => "[CONJ]".to_string(),
+            CCGType::Noun => "N".to_string(),
+            CCGType::NounPhrase => "NP".to_string(),
+            CCGType::PrepositionalPhrase => "P".to_string(),
+            CCGType::Punctuation => "PUNC".to_string(),
+            CCGType::Sentence => "S".to_string(),
+            CCGType::Empty => "NONE".to_string(),
+        }
+    }
+}
+
 impl fmt::Display for CCGType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CCGType::ForwardsFunctor(left, right) => write!(f, "({} / {})", left, right),
-            CCGType::BackwardsFunctor(left, right) => write!(f, "({} \\ {})", left, right),
-            CCGType::Conjunction => write!(f, "CONJ"),
-            CCGType::ConjunctionTag => write!(f, "[CONJ]"),
-            CCGType::Noun => write!(f, "N"),
-            CCGType::NounPhrase => write!(f, "NP"),
-            CCGType::PrepositionalPhrase => write!(f, "P"),
-            CCGType::Punctuation => write!(f, "PUNC"),
-            CCGType::Sentence => write!(f, "S"),
-            CCGType::Empty => write!(f, "NONE"),
-        }
+        write!(f, "{}", self.to_string())
     }
 }
