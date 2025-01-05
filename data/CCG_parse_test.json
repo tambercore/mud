@@ -1,0 +1,1 @@
+{"type": "s", "rule": "BA", "children": [{"type": "np", "rule": "U", "children": [{"type": "n", "rule": "L", "text": "John"}]}, {"type": "s\\np", "rule": "FA", "children": [{"type": "(s\\np)/np", "rule": "L", "text": "takes"}, {"type": "np", "rule": "FA", "children": [{"type": "np/n", "rule": "L", "text": "a"}, {"type": "n", "rule": "L", "text": "plane"}]}]}]}

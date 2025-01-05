@@ -65,6 +65,7 @@ pub enum Wordclass {
     NUM,
 }
 
+
 impl fmt::Display for Wordclass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let wordclass_str = match self {

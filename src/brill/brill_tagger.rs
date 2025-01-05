@@ -26,6 +26,15 @@ pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, cont
     apply_contextual_rules(&mut sentence_to_tag, &words_to_tags, &contextual_ruleset, 100).ok_or("Max iterations reached in contextual rules");
 
 
+
+
+    // After applying all rules, change any `Wordclass::ANY` tags to `Wordclass::NN`
+    sentence_to_tag.iter_mut().for_each(|(_, tag)| {
+        if *tag == Wordclass::ANY {
+            *tag = Wordclass::NNP;
+        }
+    });
+
     println!("{:?}", sentence_to_tag);
 
 
@@ -148,5 +157,5 @@ fn test_tag_sentence() {
     let contextual_ruleset: HashMap<Wordclass, Vec<ContextualRulespec>> = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping: WordclassMap = initialize_tagger("data/lexicon.txt").unwrap();
 
-    tag_sentence("i am SDKHFING away", &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
+    tag_sentence("All ravens are black", &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 }
