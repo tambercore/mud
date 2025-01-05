@@ -34,15 +34,14 @@ impl fmt::Display for CCGType {
         match self {
             CCGType::ForwardsFunctor(left, right) => write!(f, "({} / {})", left, right),
             CCGType::BackwardsFunctor(left, right) => write!(f, "({} \\ {})", left, right),
-            CCGType::Conjunction => write!(f, "Conjunction"),
-            CCGType::ConjunctionTag => write!(f, "ConjunctionTag"),
-            CCGType::Noun => write!(f, "Noun"),
-            CCGType::NounPhrase => write!(f, "Noun Phrase"),
-            CCGType::PrepositionalPhrase => write!(f, "Prepositional Phrase"),
-            CCGType::Punctuation => write!(f, "Punctuation"),
-            CCGType::Sentence => write!(f, "Sentence"),
-            CCGType::Empty => write!(f, "Empty Type"),
-            CCGType::ConjunctionTag => {write!(f, "Conjunction Tag")}
+            CCGType::Conjunction => write!(f, "CONJ"),
+            CCGType::ConjunctionTag => write!(f, "[CONJ]"),
+            CCGType::Noun => write!(f, "N"),
+            CCGType::NounPhrase => write!(f, "NP"),
+            CCGType::PrepositionalPhrase => write!(f, "P"),
+            CCGType::Punctuation => write!(f, "PUNC"),
+            CCGType::Sentence => write!(f, "S"),
+            CCGType::Empty => write!(f, "NONE"),
         }
     }
 }

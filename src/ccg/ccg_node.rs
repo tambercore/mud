@@ -23,8 +23,34 @@ pub struct CCGNode {
 
 impl fmt::Display for CCGNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn collect_words(node: &CCGNode) -> String {
+            if let Some(word) = &node.word {
+                word.text.clone() // Terminal node with a word
+            } else if let Some(children) = &node.children {
+                children
+                    .iter()
+                    .map(|child| collect_words(child))
+                    .filter(|word| !word.is_empty())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            } else {
+                String::new() // No word and no children
+            }
+        }
+
         fn to_ascii_tree(node: &CCGNode) -> Tree {
-            let title = format!("{:?} ({:?})", node.node_type, node.rule);
+            let aggregated_word = collect_words(node);
+            let title = format!(
+                "'{}', {}, [{}]",
+                if aggregated_word.is_empty() {
+                    "".to_string()
+                } else {
+                    aggregated_word
+                },
+                node.node_type,
+                node.rule
+            );
+
             let children = if let Some(children) = &node.children {
                 children.iter().map(|child| to_ascii_tree(child)).collect()
             } else {
