@@ -1,7 +1,7 @@
 use std::{process::Command, fs::File, io::Read};
 use serde_json::Error as SerdeError;
 use crate::brill::wordclass::Wordclass;
-use super::ccg_types::{CCGNode, add_tags};
+use super::ccg_node::{CCGNode};
 
 
 
@@ -32,7 +32,7 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
 
     // Read and parse the resulting JSON file into a CCGNode.
     let original_tree = ccgnode_parse("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
-    add_tags(original_tree, vec_of_words_to_tags)
+    original_tree
 }
 
 

@@ -58,6 +58,7 @@ pub enum CCGRule {
     Unknown,                                // "UNK"
 }
 
+
 impl CCGRule {
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -83,11 +84,13 @@ impl CCGRule {
     }
 }
 
+
 impl fmt::Display for CCGRule {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_str())
     }
 }
+
 
 /// Test that rules are properly parsed by serde.
 #[test]

@@ -23,9 +23,7 @@ impl<'de> Deserialize<'de> for CCGType {
     where
         D: Deserializer<'de>,
     {
-        // First, try to deserialize the value as a simple string.
         let value: String = Deserialize::deserialize(deserializer)?;
-
         Ok(parse_category(value.as_str()).unwrap().1)
     }
 }
@@ -44,7 +42,7 @@ impl fmt::Display for CCGType {
             CCGType::Punctuation => write!(f, "Punctuation"),
             CCGType::Sentence => write!(f, "Sentence"),
             CCGType::Empty => write!(f, "Empty Type"),
-            ConjunctionTag => {write!(f, "Conjunction Tag")}
+            CCGType::ConjunctionTag => {write!(f, "Conjunction Tag")}
         }
     }
 }
