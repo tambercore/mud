@@ -3,7 +3,7 @@ use serde::de::{self, MapAccess, Visitor};
 use std::fmt;
 use crate::ccg::word::CCGWord;
 use super::rule::CCGRule;
-use super::r#type::CCGType;
+use super::category::CCGType;
 use ascii_tree::{Tree::*, Tree, write_tree};
 
 

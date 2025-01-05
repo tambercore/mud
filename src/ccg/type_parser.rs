@@ -1,5 +1,5 @@
 
-use super::r#type::CCGType;
+use super::category::CCGType;
 use nom::{
     Parser,
     branch::alt,
