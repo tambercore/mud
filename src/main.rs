@@ -3,6 +3,7 @@ mod brill;
 mod lambda;
 mod wordnet;
 mod lingo;
+mod monty;
 
 use std::io::{self, Write};
 use crate::brill::brill_tagger::tag_sentence;
