@@ -1,21 +1,23 @@
-use std::cmp::PartialEq;
 use crate::lambda::types::*;
-use crate::lambda::types::LambdaEntity::*;
-use crate::montague::expression::Expression;
-use crate::montague::expression::Expression::{Conjunction, Var};
+use crate::lambda::types::LambdaEntity::{Application, Abstraction, Variable};
 
-fn _substitute(expression: &LambdaEntity, source: &LambdaEntity, target: &LambdaEntity) -> LambdaEntity {
+
+/// Function to handle the recursive case of a normal-order (leftmost outermost reduction) reduction.
+fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -> LambdaEntity {
     match expression {
-        // If the node is an `Application`, recursively substitute on both sides
+
+        // If the node is an `Application`, we make a recursive substitution call on the bound variable
+        // and the body (both sides of the dot).
         Application(left, right) => {
             let left_substituted = _substitute(left, source, target);
             let right_substituted = _substitute(right, source, target);
-            reduce(&Application(Box::new(left_substituted), Box::new(right_substituted)))
+            Application(Box::new(left_substituted), Box::new(right_substituted))
         }
 
-        // If the variable in the abstraction matches `source`, return it unchanged; otherwise, substitute in the body
+        // If the variable in the abstraction matches `source`, return the abstraction unchanged.
+        // Otherwise, perform substitution in the body of the abstraction.
         Abstraction(variable, subexpr) => {
-            if *variable == Box::from(source.clone()) {
+            if *variable == source {
                 Abstraction(variable.clone(), subexpr.clone())
             } else {
                 let subexpr_substituted = _substitute(subexpr, source, target);
@@ -23,80 +25,13 @@ fn _substitute(expression: &LambdaEntity, source: &LambdaEntity, target: &Lambda
             }
         }
 
-        // Handle substitution in variables or expressions
+        // This is the base case! Substitute the variable if it matches `source` otherwise, return
+        // as is. This might be worth changing later to subsitute subexpressions i.e. 'x + 1' -> '5 + 1'
         Variable(variable) => {
-            // Substitute variables and their content
-            match *variable.clone() {
-                Var(inner_var) => {
-                    if Variable(Box::from(Var(String::from(inner_var)))) == source.clone() {
-                        target.clone()
-                    } else {
-                        Variable(variable.clone())
-                    }
-                }
-                Expression::Predicate(name, args) => {
-
-                    // Substitute within predicate arguments
-                    let substituted_args: Vec<_> = args
-                        .iter()
-                        .map(|arg| if Variable(Box::from(Var(String::from(arg)))) == source.clone() { target.to_string() } else { arg.clone() })
-                        .collect();
-
-                    let mut substituted_name = name.clone();
-
-                    if name == source.clone() {
-                        substituted_name = target.clone();
-                    }
-
-                    Variable(Box::from(Expression::Predicate(substituted_name, substituted_args)))
-                }
-                Conjunction(lhs, rhs) => {
-
-                    println!("found conjunction with lhs {:?} and rhs {:?}. source: {:?}. target: {:?}", lhs, rhs, source, target);
-
-                    // Substitute within both sides of a conjunction
-                    let lhs_substituted = _substitute(
-                        &*lhs,
-                        source,
-                        target,
-                    );
-                    let rhs_substituted = _substitute(
-                        &*rhs,
-                        source,
-                        target,
-                    );
-
-                    println!("lhs substituted: {:?} rhs substituted: {:?}", lhs_substituted, rhs_substituted);
-
-                    Variable(Box::new(Conjunction(Box::from(lhs_substituted), Box::from(rhs_substituted))))
-                }
-
-                Expression::ExistentialQuantifier(var, expr) => {
-
-                    println!("found existential quantifier with var {} and expr {:?}. source: {:?}. target: {:?}", var, expr, source, target);
-
-                    // If the bound variable matches `source`, skip substitution
-                    if Variable(Box::from(Var(String::from(var.clone())))) == source.clone() {
-                        LambdaEntity::Variable(Box::new(Expression::ExistentialQuantifier(
-                            var.clone(),
-                            expr.clone(),
-                        )))
-                    } else {
-                        // Substitute within the inner expression
-                        let substituted_expr = _substitute(
-                            &*expr,
-                            source,
-                            target,
-                        );
-
-                        LambdaEntity::Variable(Box::new(Expression::ExistentialQuantifier(
-                            var.clone(),
-                            Box::from(substituted_expr.clone()),
-                        )))
-
-                    }
-                }
-
+            if variable == source {
+                target.clone()
+            } else {
+                Variable(variable.clone())
             }
         }
     }
@@ -104,11 +39,10 @@ fn _substitute(expression: &LambdaEntity, source: &LambdaEntity, target: &Lambda
 
 
 
-
 /// Function to reduce a lambda expression using a normal-order reduction strategy, i.e.
 /// leftmost, outermost reduction. This uses the recursive `substitute` func defined above.
 pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
-    let expr2 = match expression {
+    match expression {
         Application(expr, term) => {
             // Reduce the function (expr) and argument (term) before applying substitution.
             let reduced_expr = reduce(expr);
@@ -125,7 +59,5 @@ pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
         }
         // If the expression is not an application, return it as is.
         _ => expression.clone(),
-    };
-    println!("reduced expr: {:?}", expr2);
-    expr2
+    }
 }
