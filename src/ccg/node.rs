@@ -20,6 +20,7 @@ pub struct CCGNode {
     pub children: Option<Vec<Box<CCGNode>>>, // Use Box to handle recursion
 }
 
+
 impl CCGNode {
     /// Performs an in-order traversal of the CCGNode tree.
     /// Collects references to nodes in the provided vector in in-order sequence,
@@ -43,7 +44,6 @@ impl CCGNode {
         }
     }
 }
-
 
 
 impl fmt::Display for CCGNode {
