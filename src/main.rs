@@ -13,6 +13,7 @@ use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::ccg::sentence_parser::english_to_ccg;
 use crate::ccg::type_parser::*;
 use crate::lingo::past_participle::get_past_participle;
+use crate::monty::lambda_generation::ccg_to_lambda;
 
 
 
@@ -32,6 +33,9 @@ fn main() {
 
     // parse the ccg tree
     let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
+    println!("ccg: \n{}", ccg);
 
-    println!("ccg: {}", ccg);
+    // CCG to lambda
+    let lambda_expression = ccg_to_lambda(ccg);
+    println!("lambda: \n{}", lambda_expression)
 }

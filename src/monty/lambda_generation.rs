@@ -18,22 +18,22 @@ fn generate_lexical_category(_type: CCGType) -> Box<LambdaEntity> {
         }
     }
 }
-/*
-fn unwrap_two_children(parent: CCGNode) -> (CCGNode, CCGNode) {
+
+fn unpack_children(parent: CCGNode) -> (CCGNode, CCGNode) {
     if let Some(v) = parent.children {
-        if v.len() == 2 {return (*v[0], *v[1])}
+        if v.len() == 2 {return (v[0], v[1])}
     }
     panic!("Invalid retrieval of children in CCGNode")
-}*/
-
+}
+/*
 fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode) {
     let nodes_vec = maybe_nodes.as_ref().expect("Expected a vector of nodes, found None.");
     let first = nodes_vec.get(0).expect("Expected at least one node, found none.");
     let second = nodes_vec.get(1).expect("Expected at least two nodes, found only one.");
     (**first, **second)
 }
-
-fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
+*/
+pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
     match root.rule {
         // Base case: terminal nodes
@@ -41,18 +41,16 @@ fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
 
         // Recursive case
         CCGRule::BackwardApplication => {
-            let (left, right) = unpack_children(root.children);
+            let (left, right) = unpack_children(root);
             Box::from(Application(ccg_to_lambda(left), ccg_to_lambda(right)))
 
         },
         CCGRule::ForwardApplication => {
-            let (left, right) = unpack_children(root.children);
+            let (left, right) = unpack_children(root);
             Box::from(Application(ccg_to_lambda(right), ccg_to_lambda(left)))
         }
 
         _ => panic!("not implemented yet")
-
-
     }
 }
 
