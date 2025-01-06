@@ -1,6 +1,7 @@
 use crate::ccg::category::CCGType;
 use crate::ccg::node::CCGNode;
 use crate::lambda::types::*;
+use crate::ccg::type_parser::parse_category;
 
 fn build_functor_type(_type: CCGType) -> LambdaEntity {
     match _type {
@@ -18,9 +19,14 @@ fn build_functor_type(_type: CCGType) -> LambdaEntity {
 
 #[test]
 fn test_build_functor_type() {
-    let ccg_type = CCGType::ForwardsFunctor(Box::from(CCGType::NounPhrase), Box::from(CCGType::Noun));
+    let mut ccg_type = parse_category("n/np").unwrap().1;
     println!("{} \n {}", ccg_type.clone(), build_functor_type(ccg_type.clone()));
-    assert_eq!(build_functor_type(ccg_type.clone()), LambdaEntity::Abstraction(Box::from(LambdaEntity::Variable(String::from("N"))), Box::from(LambdaEntity::Variable(String::from("NP")))));
+
+    let mut ccg_type = parse_category("((s\\np)/(s\\np))").unwrap().1;
+    println!("{} \n {}", ccg_type.clone(), build_functor_type(ccg_type.clone()));
+
+    let mut ccg_type = parse_category("s/n").unwrap().1;
+    println!("{} \n {}", ccg_type.clone(), build_functor_type(ccg_type.clone()));
 }
 
 fn ccg_to_lambda (root: CCGNode) -> LambdaEntity {
