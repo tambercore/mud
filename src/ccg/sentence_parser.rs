@@ -36,7 +36,6 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
 }
 
 
-
 /// Reads a JSON file and attempts to deserialize it into a `CCGNode`.
 ///
 /// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the file can't be read or parsed.
