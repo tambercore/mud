@@ -34,6 +34,16 @@ fn main() {
     let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
     println!("ccg: \n{}", ccg);
 
+    let mut result = Vec::new();
+    ccg.inorder_traversal(&mut result);
+
+    println!("inorder traversal:");
+
+    // Print the result
+    for node in result {
+        println!("{:?}", node.word);
+    }
+
     // CCG to lambda
     let lambda_expression = ccg_to_lambda(ccg);
     println!("lambda: \n{}", lambda_expression);

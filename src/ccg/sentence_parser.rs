@@ -31,9 +31,28 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
         .map_err(|_| "Failed to execute Python command. Ensure the virtual environment and lambeq are properly installed.");
 
     // Read and parse the resulting JSON file into a CCGNode.
-    let original_tree = ccgnode_parse("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
-    original_tree
+    let mut original_tree = ccgnode_parse("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
+
+    let tree = insert_tags(original_tree, vec_of_words_to_tags);
+
+    tree
 }
+
+fn insert_tags(mut tree: CCGNode, words_and_tags: Vec<(String, Wordclass)>) -> CCGNode {
+    let mut result = Vec::new();
+    tree.inorder_traversal(&mut result);
+
+    for (node, (word, tag)) in result.iter_mut().zip(words_and_tags) {
+        if let Some(mut word_data) = node.word {
+            println!("changing tag of {} to {}", word_data.text, tag);
+            word_data.tag = tag;
+        }
+    }
+
+    tree
+}
+
+
 
 
 /// Reads a JSON file and attempts to deserialize it into a `CCGNode`.

@@ -22,31 +22,28 @@ pub struct CCGNode {
 
 impl CCGNode {
     /// Performs an in-order traversal of the CCGNode tree.
-    /// Collects references to nodes in the provided vector in in-order sequence.
+    /// Collects references to nodes in the provided vector in in-order sequence,
+    /// but only pushes nodes that contain a `Some` word.
     pub fn inorder_traversal<'a>(&'a self, visit: &mut Vec<&'a CCGNode>) {
+        // Recursive case
         if let Some(children) = &self.children {
-            // Traverse left child if it exists
             if children.len() >= 1 {
                 children[0].inorder_traversal(visit);
             }
-
-            // Visit the current node
-            visit.push(self);
-
-            // Traverse right child if it exists
+            if self.word.is_some() {
+                visit.push(self);
+            }
             if children.len() >= 2 {
                 children[1].inorder_traversal(visit);
             }
-
-            // If there are more than two children, you can decide how to handle them.
-            // For standard binary in-order traversal, additional children are ignored or handled differently.
-            // Here, we'll ignore them, but you can modify this behavior as needed.
         } else {
-            // Leaf node, just visit
-            visit.push(self);
+            if self.word.is_some() {
+                visit.push(self);
+            }
         }
     }
 }
+
 
 
 impl fmt::Display for CCGNode {
