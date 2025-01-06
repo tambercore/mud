@@ -1,46 +1,69 @@
 use crate::ccg::category::CCGType;
 use crate::ccg::node::CCGNode;
+use crate::ccg::rule::CCGRule;
 use crate::lambda::types::*;
 use crate::ccg::type_parser::parse_category;
 
-fn build_functor_type(_type: CCGType) -> LambdaEntity {
+fn generate_lexical_category(_type: CCGType) -> Box<LambdaEntity> {
+    use LambdaEntity::*;
     match _type {
         CCGType::ForwardsFunctor(left, right) => {
-            LambdaEntity::Abstraction(Box::from(build_functor_type(*right)), Box::from(build_functor_type(*left)))
+            Box::from(Abstraction(generate_lexical_category(*right), generate_lexical_category(*left)))
         }
         CCGType::BackwardsFunctor(left, right) => {
-            LambdaEntity::Abstraction(Box::from(build_functor_type(*right)), Box::from(build_functor_type(*left)))
+            Box::from(Abstraction(generate_lexical_category(*right), generate_lexical_category(*left)))
         }
         _ => {
-            LambdaEntity::Variable(_type.to_string())
+            Box::from(Variable(_type.to_string()))
         }
+    }
+}
+/*
+fn unwrap_two_children(parent: CCGNode) -> (CCGNode, CCGNode) {
+    if let Some(v) = parent.children {
+        if v.len() == 2 {return (*v[0], *v[1])}
+    }
+    panic!("Invalid retrieval of children in CCGNode")
+}*/
+
+fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode) {
+    let nodes_vec = maybe_nodes.as_ref().expect("Expected a vector of nodes, found None.");
+    let first = nodes_vec.get(0).expect("Expected at least one node, found none.");
+    let second = nodes_vec.get(1).expect("Expected at least two nodes, found only one.");
+    (**first, **second)
+}
+
+fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
+    use LambdaEntity::*;
+    match root.rule {
+        // Base case: terminal nodes
+        CCGRule::Lexical => generate_lexical_category(root.node_type),
+
+        // Recursive case
+        CCGRule::BackwardApplication => {
+            let (left, right) = unpack_children(root.children);
+            Box::from(Application(ccg_to_lambda(left), ccg_to_lambda(right)))
+
+        },
+        CCGRule::ForwardApplication => {
+            let (left, right) = unpack_children(root.children);
+            Box::from(Application(ccg_to_lambda(right), ccg_to_lambda(left)))
+        }
+
+        _ => panic!("not implemented yet")
+
+
     }
 }
 
 #[test]
 fn test_build_functor_type() {
     let mut ccg_type = parse_category("n/np").unwrap().1;
-    println!("{} \n {}", ccg_type.clone(), build_functor_type(ccg_type.clone()));
+    println!("{} \n {}", ccg_type.clone(), generate_lexical_category(ccg_type.clone()));
 
     let mut ccg_type = parse_category("((s\\np)/(s\\np))").unwrap().1;
-    println!("{} \n {}", ccg_type.clone(), build_functor_type(ccg_type.clone()));
+    println!("{} \n {}", ccg_type.clone(), generate_lexical_category(ccg_type.clone()));
 
     let mut ccg_type = parse_category("s/n").unwrap().1;
-    println!("{} \n {}", ccg_type.clone(), build_functor_type(ccg_type.clone()));
+    println!("{} \n {}", ccg_type.clone(), generate_lexical_category(ccg_type.clone()));
 }
-
-fn ccg_to_lambda (root: CCGNode) -> LambdaEntity {
-    panic!("");
-    //match root.node_type {
-    //    CCGType::ForwardsFunctor(_, _) | CCGType::BackwardsFunctor(_, _) => { build_functor_type(root) }
-    //    _ => LambdaEntity::Variable(root.node_type.to_string()),
-    //}
-}
-
-// (S -> NP) -> (S -> NP)
-// \lambda (\lambda S . NP) . (\lambda S . NP)
-
-// S -> NP
-// \lambda x:S . y:NP
-
-// \lambda x:S . y
