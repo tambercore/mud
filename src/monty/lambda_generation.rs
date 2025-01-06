@@ -5,14 +5,22 @@ use crate::lambda::types::*;
 fn build_functor_type(_type: CCGType) -> LambdaEntity {
     match _type {
         CCGType::ForwardsFunctor(left, right) => {
-            panic!("");
-            // return LambdaEntity::Abstraction(build_functor_type(*left), build_functor_type(*right));
+            LambdaEntity::Abstraction(Box::from(build_functor_type(*right)), Box::from(build_functor_type(*left)))
         }
         CCGType::BackwardsFunctor(left, right) => {
-            panic!("")
+            LambdaEntity::Abstraction(Box::from(build_functor_type(*right)), Box::from(build_functor_type(*left)))
         }
-        _ => { panic!("Expected a functor type, got other.") }
+        _ => {
+            LambdaEntity::Variable(_type.to_string())
+        }
     }
+}
+
+#[test]
+fn test_build_functor_type() {
+    let ccg_type = CCGType::ForwardsFunctor(Box::from(CCGType::NounPhrase), Box::from(CCGType::Noun));
+    println!("{} \n {}", ccg_type.clone(), build_functor_type(ccg_type.clone()));
+    assert_eq!(build_functor_type(ccg_type.clone()), LambdaEntity::Abstraction(Box::from(LambdaEntity::Variable(String::from("N"))), Box::from(LambdaEntity::Variable(String::from("NP")))));
 }
 
 fn ccg_to_lambda (root: CCGNode) -> LambdaEntity {
