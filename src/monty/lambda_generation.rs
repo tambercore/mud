@@ -35,12 +35,12 @@ pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
         // Recursive case
         CCGRule::BackwardApplication => {
             let (left, right) = unpack_children(root.children);
-            Box::from(Application(ccg_to_lambda(left), ccg_to_lambda(right)))
+            Box::from(Application(ccg_to_lambda(right), ccg_to_lambda(left)))
 
         },
         CCGRule::ForwardApplication => {
             let (left, right) = unpack_children(root.children);
-            Box::from(Application(ccg_to_lambda(right), ccg_to_lambda(left)))
+            Box::from(Application(ccg_to_lambda(left), ccg_to_lambda(right)))
         }
 
         _ => panic!("not implemented yet")

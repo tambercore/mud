@@ -14,8 +14,7 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::ccg::type_parser::*;
 use crate::lingo::past_participle::get_past_participle;
 use crate::monty::lambda_generation::ccg_to_lambda;
-
-
+use crate::lambda::reduce::reduce;
 
 fn main() {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
@@ -37,5 +36,8 @@ fn main() {
 
     // CCG to lambda
     let lambda_expression = ccg_to_lambda(ccg);
-    println!("lambda: \n{}", lambda_expression)
+    println!("lambda: \n{}", lambda_expression);
+
+    let reduction = reduce(&*lambda_expression);
+    println!("reduced expression: \n{}", reduction);
 }
