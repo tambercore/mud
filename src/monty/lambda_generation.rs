@@ -42,6 +42,7 @@ pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
             let (left, right) = unpack_children(root.children);
             Box::from(Application(ccg_to_lambda(left), ccg_to_lambda(right)))
         }
+        CCGRule::Unary => generate_lexical_category(root.node_type),
 
         _ => panic!("not implemented yet")
     }
