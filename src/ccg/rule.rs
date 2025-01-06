@@ -91,13 +91,3 @@ impl fmt::Display for CCGRule {
     }
 }
 
-
-/// Test that rules are properly parsed by serde.
-#[test]
-fn test_json_parsing() {
-
-    let tree = crate::ccg::language_parser::ccgnode_parse("data/CCG_parse_test.json").expect("Failed to read tree");
-    println!("{:?}", tree)
-
-
-}

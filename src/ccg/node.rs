@@ -1,9 +1,9 @@
 use serde::{Deserialize, Deserializer};
 use serde::de::{self, MapAccess, Visitor};
 use std::fmt;
-use crate::ccg::ccg_word::CCGWord;
-use super::ccg_rule::CCGRule;
-use super::ccg_type::CCGType;
+use crate::ccg::word::CCGWord;
+use super::rule::CCGRule;
+use super::category::CCGType;
 use ascii_tree::{Tree::*, Tree, write_tree};
 
 
@@ -18,6 +18,31 @@ pub struct CCGNode {
 
     pub rule: CCGRule,
     pub children: Option<Vec<Box<CCGNode>>>, // Use Box to handle recursion
+}
+
+
+impl CCGNode {
+    /// Performs an in-order traversal of the CCGNode tree.
+    /// Collects references to nodes in the provided vector in in-order sequence,
+    /// but only pushes nodes that contain a `Some` word.
+    pub fn inorder_traversal<'a>(&'a self, visit: &mut Vec<&'a CCGNode>) {
+        // Recursive case
+        if let Some(children) = &self.children {
+            if children.len() >= 1 {
+                children[0].inorder_traversal(visit);
+            }
+            if self.word.is_some() {
+                visit.push(self);
+            }
+            if children.len() >= 2 {
+                children[1].inorder_traversal(visit);
+            }
+        } else {
+            if self.word.is_some() {
+                visit.push(self);
+            }
+        }
+    }
 }
 
 

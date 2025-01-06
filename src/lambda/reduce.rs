@@ -3,7 +3,7 @@ use crate::lambda::types::LambdaEntity::{Application, Abstraction, Variable};
 
 
 /// Function to handle the recursive case of a normal-order (leftmost outermost reduction) reduction.
-fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -> LambdaEntity {
+fn _substitute(expression: &LambdaEntity, source: &LambdaEntity, target: &LambdaEntity) -> LambdaEntity {
     match expression {
 
         // If the node is an `Application`, we make a recursive substitution call on the bound variable
@@ -17,7 +17,7 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
         // If the variable in the abstraction matches `source`, return the abstraction unchanged.
         // Otherwise, perform substitution in the body of the abstraction.
         Abstraction(variable, subexpr) => {
-            if *variable == source {
+            if *variable == Box::from(source.clone()) {
                 Abstraction(variable.clone(), subexpr.clone())
             } else {
                 let subexpr_substituted = _substitute(subexpr, source, target);
@@ -28,7 +28,7 @@ fn _substitute(expression: &LambdaEntity, source: &str, target: &LambdaEntity) -
         // This is the base case! Substitute the variable if it matches `source` otherwise, return
         // as is. This might be worth changing later to subsitute subexpressions i.e. 'x + 1' -> '5 + 1'
         Variable(variable) => {
-            if variable == source {
+            if expression == source {
                 target.clone()
             } else {
                 Variable(variable.clone())

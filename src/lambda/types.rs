@@ -6,7 +6,7 @@ use std::fmt;
 #[derive(Clone, Debug)]
 pub enum LambdaEntity {
     Application(Box<LambdaEntity>, Box<LambdaEntity>),      // Application of two expressions
-    Abstraction(String, Box<LambdaEntity>),                 // Lambda abstraction, e.g., λx.x + 1
+    Abstraction(Box<LambdaEntity>, Box<LambdaEntity>),                 // Lambda abstraction, e.g., λx.x + 1
     Variable(String),                                       // Variable, e.g., x
 }
 
@@ -21,6 +21,21 @@ impl fmt::Display for LambdaEntity {
                 write!(f, "(λ{}. {})", param, body)
             }
             LambdaEntity::Variable(name) => write!(f, "{}", name),
+        }
+    }
+}
+
+impl PartialEq for LambdaEntity {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (LambdaEntity::Variable(v1), LambdaEntity::Variable(v2)) => v1 == v2,
+            (LambdaEntity::Abstraction(var1, body1), LambdaEntity::Abstraction(var2, body2)) => {
+                var1 == var2 && body1 == body2
+            }
+            (LambdaEntity::Application(left1, right1), LambdaEntity::Application(left2, right2)) => {
+                left1 == left2 && right1 == right2
+            }
+            _ => false,
         }
     }
 }
