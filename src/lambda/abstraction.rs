@@ -1,6 +1,7 @@
 use crate::lambda::types::{LambdaEntity, Substitutable};
 use crate::λAbs;
-
+use std::fmt;
+use std::fmt::Formatter;
 
 /// Structure to define λ-Abstractions (λx. e)
 pub struct Abstraction {
@@ -35,3 +36,12 @@ impl PartialEq for Abstraction {
         self.bound_var == other.bound_var && self.body == other.body
     }
 }
+
+
+/// Implementation of Pretty Print for Abstractions
+impl fmt::Display for Abstraction {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "(λ{}. {})", self.bound_var, self.body)
+    }
+}
+

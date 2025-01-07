@@ -1,6 +1,7 @@
 use crate::lambda::types::{LambdaEntity, Substitutable};
 use crate::λApp;
-
+use std::fmt;
+use std::fmt::Formatter;
 
 /// Structure to define λ-Variables (x)
 pub struct Variable {
@@ -21,5 +22,13 @@ impl Substitutable for Variable {
 impl PartialEq for Variable {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
+    }
+}
+
+
+/// Implementing Pretty Print
+impl fmt::Display for Variable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
     }
 }
