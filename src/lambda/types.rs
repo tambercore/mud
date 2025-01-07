@@ -5,7 +5,7 @@ use super::lambda_element::LambdaElement;
 
 pub trait Substitutable {
     /// Substitute all free occurrences of `var` with `replacement`.
-    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Self;
+    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<Self>;
 }
 
 #[derive(Clone, Debug)]

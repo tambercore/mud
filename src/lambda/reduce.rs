@@ -4,7 +4,7 @@ use crate::lambda::types::*;
 // Implement the Substitutable trait for LambdaEntity
 impl Substitutable for LambdaEntity {
     /// Function to handle the recursive case of a normal-order (leftmost outermost reduction) reduction.
-    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> LambdaEntity {
+    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
         use LambdaEntity::*;
         match self {
 
@@ -13,17 +13,17 @@ impl Substitutable for LambdaEntity {
             Application(left, right) => {
                 let left_substituted = left.substitute(source, target);
                 let right_substituted = right.substitute(source, target);
-                Application(Box::new(left_substituted), Box::new(right_substituted))
+                *Application(Box::new(*left_substituted), Box::new(*right_substituted))
             }
 
             // If the variable in the abstraction matches `source`, return the abstraction unchanged.
             // Otherwise, perform substitution in the body of the abstraction.
             Abstraction(variable, subexpr) => {
                 if *variable == Box::from(source.clone()) {
-                    Abstraction(variable.clone(), subexpr.clone())
+                    *Abstraction(variable.clone(), subexpr.clone())
                 } else {
                     let subexpr_substituted = subexpr.substitute(source, target);
-                    Abstraction(variable.clone(), Box::new(subexpr_substituted))
+                    *Abstraction(variable.clone(), Box::new(*subexpr_substituted))
                 }
             }
 
@@ -31,9 +31,9 @@ impl Substitutable for LambdaEntity {
             // as is. This might be worth changing later to subsitute subexpressions i.e. 'x + 1' -> '5 + 1'
             Variable(variable) => {
                 if self == source {
-                    target.clone()
+                    *target.clone()
                 } else {
-                    Variable(variable.clone())
+                    *Variable(variable.clone())
                 }
             }
         }
