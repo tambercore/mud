@@ -5,22 +5,6 @@ pub enum LambdaElement {
     Predicate(String, Vec<LambdaElement>)
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 impl fmt::Display for LambdaElement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

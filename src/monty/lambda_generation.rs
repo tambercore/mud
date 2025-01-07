@@ -25,15 +25,16 @@ macro_rules! λApp {
     };
 }
 
-fn generate_lexical_category(_type: CCGType) -> Box<LambdaEntity> {
+
+fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
     use LambdaElement::*;
     match _type {
         CCGType::ForwardsFunctor(left, right) => {
-            λAbs!(generate_lexical_category(*left), generate_lexical_category(*right))
+            λAbs!(generate_lexical_category(*left, _node), generate_lexical_category(*right, _node))
         }
         CCGType::BackwardsFunctor(left, right) => {
-            λAbs!(generate_lexical_category(*left), generate_lexical_category(*right))
+            λAbs!(generate_lexical_category(*left, _node), generate_lexical_category(*right, _node))
         }
         _ => {
             λVar!(_type)
@@ -48,36 +49,26 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
     ( (**first).clone(), (**second).clone() )
 }
 
-pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
+pub fn ccg_to_lambda(root: CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
     match root.rule {
         // Base case: terminal nodes
-        CCGRule::Lexical => generate_lexical_category(root.node_type),
+        CCGRule::Lexical => {
+            let _type = generate_lexical_category(root.node_type.clone(), &root);
+            _type
+        },
 
         // Recursive case
         CCGRule::BackwardApplication => {
             let (left, right) = unpack_children(root.children);
-            Box::from(Application(ccg_to_lambda(right), ccg_to_lambda(left)))
-
+            λApp!(ccg_to_lambda(right), ccg_to_lambda(left))
         },
         CCGRule::ForwardApplication => {
             let (left, right) = unpack_children(root.children);
-            Box::from(Application(ccg_to_lambda(left), ccg_to_lambda(right)))
+            λApp!(ccg_to_lambda(left), ccg_to_lambda(right))
         }
-        CCGRule::Unary => generate_lexical_category(root.node_type),
+        CCGRule::Unary => generate_lexical_category(root.node_type.clone(), &root),
 
-        _ => panic!("not implemented yet")
+        _ => panic!("not implemented yet"),
     }
-}
-
-#[test]
-fn test_build_functor_type() {
-    let mut ccg_type = parse_category("n/np").unwrap().1;
-    println!("{} \n {}", ccg_type.clone(), generate_lexical_category(ccg_type.clone()));
-
-    let mut ccg_type = parse_category("((s\\np)/(s\\np))").unwrap().1;
-    println!("{} \n {}", ccg_type.clone(), generate_lexical_category(ccg_type.clone()));
-
-    let mut ccg_type = parse_category("s/n").unwrap().1;
-    println!("{} \n {}", ccg_type.clone(), generate_lexical_category(ccg_type.clone()));
 }
