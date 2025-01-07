@@ -6,25 +6,7 @@ use crate::ccg::node::CCGNode;
 use crate::ccg::rule::CCGRule;
 use crate::lambda::types::*;
 use crate::lambda::lambda_element::LambdaElement;
-
-macro_rules! λVar {
-    ($type_expr:expr) => {
-        Box::from(Variable(Box::from($type_expr)))
-    };
-}
-
-macro_rules! λAbs {
-    ($left:expr, $right:expr) => {
-        Box::from(Abstraction($left, $right))
-    };
-}
-
-macro_rules! λApp {
-    ($left:expr, $right:expr) => {
-        Box::from(Application($left, $right))
-    };
-}
-
+use crate::{lambda, λAbs, λVar, λApp};
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
@@ -38,6 +20,7 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntit
         _ => generate_lexical_element(_node, λVar!(Term(_type.to_string())))
     }
 }
+
 
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     use LambdaEntity::*;
@@ -81,6 +64,7 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
     final_expression
 }
 
+
 fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
     match *category {
         LambdaEntity::Abstraction(left, right) => {
@@ -98,6 +82,7 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
     let second = nodes_vec.get(1).expect("Expected at least two nodes, found only one.");
     ( (**first).clone(), (**second).clone() )
 }
+
 
 pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
