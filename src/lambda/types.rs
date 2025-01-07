@@ -3,6 +3,10 @@ use std::cmp::PartialEq;
 use std::fmt;
 use super::lambda_element::LambdaElement;
 
+pub trait Substitutable {
+    /// Substitute all free occurrences of `var` with `replacement`.
+    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Self;
+}
 
 #[derive(Clone, Debug)]
 pub enum LambdaEntity {
