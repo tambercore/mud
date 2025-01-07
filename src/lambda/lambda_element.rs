@@ -1,8 +1,10 @@
 use std::fmt;
+use crate::lambda::types::LambdaEntity;
+
 #[derive(Clone, Debug)]
 pub enum LambdaElement {
     Term(String),
-    Predicate(String, Vec<LambdaElement>)
+    Predicate(String, Vec<Box<LambdaEntity>>)
 }
 
 impl fmt::Display for LambdaElement {

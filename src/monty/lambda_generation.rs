@@ -32,31 +32,21 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntit
 
     match _type {
         CCGType::ForwardsFunctor(left, right) | CCGType::BackwardsFunctor(left, right) => {
-            let left = generate_lexical_category(*left, _node);
-            let right = generate_lexical_category(*right, _node);
-            let lexical_category = λAbs!(right.clone(), left.clone());
-
-            λVar!(generate_lexical_element(_node, lexical_category))
-
-            /*Box::from(Abstraction(
-                right.clone(),
-                λVar!(left.clone()),
-            ))*/
+            let lexical_category = λAbs!(generate_lexical_category(*right, _node), generate_lexical_category(*left, _node));
+            generate_lexical_element(_node, lexical_category)
         }
-        _ => {
-            λVar!(generate_lexical_element(_node, λVar!(Term(_type.to_string()))))
-        }
+        _ => generate_lexical_element(_node, λVar!(Term(_type.to_string())))
     }
 }
 
-fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> LambdaElement {
+fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     use LambdaEntity::*;
     use LambdaElement::*;
 
     if let Some(ccg_word) = &node.word {
         match ccg_word.tag {
-            Wordclass::NNP => Term(ccg_word.text.clone()),
-            Wordclass::VBZ => {Predicate(ccg_word.text.clone(), generate_predicate_arguments(category))},
+            Wordclass::NNP => λVar!(Term(ccg_word.text.clone())),
+            Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
             _ => panic!("wordclass variant not implemented"),
         }
     } else {
@@ -65,13 +55,42 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Lamb
 }
 
 
-fn generate_predicate_arguments(category: Box<LambdaEntity>) -> Vec<LambdaElement> {
-    // todo: count arguments
+fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     use LambdaEntity::*;
     use LambdaElement::*;
 
-    vec![Term("x2".to_string()), Term("x1".to_string())]
+    let num_arguments = count_predicate_arguments(category.clone());
+
+    // todo: i have no idea why this works
+    if num_arguments == 0 {
+        return λVar!(Term(String::from("tmp")))
+    }
+
+    let mut arguments = Vec::new();
+    for i in 1..=num_arguments {
+        arguments.push(λVar!(Term(format!("x{}", i))));
+    }
+
+    let expression = Variable(Box::from(Predicate(identifier, arguments)));
+    let mut final_expression = Box::from(expression);
+    for i in (1..=num_arguments) {
+        let arg_name = format!("x{}", i);
+        final_expression = λAbs!(λVar!(Term(arg_name)),final_expression);
+    }
+
+    final_expression
 }
+
+fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
+    match *category {
+        LambdaEntity::Abstraction(left, right) => {
+            1 + count_predicate_arguments(left) + count_predicate_arguments(right)
+        }
+        LambdaEntity::Variable(_) => 0,
+        _ => panic!("invalid application in lexical term"),
+    }
+}
+
 
 fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode) {
     let nodes_vec = maybe_nodes.expect("Expected a vector of nodes, found None.");
