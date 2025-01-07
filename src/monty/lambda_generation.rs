@@ -1,20 +1,42 @@
+#![allow(non_snake_case)]
+
 use crate::ccg::category::CCGType;
 use crate::ccg::node::CCGNode;
 use crate::ccg::rule::CCGRule;
 use crate::lambda::types::*;
 use crate::ccg::type_parser::parse_category;
+use crate::lambda::lambda_element::LambdaElement;
+
+macro_rules! λVar {
+    ($type_expr:expr) => {
+        Box::from(LambdaEntity::Variable(Box::from(LambdaElement::Term($type_expr.to_string()))))
+    };
+}
+
+macro_rules! λAbs {
+    ($left:expr, $right:expr) => {
+        Box::from(Abstraction($right, $left))
+    };
+}
+
+macro_rules! λApp {
+    ($left:expr, $right:expr) => {
+        Box::from(Application($right, $left))
+    };
+}
 
 fn generate_lexical_category(_type: CCGType) -> Box<LambdaEntity> {
     use LambdaEntity::*;
+    use LambdaElement::*;
     match _type {
         CCGType::ForwardsFunctor(left, right) => {
-            Box::from(Abstraction(generate_lexical_category(*right), generate_lexical_category(*left)))
+            λAbs!(generate_lexical_category(*left), generate_lexical_category(*right))
         }
         CCGType::BackwardsFunctor(left, right) => {
-            Box::from(Abstraction(generate_lexical_category(*right), generate_lexical_category(*left)))
+            λAbs!(generate_lexical_category(*left), generate_lexical_category(*right))
         }
         _ => {
-            Box::from(Variable(_type.to_string()))
+            λVar!(_type)
         }
     }
 }

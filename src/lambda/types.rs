@@ -1,13 +1,14 @@
 use std::any::Any;
+use std::cmp::PartialEq;
 use std::fmt;
-
+use super::lambda_element::LambdaElement;
 
 
 #[derive(Clone, Debug)]
 pub enum LambdaEntity {
     Application(Box<LambdaEntity>, Box<LambdaEntity>),      // Application of two expressions
     Abstraction(Box<LambdaEntity>, Box<LambdaEntity>),                 // Lambda abstraction, e.g., λx.x + 1
-    Variable(String),                                       // Variable, e.g., x
+    Variable(Box<LambdaElement>),                                       // Variable, e.g., x
 }
 
 
@@ -25,10 +26,11 @@ impl fmt::Display for LambdaEntity {
     }
 }
 
+
 impl PartialEq for LambdaEntity {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (LambdaEntity::Variable(v1), LambdaEntity::Variable(v2)) => v1 == v2,
+            (LambdaEntity::Variable(v1), LambdaEntity::Variable(v2)) => *v1 == *v2,
             (LambdaEntity::Abstraction(var1, body1), LambdaEntity::Abstraction(var2, body2)) => {
                 var1 == var2 && body1 == body2
             }
