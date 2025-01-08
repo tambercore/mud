@@ -5,30 +5,27 @@ use crate::ccg::category::CCGType;
 use crate::ccg::node::CCGNode;
 use crate::ccg::rule::CCGRule;
 use crate::lambda::types::*;
-use crate::lambda::lambda_element::LambdaElement;
 use crate::{lambda, λAbs, λVar, λApp};
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
-    use LambdaElement::*;
 
     match _type {
         CCGType::ForwardsFunctor(left, right) | CCGType::BackwardsFunctor(left, right) => {
             let lexical_category = λAbs!(generate_lexical_category(*right, _node), generate_lexical_category(*left, _node));
             generate_lexical_element(_node, lexical_category)
         }
-        _ => generate_lexical_element(_node, λVar!(Term(_type.to_string())))
+        _ => generate_lexical_element(_node, λVar!(_type.to_string()))
     }
 }
 
 
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     use LambdaEntity::*;
-    use LambdaElement::*;
 
     if let Some(ccg_word) = &node.word {
         match ccg_word.tag {
-            Wordclass::NNP => λVar!(Term(ccg_word.text.clone())),
+            Wordclass::NNP => λVar!(ccg_word.text.clone()),
             Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
             _ => panic!("wordclass variant not implemented"),
         }
@@ -40,25 +37,24 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<
 
 fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     use LambdaEntity::*;
-    use LambdaElement::*;
 
     let num_arguments = count_predicate_arguments(category.clone());
 
     // todo: i have no idea why this works
     if num_arguments == 0 {
-        return λVar!(Term(String::from("tmp")))
+        return λVar!(String::from("tmp"))
     }
 
     let mut arguments = Vec::new();
     for i in 1..=num_arguments {
-        arguments.push(λVar!(Term(format!("x{}", i))));
+        arguments.push(λVar!(format!("x{}", i)));
     }
 
     let expression = Variable(Box::from(Predicate(identifier, arguments)));
     let mut final_expression = Box::from(expression);
     for i in (1..=num_arguments) {
         let arg_name = format!("x{}", i);
-        final_expression = λAbs!(λVar!(Term(arg_name)),final_expression);
+        final_expression = λAbs!(λVar!(arg_name), final_expression);
     }
 
     final_expression
@@ -67,10 +63,10 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
 
 fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
     match *category {
-        LambdaEntity::Abstraction(left, right) => {
-            1 + count_predicate_arguments(left) + count_predicate_arguments(right)
+        LambdaEntity::Abs(abs) => {
+            1 + count_predicate_arguments(abs.bound_var) + count_predicate_arguments(abs.body)
         }
-        LambdaEntity::Variable(_) => 0,
+        LambdaEntity::Var(_) => 0,
         _ => panic!("invalid application in lexical term"),
     }
 }
