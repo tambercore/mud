@@ -13,7 +13,7 @@ use crate::{λAbs, λVar, λApp, λPred};
 
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
-    use LambdaEntity::*;
+    
 
     match _type {
         CCGType::ForwardsFunctor(left, right) | CCGType::BackwardsFunctor(left, right) => {
@@ -26,7 +26,7 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntit
 
 
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
-    use LambdaEntity::*;
+    
 
     if let Some(ccg_word) = &node.word {
         match ccg_word.tag {
@@ -41,7 +41,7 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<
 
 
 fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
-    use LambdaEntity::*;
+    
 
     let num_arguments = count_predicate_arguments(category.clone());
 
@@ -56,7 +56,7 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
     }
 
     let mut expression = λPred!(identifier, arguments);
-    for i in (1..=num_arguments) {
+    for i in 1..=num_arguments {
         let arg_name = format!("x{}", i);
         expression = λAbs!(λVar!(arg_name), expression);
     }
@@ -86,7 +86,7 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
 
 
 pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
-    use LambdaEntity::*;
+    
     match root.rule {
         // Base case: terminal nodes
         CCGRule::Lexical => generate_lexical_category(root.node_type.clone(), &root),

@@ -1,5 +1,5 @@
 use std::fmt;
-use serde::{Deserialize, Deserializer, de::Error};
+use serde::Deserialize;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize)]
 pub enum CCGRule {

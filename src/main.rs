@@ -5,14 +5,11 @@ mod wordnet;
 mod lingo;
 mod monty;
 
-use std::io::{self, Write};
 use crate::brill::brill_tagger::tag_sentence;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::initialize_tagger;
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::ccg::sentence_parser::english_to_ccg;
-use crate::ccg::type_parser::*;
-use crate::lingo::past_participle::get_past_participle;
 use crate::monty::lambda_generation::ccg_to_lambda;
 use crate::lambda::reducible::*;
 

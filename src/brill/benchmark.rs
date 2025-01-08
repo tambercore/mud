@@ -219,7 +219,7 @@ pub fn analyze_pos_csv(filepath: &str) {
 // Function to write benchmark data to a CSV file
 fn save_benchmark_data_to_csv(filepath: &str, data: &Vec<BenchmarkData>) {
     let file = File::create(filepath).expect("Unable to create file");
-    let mut writer = BufWriter::new(file);
+    let writer = BufWriter::new(file);
 
     let mut csv_writer = csv::Writer::from_writer(writer);
 
