@@ -1,9 +1,11 @@
+use std::cmp::PartialEq;
 use crate::lambda::types::{LambdaEntity, Substitutable};
-use crate::λApp;
+use crate::λVar;
 use std::fmt;
 use std::fmt::Formatter;
 
 /// Structure to define λ-Variables (x)
+#[derive(Clone, Debug, PartialEq)]
 pub struct Variable {
     pub name: String,
 }
@@ -19,9 +21,12 @@ impl Substitutable for Variable {
 
 
 /// Implementation of Partial Equality for λ-Variables. Used in substitution.
-impl PartialEq for Variable {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
+impl PartialEq<LambdaEntity> for Variable {
+    fn eq(&self, other: &LambdaEntity) -> bool {
+        match other {
+            LambdaEntity::Var(other_name) => *self.name == *other_name.name,
+            _ => false
+        }
     }
 }
 

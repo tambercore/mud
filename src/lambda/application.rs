@@ -4,6 +4,7 @@ use std::fmt;
 use std::fmt::Formatter;
 
 /// Structure to define λ-Applications (λx. e @ t)
+#[derive(Clone, Debug, PartialEq)]
 pub struct Application {
     pub lhs: Box<LambdaEntity>,
     pub rhs: Box<LambdaEntity>,
@@ -24,9 +25,12 @@ impl Substitutable for Application {
 
 
 /// Implementation of Partial Equality for λ-Applications, used in substitution.
-impl PartialEq for Application {
-    fn eq(&self, other: &Self) -> bool {
-        self.lhs == other.lhs && self.rhs == other.rhs
+impl PartialEq<LambdaEntity> for Application {
+    fn eq(&self, other: &LambdaEntity) -> bool {
+        match other {
+            LambdaEntity::App(other_app) => self.lhs == other_app.lhs && self.rhs == other_app.rhs,
+            _ => false
+        }
     }
 }
 

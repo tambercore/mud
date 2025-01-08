@@ -1,76 +1,56 @@
+use crate::lambda::abstraction::Abstraction;
 use crate::lambda::types::*;
-
-
-// Implement the Substitutable trait for LambdaEntity
-impl Substitutable for LambdaEntity {
-    /// Function to handle the recursive case of a normal-order (leftmost outermost reduction) reduction.
-    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
-        use LambdaEntity::*;
-        match self {
-
-            // If the node is an `Application`, we make a recursive substitution call on the bound variable
-            // and the body (both sides of the dot).
-            Application(left, right) => {
-                let left_substituted = left.substitute(source, target);
-                let right_substituted = right.substitute(source, target);
-                *Application(Box::new(*left_substituted), Box::new(*right_substituted))
-            }
-
-            // If the variable in the abstraction matches `source`, return the abstraction unchanged.
-            // Otherwise, perform substitution in the body of the abstraction.
-            Abstraction(variable, subexpr) => {
-                if *variable == Box::from(source.clone()) {
-                    *Abstraction(variable.clone(), subexpr.clone())
-                } else {
-                    let subexpr_substituted = subexpr.substitute(source, target);
-                    *Abstraction(variable.clone(), Box::new(*subexpr_substituted))
-                }
-            }
-
-            // This is the base case! Substitute the variable if it matches `source` otherwise, return
-            // as is. This might be worth changing later to subsitute subexpressions i.e. 'x + 1' -> '5 + 1'
-            Variable(variable) => {
-                if self == source {
-                    *target.clone()
-                } else {
-                    *Variable(variable.clone())
-                }
-            }
-        }
-    }
-}
 
 
 /// Function to reduce a lambda expression using a normal-order reduction strategy, i.e.,
 /// leftmost, outermost reduction. This now uses the `substitute` method from the `Substitutable` trait.
 pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
     match expression {
-        LambdaEntity::Application(expr, term) => {
-            // Attempt to reduce the function part first
-            let reduced_expr = reduce(expr);
+        // Handle Application: (lhs @ rhs)
+        LambdaEntity::App(application) => {
+            // Attempt to reduce the function part (lhs) first
+            let reduced_lhs = reduce(&application.lhs);
 
-            match reduced_expr {
-                LambdaEntity::Abstraction(bound_var, body) => {
-                    // Perform substitution: replace bound_var with term in body
-                    // Extract the variable name from bound_var
-                    let var_name = bound_var();
-                    let substituted_body = (*body).substitute(var_name, term.as_ref());
+            match reduced_lhs {
+                // If the reduced lhs is an Abstraction, perform substitution
+                LambdaEntity::Abs(abstraction) => {
+                    // Perform substitution: replace the bound variable with the argument (rhs) in the body
+                    let substituted_body = abstraction.body.substitute(&abstraction.bound_var, &application.rhs);
+
                     // Continue reducing the substituted body
                     reduce(&substituted_body)
                 }
+                // If the function part is not an Abstraction, attempt to reduce the argument (rhs)
                 _ => {
-                    // If the function part is not an abstraction, attempt to reduce the argument
-                    let reduced_term = reduce(term);
-                    LambdaEntity::Application(Box::new(reduced_expr), Box::new(reduced_term))
+                    let reduced_rhs = reduce(&application.rhs);
+
+                    // If both lhs and rhs are fully reduced, return the application
+                    if reduced_rhs == *application.rhs {
+                        LambdaEntity::App(Box::new(reduced_lhs), Box::new(reduced_rhs))
+                    } else {
+                        // Otherwise, continue reducing
+                        LambdaEntity::App(Box::new(reduced_lhs), Box::new(reduced_rhs))
+                    }
                 }
             }
         }
-        // If the expression is an abstraction, attempt to reduce its body
-        LambdaEntity::Abstraction(var, body) => {
-            let reduced_body = reduce(body);
-            LambdaEntity::Abstraction(var.clone(), Box::new(reduced_body))
+        // Handle Abstraction: (λvar. body)
+        LambdaEntity::Abs(abstraction) => {
+            // Attempt to reduce the body of the abstraction
+            let reduced_body = reduce(&abstraction.body);
+
+            // If the body is reduced, return the new Abstraction
+            if reduced_body != *abstraction.body {
+                LambdaEntity::Abs(Box::new(Abstraction {
+                    bound_var: abstraction.bound_var.clone(),
+                    body: Box::new(reduced_body),
+                }))
+            } else {
+                // If the body cannot be reduced further, return the original abstraction
+                expression.clone()
+            }
         }
-        // Variables cannot be reduced further
-        LambdaEntity::Variable(_) => expression.clone(),
+        // Handle Variable: cannot be reduced further
+        LambdaEntity::Var(_) => expression.clone(),
     }
 }

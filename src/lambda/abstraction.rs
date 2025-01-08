@@ -4,6 +4,7 @@ use std::fmt;
 use std::fmt::Formatter;
 
 /// Structure to define λ-Abstractions (λx. e)
+#[derive(Clone, Debug, PartialEq)]
 pub struct Abstraction {
     pub bound_var: Box<LambdaEntity>,
     pub body: Box<LambdaEntity>,
@@ -31,9 +32,13 @@ impl Substitutable for Abstraction {
 
 
 /// Implementation of Partial Equality, used for substitution.
-impl PartialEq for Abstraction {
-    fn eq(&self, other: &Self) -> bool {
-        self.bound_var == other.bound_var && self.body == other.body
+impl PartialEq<LambdaEntity> for Abstraction {
+    fn eq(&self, other: &LambdaEntity) -> bool {
+        match other {
+            LambdaEntity::Abs(other_abs) => self.bound_var == other_abs.bound_var && self.body == other_abs.body,
+            _ => return false
+        }
+
     }
 }
 
