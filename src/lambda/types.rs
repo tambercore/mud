@@ -8,7 +8,7 @@ use crate::lambda::predicate::Predicate;
 
 /// Substitutable trait (required by all elements of the LambdaEntity, or it will not work.)
 pub trait Substitutable {
-    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<Self>;
+    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity>;
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -37,7 +37,7 @@ impl fmt::Display for LambdaEntity {
 
 // Map to individual methods for substitution.
 impl Substitutable for LambdaEntity {
-    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<Self> {
+    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
         match self {
             LambdaEntity::App(app) => { return app.substitute(source, target) }
             LambdaEntity::Abs(abs) => { return abs.substitute(source, target) }

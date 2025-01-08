@@ -6,7 +6,10 @@ use crate::ccg::node::CCGNode;
 use crate::ccg::rule::CCGRule;
 use crate::lambda::types::*;
 use crate::lambda::predicate::Predicate;
-use crate::{lambda, λAbs, λVar, λApp, λPred};
+use crate::lambda::abstraction::Abstraction;
+use crate::lambda::application::Application;
+use crate::lambda::variable::Variable;
+use crate::{λAbs, λVar, λApp, λPred};
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
@@ -67,7 +70,7 @@ fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
             1 + count_predicate_arguments(abs.bound_var) + count_predicate_arguments(abs.body)
         }
         LambdaEntity::Var(_) => 0,
-        _ => panic!("invalid application in lexical term"),
+        _ => panic!("Invalid application in lexical term"),
     }
 }
 

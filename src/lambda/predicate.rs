@@ -39,7 +39,7 @@ impl Substitutable for Predicate {
             .map(|arg| arg.substitute(source, target))
             .collect();
 
-        λPred!(self.name.clone(), substituted_args);
+        λPred!(self.iden.clone(), substituted_args)
     }
 }
 

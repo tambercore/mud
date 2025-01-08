@@ -14,7 +14,7 @@ pub struct Variable {
 /// Implementation of λ-substitution for λ-Variables.
 impl Substitutable for Variable {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
-        if self == source { *target.clone() }
+        if self == source { Box::from(target.clone()) }
         else { λVar!(self.name.clone()) }
     }
 }

@@ -29,6 +29,6 @@ macro_rules! λApp {
 #[macro_export]
 macro_rules! λPred {
     ($name:expr, $args:expr) => {
-        Box::from(LambdaEntity::Pred(Predicate{name: $left, args: $right}))
+        Box::from(LambdaEntity::Pred(Predicate{iden: $name, args: $args}))
     };
 }
