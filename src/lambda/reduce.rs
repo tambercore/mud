@@ -15,7 +15,7 @@ pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
                 // If the reduced lhs is an Abstraction, perform substitution
                 LambdaEntity::Abs(abstraction) => {
                     // Perform substitution: replace the bound variable with the argument (rhs) in the body
-                    let substituted_body = abstraction.body.substitute(&abstraction.bound_var, &application.rhs);
+                    let substituted_body = (*abstraction.body).substitute(&*abstraction.bound_var, &application.rhs);
 
                     // Continue reducing the substituted body
                     reduce(&substituted_body)
@@ -24,13 +24,8 @@ pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
                 _ => {
                     let reduced_rhs = reduce(&application.rhs);
 
-                    // If both lhs and rhs are fully reduced, return the application
-                    if reduced_rhs == *application.rhs {
-                        LambdaEntity::App(Box::new(reduced_lhs), Box::new(reduced_rhs))
-                    } else {
-                        // Otherwise, continue reducing
-                        LambdaEntity::App(Box::new(reduced_lhs), Box::new(reduced_rhs))
-                    }
+                    // Return the application with the reduced lhs and rhs
+                    LambdaEntity::App(Box::new(reduced_lhs), Box::new(reduced_rhs))
                 }
             }
         }

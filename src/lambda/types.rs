@@ -19,6 +19,7 @@ pub enum LambdaEntity {
 }
 
 
+// Map to individual methods for pretty print.
 impl fmt::Display for LambdaEntity {
 
     // Tedious, but necessary unless we want another library.
@@ -27,6 +28,18 @@ impl fmt::Display for LambdaEntity {
             LambdaEntity::App(internal) => write!(f, "{}", internal),
             LambdaEntity::Abs(internal) => write!(f, "{}", internal),
             LambdaEntity::Var(internal) => write!(f, "{}", internal)
+        }
+    }
+}
+
+
+// Map to individual methods for substitution.
+impl Substitutable for LambdaEntity {
+    fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<Self> {
+        match self {
+            LambdaEntity::App(app) => { return app.substitute(source, target) }
+            LambdaEntity::Abs(abs) => { return abs.substitute(source, target) }
+            LambdaEntity::Var(var) => { return var.substitute(source, target) }
         }
     }
 }
