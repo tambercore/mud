@@ -6,13 +6,17 @@ use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::predicate::Predicate;
-
+use crate::λConj;
 
 /// Substitutable trait (required by all elements of the LambdaEntity, or it will not work.)
 pub trait Substitutable {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity>;
 }
 
+/// Expandalble trait (required for all elements of LambdaEntity, recurs to expand predicates)
+pub trait Expandable {
+    fn expand(&self) -> Box<LambdaEntity>;
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LambdaEntity {
@@ -51,4 +55,21 @@ impl Substitutable for LambdaEntity {
             LambdaEntity::Conj(var) => { return var.substitute(source, target) }
         }
     }
+}
+
+
+/// Recursively expands a `LambdaEntity` expression until no further expansion is possible.
+impl Expandable for LambdaEntity {
+    fn expand(&self) -> Box<LambdaEntity> {
+            match self {
+                LambdaEntity::Pred(ref predicate) => predicate.expand(),
+                LambdaEntity::Conj(ref conjunction) => {
+                    λConj!(
+                        conjunction.lhs.clone().expand(),
+                        conjunction.rhs.clone().expand()
+                    )
+                }
+                _ => Box::from(self.clone()),
+            }
+        }
 }
