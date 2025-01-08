@@ -14,7 +14,7 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::ccg::type_parser::*;
 use crate::lingo::past_participle::get_past_participle;
 use crate::monty::lambda_generation::ccg_to_lambda;
-use crate::lambda::reduce::reduce;
+use crate::lambda::reducible::reduce;
 
 fn main() {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
