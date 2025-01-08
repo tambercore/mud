@@ -70,6 +70,7 @@ fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
             1 + count_predicate_arguments(abs.bound_var) + count_predicate_arguments(abs.body)
         }
         LambdaEntity::Var(_) => 0,
+        LambdaEntity::Pred(_) => 0,
         _ => panic!("Invalid application in lexical term"),
     }
 }
