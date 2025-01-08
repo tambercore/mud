@@ -1,6 +1,6 @@
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::types::*;
-
+use crate::{λVar, λAbs, λApp};
 
 /// Function to reduce a lambda expression using a normal-order reduction strategy, i.e.,
 /// leftmost, outermost reduction. This now uses the `substitute` method from the `Substitutable` trait.
@@ -25,7 +25,7 @@ pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
                     let reduced_rhs = reduce(&application.rhs);
 
                     // Return the application with the reduced lhs and rhs
-                    LambdaEntity::App(Box::new(reduced_lhs), Box::new(reduced_rhs))
+                    *λApp!(reduced_lhs, reduced_rhs)
                 }
             }
         }
@@ -36,10 +36,7 @@ pub fn reduce(expression: &LambdaEntity) -> LambdaEntity {
 
             // If the body is reduced, return the new Abstraction
             if reduced_body != *abstraction.body {
-                LambdaEntity::Abs(Box::new(Abstraction {
-                    bound_var: abstraction.bound_var.clone(),
-                    body: Box::new(reduced_body),
-                }))
+                *λAbs!(abstraction.bound_var.clone(), Box::new(reduced_body))
             } else {
                 // If the body cannot be reduced further, return the original abstraction
                 expression.clone()
