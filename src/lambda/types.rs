@@ -4,6 +4,7 @@ use crate::lambda::variable::Variable;
 use std::cmp::PartialEq;
 use std::fmt;
 use std::fmt::Formatter;
+use crate::lambda::predicate::Predicate;
 
 /// Substitutable trait (required by all elements of the LambdaEntity, or it will not work.)
 pub trait Substitutable {
@@ -15,6 +16,7 @@ pub enum LambdaEntity {
     App(Application),      // Application of two expressions
     Abs(Abstraction),      // Lambda abstraction, e.g., λx.x + 1
     Var(Variable),         // Variable, e.g., x
+    Pred(Predicate),       // Predicate, e.g. P(x)
 }
 
 
@@ -26,7 +28,8 @@ impl fmt::Display for LambdaEntity {
         match self {
             LambdaEntity::App(internal) => write!(f, "{}", internal),
             LambdaEntity::Abs(internal) => write!(f, "{}", internal),
-            LambdaEntity::Var(internal) => write!(f, "{}", internal)
+            LambdaEntity::Var(internal) => write!(f, "{}", internal),
+            LambdaEntity::Pred(internal) => write!(f, "{}", internal),
         }
     }
 }
@@ -39,6 +42,7 @@ impl Substitutable for LambdaEntity {
             LambdaEntity::App(app) => { return app.substitute(source, target) }
             LambdaEntity::Abs(abs) => { return abs.substitute(source, target) }
             LambdaEntity::Var(var) => { return var.substitute(source, target) }
+            LambdaEntity::Pred(var) => { return var.substitute(source, target) }
         }
     }
 }

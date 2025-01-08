@@ -101,11 +101,11 @@ pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
                 if children.len() == 1 {
                     generate_lexical_category(children[0].node_type.clone(), &children[0])
                 } else {
-                    panic!("expected one child (unary rule)");
+                    panic!("Expected one child (unary rule).");
                 }
-            } else { panic!("expected node to have children") }
+            } else { panic!("Expected node to have children.") }
         }
 
-        _ => panic!("not implemented yet")
+        _ => panic!("Not implemented yet!")
     }
 }

@@ -1,3 +1,4 @@
+use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity::Var;
 use super::types::*;
 use super::abstraction::Abstraction;
@@ -22,5 +23,12 @@ macro_rules! λAbs {
 macro_rules! λApp {
     ($left:expr, $right:expr) => {
         Box::from(LambdaEntity::App(Application{lhs: $left, rhs: $right}))
+    };
+}
+
+#[macro_export]
+macro_rules! λPred {
+    ($name:expr, $args:expr) => {
+        Box::from(LambdaEntity::Pred(Predicate{name: $left, args: $right}))
     };
 }
