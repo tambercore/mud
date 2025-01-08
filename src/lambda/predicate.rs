@@ -3,6 +3,7 @@ use crate::lambda::types::{LambdaEntity, Substitutable};
 use crate::λPred;
 use std::fmt;
 use std::fmt::Formatter;
+use crate::lambda::reducible::Reducible;
 
 /// Structure to define Predicates i.e. P(x)
 #[derive(Clone, Debug, PartialEq)]
@@ -42,7 +43,19 @@ impl Substitutable for Predicate {
         λPred!(self.iden.clone(), substituted_args)
     }
 }
+// todo this currently doesnt get called because of the reducible for LambdaEntity gets entered first
+impl Reducible for Predicate {
 
+    fn beta_reduce(&self) -> LambdaEntity {
+        // Reduce all arguments of the predicate
+        let reduced_args: Vec<Box<LambdaEntity>> = self.args
+            .iter()
+            .map(|arg| Box::new(arg.beta_reduce()))
+            .collect();
+
+        *λPred!(self.iden.clone(), reduced_args)
+    }
+}
 
 /// Implementation of Pretty Prints for Predicates
 impl fmt::Display for Predicate {

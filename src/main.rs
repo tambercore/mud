@@ -20,7 +20,7 @@ fn main() {
 
     // TODO: contractions break the tagger (don't does not get a tag etc)
 
-    let sentence = "John eats gouda";
+    let sentence = "John eats gouda and cheddar";
 
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -33,13 +33,6 @@ fn main() {
 
     let mut result = Vec::new();
     ccg.inorder_traversal(&mut result);
-
-    println!("inorder traversal:");
-
-    // Print the result
-    for node in result {
-        println!("{:?}", node.word);
-    }
 
     // CCG to lambda
     let lambda_expression = ccg_to_lambda(ccg);

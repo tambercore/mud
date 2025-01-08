@@ -1,3 +1,4 @@
+use crate::ccg::rule::CCGRule;
 
 #[macro_export]
 macro_rules! λVar {
@@ -24,5 +25,12 @@ macro_rules! λApp {
 macro_rules! λPred {
     ($name:expr, $args:expr) => {
         Box::from(LambdaEntity::Pred(Predicate{iden: $name, args: $args}))
+    };
+}
+
+#[macro_export]
+macro_rules! λConj {
+    ($lhs:expr, $rhs:expr) => {
+        Box::from(LambdaEntity::Conj(Conjunction{lhs: $lhs, rhs: $rhs}))
     };
 }

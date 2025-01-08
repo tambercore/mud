@@ -1,7 +1,8 @@
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
+use crate::lambda::predicate::Predicate;
 use crate::lambda::types::*;
-use crate::{λAbs, λApp};
+use crate::{λAbs, λApp, λPred};
 
 
 /// Trait defining a function to reduce the lambda entity using a normal-order reduction strategy
@@ -52,6 +53,18 @@ impl Reducible for LambdaEntity {
                     self.clone()
                 }
             }
+
+            LambdaEntity::Pred(predicate) => {
+                // Reduce all arguments of the predicate
+                let reduced_args: Vec<Box<LambdaEntity>> = predicate.args
+                    .iter()
+                    .map(|arg| Box::new(arg.beta_reduce()))
+                    .collect();
+
+                *λPred!(predicate.iden.clone(), reduced_args)
+
+            }
+
             // Handle Non Computational Cases (i.e. vars and predicates)
             _ => self.clone(),
         }

@@ -4,6 +4,7 @@ use crate::lambda::variable::Variable;
 use std::cmp::PartialEq;
 use std::fmt;
 use std::fmt::Formatter;
+use crate::lambda::conjunction::Conjunction;
 use crate::lambda::predicate::Predicate;
 
 
@@ -19,6 +20,7 @@ pub enum LambdaEntity {
     Abs(Abstraction),      // Lambda abstraction, e.g., λx.x + 1
     Var(Variable),         // Variable, e.g., x
     Pred(Predicate),       // Predicate, e.g. P(x)
+    Conj(Conjunction),     // Conjunction, e.g. x ^ y
 }
 
 
@@ -32,6 +34,7 @@ impl fmt::Display for LambdaEntity {
             LambdaEntity::Abs(internal) => write!(f, "{}", internal),
             LambdaEntity::Var(internal) => write!(f, "{}", internal),
             LambdaEntity::Pred(internal) => write!(f, "{}", internal),
+            LambdaEntity::Conj(internal) => write!(f, "{}", internal),
         }
     }
 }
@@ -45,6 +48,7 @@ impl Substitutable for LambdaEntity {
             LambdaEntity::Abs(abs) => { return abs.substitute(source, target) }
             LambdaEntity::Var(var) => { return var.substitute(source, target) }
             LambdaEntity::Pred(var) => { return var.substitute(source, target) }
+            LambdaEntity::Conj(var) => { return var.substitute(source, target) }
         }
     }
 }

@@ -5,3 +5,4 @@ pub mod application;
 pub mod variable;
 pub mod predicate;
 pub mod reducible;
+pub mod conjunction;

@@ -8,8 +8,9 @@ use crate::lambda::types::*;
 use crate::lambda::predicate::Predicate;
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
+use crate::lambda::conjunction::Conjunction;
 use crate::lambda::variable::Variable;
-use crate::{λAbs, λVar, λApp, λPred};
+use crate::{λAbs, λVar, λApp, λPred, λConj};
 
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
@@ -35,7 +36,7 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<
             _ => panic!("wordclass variant not implemented"),
         }
     } else {
-        panic!("expected word and tag on terminal node");
+        panic!("expected word and tag on terminal node: {}", node);
     }
 }
 
@@ -86,6 +87,9 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
 
 
 pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
+    //use CCGRule::*;
+    use LambdaEntity::*;
+
     
     match root.rule {
         // Base case: terminal nodes
@@ -104,11 +108,36 @@ pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
         CCGRule::Unary => {
             if let Some(children) = &root.children {
                 if children.len() == 1 {
-                    generate_lexical_category(children[0].node_type.clone(), &children[0])
+                    ccg_to_lambda(*children[0].clone())
                 } else {
                     panic!("Expected one child (unary rule).");
                 }
             } else { panic!("Expected node to have children.") }
+        }
+        CCGRule::Conjunction => {
+            // gouda \ (and cheddar)
+            // if the "and" first combines with the left argument (gouda and) / cheddar.
+            // im not sure if lambeq does this
+            // todo fix indentation
+
+            // if the type of the first argument is CONJ, then it is of the form "and --right--"
+            // lambda x . (x and ccg_to_lambda(arg2))
+            if let Some(children) = &root.children {
+                if children.len() == 2 {
+                    match (children[0].clone().node_type, children[1].clone().node_type) {
+                        (CCGType::Conjunction, rhs) => {λAbs!(λVar!(String::from("x1")), λConj!(λVar!(String::from("x1")), ccg_to_lambda(*children[1].clone())))}
+                        (lhs, CCGType::Conjunction) => {λAbs!(λVar!(String::from("x1")), λConj!(ccg_to_lambda(*children[0].clone()), λVar!(String::from("x1"))))}
+                        _ => panic!("Expecting CONJ type as child of Conjunction rule")
+
+                    }
+                } else {panic!("Expected 2 children in conjunction rule")}
+            } else {panic!("Expected conjunction rule to have children")}
+
+            // if the type of the second argument is CONJ, then it is of the form "--left-- and"
+            // lambda x . (ccg_to_lambda(arg1) and x)
+
+
+
         }
 
         _ => panic!("Not implemented yet!")
