@@ -1,12 +1,10 @@
 
 use super::category::CCGType;
 use nom::{
-    Parser,
     branch::alt,
     bytes::complete::tag,
     character::complete::{char, multispace0},
-    combinator::{map, map_res},
-    multi::fold_many0,
+    combinator::map,
     sequence::{delimited, pair, preceded},
     IResult,
 };

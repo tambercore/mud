@@ -1,7 +1,7 @@
+use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use super::wordclass::{map_pos_tag, Wordclass};
 use super::init_tagger::{initialize_tagger, WordclassMap};
 use super::lex_rulespec_id::{LexicalRuleID, LexicalRulespec};
-use super::lexical_ruleset::parse_lexical_ruleset;
 
 /// Function to check if the word at `current_index` has suffix `suffix` and is not yet tagged.
 pub fn has_suffix(sentence: &Vec<(String, Wordclass)>, current_index: i32, suffix: &str) -> bool {

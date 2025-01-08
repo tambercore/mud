@@ -5,16 +5,14 @@ mod wordnet;
 mod lingo;
 mod monty;
 
-use std::io::{self, Write};
 use crate::brill::brill_tagger::tag_sentence;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::initialize_tagger;
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::ccg::sentence_parser::english_to_ccg;
-use crate::ccg::type_parser::*;
-use crate::lingo::past_participle::get_past_participle;
 use crate::monty::lambda_generation::ccg_to_lambda;
-use crate::lambda::reduce::reduce;
+use crate::lambda::reducible::*;
+use crate::monty::predicate_expansion::expand_expression;
 
 fn main() {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
@@ -23,7 +21,7 @@ fn main() {
 
     // TODO: contractions break the tagger (don't does not get a tag etc)
 
-    let sentence = "A man that dreams sleeps";
+    let sentence = "John eats gouda and cheddar";
 
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -37,17 +35,13 @@ fn main() {
     let mut result = Vec::new();
     ccg.inorder_traversal(&mut result);
 
-    println!("inorder traversal:");
-
-    // Print the result
-    for node in result {
-        println!("{:?}", node.word);
-    }
-
     // CCG to lambda
     let lambda_expression = ccg_to_lambda(ccg);
     println!("lambda: \n{}", lambda_expression);
 
-    let reduction = reduce(&*lambda_expression);
+    let reduction = (*lambda_expression).beta_reduce();
     println!("reduced expression: \n{}", reduction);
+
+    let expanded_expression = expand_expression(Box::from(reduction));
+    println!("expanded expression: {}", expanded_expression)
 }

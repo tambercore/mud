@@ -1,5 +1,4 @@
-use serde::{Deserialize, Deserializer};
-use serde::de::{self, MapAccess, Visitor};
+use serde::Deserialize;
 use std::fmt;
 use crate::ccg::word::CCGWord;
 use super::rule::CCGRule;

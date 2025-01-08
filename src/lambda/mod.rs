@@ -1,3 +1,8 @@
 pub mod types;
-pub mod reduce;
-mod tests;
+pub mod macros;
+pub mod abstraction;
+pub mod application;
+pub mod variable;
+pub mod predicate;
+pub mod reducible;
+pub mod conjunction;
