@@ -11,6 +11,7 @@ use crate::lambda::application::Application;
 use crate::lambda::variable::Variable;
 use crate::{λAbs, λVar, λApp, λPred};
 
+
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 

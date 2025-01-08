@@ -6,10 +6,12 @@ use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::predicate::Predicate;
 
+
 /// Substitutable trait (required by all elements of the LambdaEntity, or it will not work.)
 pub trait Substitutable {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity>;
 }
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LambdaEntity {
