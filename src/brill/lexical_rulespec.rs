@@ -1,5 +1,6 @@
+use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use super::wordclass::{map_pos_tag, Wordclass};
-use super::init_tagger::WordclassMap;
+use super::init_tagger::{initialize_tagger, WordclassMap};
 use super::lex_rulespec_id::{LexicalRuleID, LexicalRulespec};
 
 /// Function to check if the word at `current_index` has suffix `suffix` and is not yet tagged.

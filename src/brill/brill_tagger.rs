@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use crate::brill::contextual_ruleset::parse_contextual_ruleset;
+use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use super::contextual_rulespec::{contextual_rule_apply, ContextualRulespec};
 use super::wordclass::Wordclass;
-use super::init_tagger::WordclassMap;
+use super::init_tagger::{initialize_tagger, WordclassMap};
 use super::contractions::find_contractions;
 use super::lex_rulespec_id::LexicalRulespec;
 use super::lexical_rulespec::lexical_rule_apply;

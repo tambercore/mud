@@ -1,8 +1,9 @@
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
 use crate::lambda::predicate::Predicate;
+use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::*;
-use crate::{λAbs, λApp, λPred};
+use crate::{λAbs, λApp, λPred, λConj};
 
 
 /// Trait defining a function to reduce the lambda entity using a normal-order reduction strategy
@@ -62,6 +63,11 @@ impl Reducible for LambdaEntity {
                     .collect();
 
                 *λPred!(predicate.iden.clone(), reduced_args)
+
+            }
+
+            LambdaEntity::Conj(conjunction) => {
+                *λConj!(Box::from(conjunction.lhs.beta_reduce()), Box::from(conjunction.rhs.beta_reduce()))
 
             }
 

@@ -27,7 +27,6 @@ impl PartialEq<LambdaEntity> for Conjunction {
 /// Implementation of substitution for Conjunctions.
 impl Substitutable for Conjunction {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
-        println!("substituting {} for {} in {}", source, target, self);
         // Am I being substituted? If so, replace me!
         let self_as_entity = LambdaEntity::Conj(self.clone());
         if source == &self_as_entity {

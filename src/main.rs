@@ -12,6 +12,7 @@ use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::lambda_generation::ccg_to_lambda;
 use crate::lambda::reducible::*;
+use crate::monty::predicate_expansion::expand_expression;
 
 fn main() {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
@@ -40,4 +41,7 @@ fn main() {
 
     let reduction = (*lambda_expression).beta_reduce();
     println!("reduced expression: \n{}", reduction);
+
+    let expanded_expression = expand_expression(Box::from(reduction));
+    println!("expanded expression: {}", expanded_expression)
 }
