@@ -1,2 +1,2 @@
 pub mod lambda_generation;
-pub mod predicate_expansion;
+pub mod test_predicate_expansion;
