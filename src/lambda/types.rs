@@ -1,4 +1,3 @@
-use super::lambda_element::LambdaElement;
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
 use crate::lambda::variable::Variable;
