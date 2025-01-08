@@ -1,5 +1,5 @@
 use std::cmp::PartialEq;
-use crate::lambda::types::{LambdaEntity, Substitutable};
+use crate::lambda::types::{Expandable, LambdaEntity, Substitutable};
 use crate::{λConj, λPred, λVar};
 use std::fmt;
 use std::fmt::Formatter;
@@ -47,3 +47,13 @@ impl fmt::Display for Conjunction {
     }
 }
 
+
+// Expand both sides, then return.
+impl Expandable for Conjunction {
+    fn expand(&self) -> Box<LambdaEntity> {
+        λConj!(
+            self.lhs.clone().expand(),
+            self.rhs.clone().expand()
+        )
+    }
+}
