@@ -5,7 +5,8 @@ use crate::ccg::category::CCGType;
 use crate::ccg::node::CCGNode;
 use crate::ccg::rule::CCGRule;
 use crate::lambda::types::*;
-use crate::{lambda, λAbs, λVar, λApp};
+use crate::lambda::predicate::Predicate;
+use crate::{lambda, λAbs, λVar, λApp, λPred};
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
@@ -50,14 +51,13 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
         arguments.push(λVar!(format!("x{}", i)));
     }
 
-    let expression = Variable(Box::from(Predicate(identifier, arguments)));
-    let mut final_expression = Box::from(expression);
+    let mut expression = λPred!(identifier, arguments);
     for i in (1..=num_arguments) {
         let arg_name = format!("x{}", i);
-        final_expression = λAbs!(λVar!(arg_name), final_expression);
+        expression = λAbs!(λVar!(arg_name), expression);
     }
 
-    final_expression
+    expression
 }
 
 

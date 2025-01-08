@@ -4,7 +4,7 @@ use crate::λPred;
 use std::fmt;
 use std::fmt::Formatter;
 
-/// Structure to define λ-Applications (λx. e @ t)
+/// Structure to define Predicates i.e. P(x)
 #[derive(Clone, Debug, PartialEq)]
 pub struct Predicate {
     pub iden: String,
@@ -47,7 +47,6 @@ impl Substitutable for Predicate {
 /// Implementation of Pretty Prints for Predicates
 impl fmt::Display for Predicate {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // It's also possible to include a explicit application operator i.e. ( term @ term ).
         if self.args.is_empty() { write!(f, "{}", self.iden) }
         else {
             let args_str = self.args.iter().map(|arg| arg.to_string()).collect::<Vec<String>>().join(", ");
