@@ -1,7 +1,7 @@
 use std::cmp::PartialEq;
 use crate::lambda::types::{Expandable, LambdaEntity, Substitutable};
 use crate::lambda::conjunction::Conjunction;
-use crate::{λConj, λPred};
+use crate::{λConj, λPred, λDepFun};
 use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::reducible::Reducible;
@@ -9,7 +9,7 @@ use crate::lambda::reducible::Reducible;
 /// Structure to define Π(x) (expr)
 #[derive(Clone, Debug, PartialEq)]
 pub struct DependentFunction {
-    pub bound_var: Box<LambdaEntity>, // TODO: should this be a String (Man) or a Term?
+    pub bound_var: Box<LambdaEntity>,
     pub expr: Box<LambdaEntity>,
 }
 
@@ -17,7 +17,11 @@ pub struct DependentFunction {
 /// Implementation of Partial Equality for DependentFunction, used in substitution.
 impl PartialEq<LambdaEntity> for DependentFunction {
     fn eq(&self, other: &LambdaEntity) -> bool {
-        todo!()
+        if let LambdaEntity::DepFun(fun) = other {
+            self.bound_var == fun.bound_var && self.expr == fun.expr
+        } else {
+            false
+        }
     }
 }
 
@@ -25,14 +29,20 @@ impl PartialEq<LambdaEntity> for DependentFunction {
 /// Implementation of substitution for DependentFunction.
 impl Substitutable for DependentFunction {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
-        todo!()
+        // Am I being substituted? If so, replace me!
+        let self_as_entity = LambdaEntity::DepFun(self.clone());
+        if source == &self_as_entity {
+            return Box::new(target.clone());
+        }
+
+        λDepFun!(self.bound_var.substitute(source, target), self.expr.substitute(source, target))
     }
 }
 
 
 impl Reducible for DependentFunction {
     fn beta_reduce(&self) -> LambdaEntity {
-        todo!()
+        *λDepFun!(Box::from(self.bound_var.beta_reduce()), Box::from(self.expr.beta_reduce()))
     }
 }
 

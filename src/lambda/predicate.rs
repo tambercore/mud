@@ -46,7 +46,6 @@ impl Substitutable for Predicate {
 }
 
 
-// todo this currently doesnt get called because of the reducible for LambdaEntity gets entered first
 impl Reducible for Predicate {
 
     fn beta_reduce(&self) -> LambdaEntity {
