@@ -27,8 +27,6 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntit
 
 
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
-    
-
     if let Some(ccg_word) = &node.word {
         match ccg_word.tag {
             Wordclass::NNP => λVar!(ccg_word.text.clone()),
