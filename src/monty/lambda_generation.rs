@@ -29,17 +29,18 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntit
 
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     if let Some(ccg_word) = &node.word {
+        // Compute a "local" mutated tag (does not affect the original node)
+        let effective_tag = if [Wordclass::NN, Wordclass::NNS].contains(&ccg_word.tag)
+            && matches!(node.node_type, CCGType::ForwardsFunctor(..) | CCGType::BackwardsFunctor(..))
+        {
+            Wordclass::VBZ
+        } else {
+            ccg_word.tag
+        };
 
-        // TODO: Replace with reference to thread safe singleton.
-        // let mut wc_mapping: WordclassMap = initialize_tagger("data/lexicon.txt").unwrap();
-        // let possible_tags = get_possible_tags(vec![ccg_word.text], &mut wc_mapping);
-
-        match ccg_word.tag {
-            Wordclass::NNP => {λVar!(ccg_word.text.clone())},
-            Wordclass::VBZ => {
-                // VBZ are functor types. If it is not a functor type the tag is probably wrong
-                generate_predicate(ccg_word.text.clone(), category)
-            },
+        match effective_tag {
+            Wordclass::NNP => λVar!(ccg_word.text.clone()),
+            Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
             _ => panic!("wordclass variant not implemented"),
         }
     } else {
