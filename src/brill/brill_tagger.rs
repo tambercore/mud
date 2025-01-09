@@ -109,7 +109,7 @@ fn tokenize_sentence(sentence: &str) -> Vec<String> {
 
 
 /// Function to: given a tokenized `sentence` and mapping `wc_mapping`, retrieve the possible tags for each word.
-fn get_possible_tags(sentence: Vec<String>, wc_mapping: &mut WordclassMap) -> Vec<(String, Vec<Wordclass>)> {
+pub fn get_possible_tags(sentence: Vec<String>, wc_mapping: &mut WordclassMap) -> Vec<(String, Vec<Wordclass>)> {
     sentence.iter()
         .map(|word| (word.as_str().to_owned(), wc_mapping.entry(word.as_str().parse().unwrap()).or_insert(vec![Wordclass::ANY]).to_owned()))
         .collect()
