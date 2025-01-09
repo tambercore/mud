@@ -29,4 +29,4 @@ Mudskip is a symbolic theorem prover designed to reason with Natural Langauge st
 - Visualise and understand step-by-step derivations on our dedicated web compiler.
 
 ### Contributors
-Mudskip is designed, and developed by [Amber Swarbrick](https://github.com/aswarbs/) and [Toby Clark](https://github.com/tobybenjaminclark/) in a joint-disseration for master in Computer Science under the supervision of [Professor. Thorsten Altenkirch](https://en.wikipedia.org/wiki/Thorsten_Altenkirch) at [University of Nottingham](https://www.nottingham.ac.uk/). If you're interested in contributing, have a question or are interested in philosophy of language, type theory or Agda, please get in touch!
+Mudskip is designed, and developed by [Amber Swarbrick](https://github.com/aswarbs/) and [Toby Clark](https://github.com/tobybenjaminclark/) in a joint-disseration for masters in Computer Science under the supervision of [Professor. Thorsten Altenkirch](https://en.wikipedia.org/wiki/Thorsten_Altenkirch) at [University of Nottingham](https://www.nottingham.ac.uk/). If you're interested in contributing, have a question or are interested, please get in touch!
