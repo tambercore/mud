@@ -23,7 +23,7 @@
 </div>
 
 ### What is [Mudskip](https://github.com/tambercore/hottnat)?
-Mudskip is a symbolic theorem prover designed to reason with Natural Langauge statements and built on top of Agda. 
+Mudskip is a symbolic theorem prover designed to reason with Natural Langauge statements through the derivation of dependent types, expressed in _Agda_. This work is inspired by research led by Aarne Ranta, Robin Cooper and aims to provide an automated, end-to-end type-theoretic implementation of natural language reasoning.
 - Easily translate, and formalise natural language statements into a dependent-type theory.
 - Prove properties between natural langauge statements, i.e. entailment & contradiction.
 - Visualise and understand step-by-step derivations on our dedicated web compiler.
