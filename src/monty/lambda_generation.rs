@@ -30,9 +30,9 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntit
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     if let Some(ccg_word) = &node.word {
 
-        // todo replace with reference to thread safe singleton
-        let mut wc_mapping: WordclassMap = initialize_tagger("data/lexicon.txt").unwrap();
-        let possible_tags = get_possible_tags(vec![ccg_word.text], &mut wc_mapping);
+        // TODO: Replace with reference to thread safe singleton.
+        // let mut wc_mapping: WordclassMap = initialize_tagger("data/lexicon.txt").unwrap();
+        // let possible_tags = get_possible_tags(vec![ccg_word.text], &mut wc_mapping);
 
         match ccg_word.tag {
             Wordclass::NNP => {λVar!(ccg_word.text.clone())},
