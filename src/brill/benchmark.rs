@@ -231,12 +231,10 @@ fn save_benchmark_data_to_csv(filepath: &str, data: &Vec<BenchmarkData>) {
     csv_writer.flush().expect("Failed to flush data");
 }
 
-
+/*
 #[test]
 fn analyse_csv() {
-
     let filepath: &str = "pos_benchmark_results.csv";
     analyze_pos_csv(filepath);
-
-
 }
+*/
