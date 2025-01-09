@@ -28,7 +28,19 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntit
 
 
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
+
     if let Some(ccg_word) = &node.word {
+
+        // If the word is every, construct a dependent function type
+        if ccg_word.text.to_lowercase() == "every" {
+
+            // return Π(Man) (expression) .
+
+            // TODO: implement dependent function type
+
+
+        }
+
         // Compute a "local" mutated tag (does not affect the original node)
         let effective_tag = if [Wordclass::NN, Wordclass::NNS].contains(&ccg_word.tag)
             && matches!(node.node_type, CCGType::ForwardsFunctor(..) | CCGType::BackwardsFunctor(..))
