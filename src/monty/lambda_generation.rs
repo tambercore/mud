@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use std::thread::current;
 use crate::brill::wordclass::Wordclass;
 use crate::ccg::category::CCGType;
 use crate::ccg::node::CCGNode;
@@ -9,61 +10,80 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
 use crate::lambda::conjunction::Conjunction;
+use crate::lambda::dependent_function::DependentFunction;
 use crate::lambda::variable::Variable;
-use crate::{λAbs, λVar, λApp, λPred, λConj};
+use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun};
 use crate::brill::brill_tagger::get_possible_tags;
 use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
 
-fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
-    
-
+fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     match _type {
         CCGType::ForwardsFunctor(left, right) | CCGType::BackwardsFunctor(left, right) => {
-            let lexical_category = λAbs!(generate_lexical_category(*right, _node), generate_lexical_category(*left, _node));
-            generate_lexical_element(_node, lexical_category)
+            let lexical_category = λAbs!(generate_lexical_category(*right, _node, root), generate_lexical_category(*left, _node, root));
+            generate_lexical_element(_node, lexical_category, root)
         }
-        _ => generate_lexical_element(_node, λVar!(_type.to_string()))
+        _ => generate_lexical_element(_node, λVar!(_type.to_string()), root)
     }
 }
 
-
-fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
+fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &CCGNode) -> Box<LambdaEntity> {
+    println!("generate lexical element: currently considering {}", node);
 
     if let Some(ccg_word) = &node.word {
 
         // If the word is every, construct a dependent function type
         if ccg_word.text.to_lowercase() == "every" {
+            println!("root in dep fun: {}", root.clone());
 
-            // return Π(Man) (expression) .
+            // Retrieve the parent of the current node
+            let parent = node.get_parent(&root);
+            println!("parent of {} : {:?}", ccg_word.text, parent);
 
-            // TODO: implement dependent function type
+            let sibling = node.get_sibling(&root);
+            println!("sibling of {} : {:?}", ccg_word.text, sibling);
 
+            if let (Some(p), Some(x)) = (parent, sibling) {
+                // Retrieve the sibling of the parent
+                let y = p.get_sibling(&root);
 
-        }
+                if let Some(y) = y {
+                    let reduced_x = ccg_to_lambda_recursive(x.clone(), root);
+                    let reduced_y = ccg_to_lambda_recursive(y.clone(), root);
 
-        // Compute a "local" mutated tag (does not affect the original node)
-        let effective_tag = if [Wordclass::NN, Wordclass::NNS].contains(&ccg_word.tag)
-            && matches!(node.node_type, CCGType::ForwardsFunctor(..) | CCGType::BackwardsFunctor(..))
-        {
-            Wordclass::VBZ
+                    let ret = λDepFun!(reduced_x, reduced_y);
+
+                    println!("returning {:?}", ret);
+                    ret
+                } else {
+                    panic!("Parent has no sibling.");
+                }
+            } else {
+                panic!("Node is missing a parent or sibling.");
+            }
+
         } else {
-            ccg_word.tag
-        };
+            // Compute a "local" mutated tag (does not affect the original node)
+            let effective_tag = if [Wordclass::NN, Wordclass::NNS].contains(&ccg_word.tag)
+                && matches!(node.node_type, CCGType::ForwardsFunctor(..) | CCGType::BackwardsFunctor(..))
+            {
+                Wordclass::VBZ
+            } else {
+                ccg_word.tag
+            };
 
-        match effective_tag {
-            Wordclass::NNP => λVar!(ccg_word.text.clone()),
-            Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
-            _ => panic!("wordclass variant not implemented"),
+            match effective_tag {
+                Wordclass::NNP | Wordclass::NN  => λVar!(ccg_word.text.clone()),
+                Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
+                _ => panic!("wordclass variant not implemented"),
+            }
         }
+
     } else {
         panic!("expected word and tag on terminal node: {}", node);
     }
 }
 
-
 fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
-    
-
     let num_arguments = count_predicate_arguments(category.clone());
 
     // todo: i have no idea why this works
@@ -85,7 +105,6 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
     expression
 }
 
-
 fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
     match *category {
         LambdaEntity::Abs(abs) => {
@@ -97,7 +116,6 @@ fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
     }
 }
 
-
 fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode) {
     let nodes_vec = maybe_nodes.expect("Expected a vector of nodes, found None.");
     let first = nodes_vec.get(0).expect("Expected at least one node, found none.");
@@ -105,59 +123,53 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
     ( (**first).clone(), (**second).clone() )
 }
 
+pub fn ccg_to_lambda(root: &CCGNode) -> Box<LambdaEntity> {
+    ccg_to_lambda_recursive(root.clone(), root)
+}
 
-pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
-    //use CCGRule::*;
+pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
-    
-    match root.rule {
+    match current_node.rule {
         // Base case: terminal nodes
-        CCGRule::Lexical => generate_lexical_category(root.node_type.clone(), &root),
+        CCGRule::Lexical => {
+            let expr = generate_lexical_category(current_node.node_type.clone(), &current_node, root);
+            expr
+        },
 
         // Recursive case
         CCGRule::BackwardApplication => {
-            let (left, right) = unpack_children(root.children);
-            λApp!(ccg_to_lambda(right), ccg_to_lambda(left))
-
+            let (left, right) = unpack_children(current_node.children);
+            λApp!(ccg_to_lambda_recursive(right, root), ccg_to_lambda_recursive(left, root))
         },
         CCGRule::ForwardApplication => {
-            let (left, right) = unpack_children(root.children);
-            λApp!(ccg_to_lambda(left), ccg_to_lambda(right))
+            let (left, right) = unpack_children(current_node.children);
+            λApp!(ccg_to_lambda_recursive(left, root), ccg_to_lambda_recursive(right, root))
         }
         CCGRule::Unary => {
-            if let Some(children) = &root.children {
+            if let Some(children) = &current_node.children {
                 if children.len() == 1 {
-                    ccg_to_lambda(*children[0].clone())
+                    ccg_to_lambda_recursive(*children[0].clone(), root)
                 } else {
                     panic!("Expected one child (unary rule).");
                 }
             } else { panic!("Expected node to have children.") }
         }
         CCGRule::Conjunction => {
-            // gouda \ (and cheddar)
-            // if the "and" first combines with the left argument (gouda and) / cheddar.
-            // im not sure if lambeq does this
-            // todo fix indentation
-
-            // if the type of the first argument is CONJ, then it is of the form "and --right--"
-            // lambda x . (x and ccg_to_lambda(arg2))
-            if let Some(children) = &root.children {
+            // Handle conjunction as before
+            if let Some(children) = &current_node.children {
                 if children.len() == 2 {
                     match (children[0].clone().node_type, children[1].clone().node_type) {
-                        (CCGType::Conjunction, rhs) => {λAbs!(λVar!(String::from("x1")), λConj!(λVar!(String::from("x1")), ccg_to_lambda(*children[1].clone())))}
-                        (lhs, CCGType::Conjunction) => {λAbs!(λVar!(String::from("x1")), λConj!(ccg_to_lambda(*children[0].clone()), λVar!(String::from("x1"))))}
+                        (CCGType::Conjunction, rhs) => {
+                            λAbs!(λVar!(String::from("x1")), λConj!(λVar!(String::from("x1")), ccg_to_lambda_recursive(*children[1].clone(), root)))
+                        }
+                        (lhs, CCGType::Conjunction) => {
+                            λAbs!(λVar!(String::from("x1")), λConj!(ccg_to_lambda_recursive(*children[0].clone(), root), λVar!(String::from("x1"))))
+                        }
                         _ => panic!("Expecting CONJ type as child of Conjunction rule")
-
                     }
-                } else {panic!("Expected 2 children in conjunction rule")}
-            } else {panic!("Expected conjunction rule to have children")}
-
-            // if the type of the second argument is CONJ, then it is of the form "--left-- and"
-            // lambda x . (ccg_to_lambda(arg1) and x)
-
-
-
+                } else { panic!("Expected 2 children in conjunction rule") }
+            } else { panic!("Expected conjunction rule to have children") }
         }
 
         _ => panic!("Not implemented yet!")

@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use serde::Deserialize;
 use std::fmt;
 use crate::ccg::word::CCGWord;
@@ -20,6 +21,43 @@ pub struct CCGNode {
 }
 
 
+
+impl PartialEq for CCGNode {
+    fn eq(&self, other: &Self) -> bool {
+        // Compare node type
+        if self.node_type != other.node_type {
+            return false;
+        }
+
+        // Compare words (if they exist)
+        if self.word != other.word {
+            return false;
+        }
+
+        // Compare rules
+        if self.rule != other.rule {
+            return false;
+        }
+
+        // Compare children
+        match (&self.children, &other.children) {
+            (Some(self_children), Some(other_children)) => {
+                if self_children.len() != other_children.len() {
+                    return false;
+                }
+
+                for (self_child, other_child) in self_children.iter().zip(other_children.iter()) {
+                    if self_child != other_child {
+                        return false;
+                    }
+                }
+                true
+            }
+            (None, None) => true,
+            _ => false,
+        }
+    }
+}
 impl CCGNode {
     /// Performs an in-order traversal of the CCGNode tree.
     /// Collects references to nodes in the provided vector in in-order sequence,
@@ -41,6 +79,44 @@ impl CCGNode {
                 visit.push(self);
             }
         }
+    }
+
+    /// Finds the parent of a given node within the tree.
+    pub fn get_parent<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
+        println!("Searching parent of node: {}", self);
+        fn find_parent<'a>(
+            current: &'a CCGNode,
+            target: &CCGNode,
+            parent: Option<&'a CCGNode>,
+        ) -> Option<&'a CCGNode> {
+            if current == target{
+                return parent;
+            }
+
+            if let Some(children) = &current.children {
+                for child in children {
+                    if let Some(found) = find_parent(child, target, Some(current)) {
+                        return Some(found);
+                    }
+                }
+            }
+
+            None
+        }
+
+        find_parent(root, self, None)
+    }
+    pub fn get_sibling<'a>(&'a self, root: &'a CCGNode) -> Option<&'a CCGNode> {
+        if let Some(parent) = self.get_parent(root) {
+            if let Some(children) = &parent.children {
+                for sibling in children {
+                    if **sibling != *self {
+                        return Some(sibling);
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
