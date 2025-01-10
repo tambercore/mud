@@ -34,3 +34,10 @@ macro_rules! λConj {
         Box::from(LambdaEntity::Conj(Conjunction{lhs: $lhs, rhs: $rhs}))
     };
 }
+
+#[macro_export]
+macro_rules! λDepFun {
+    ($bound_var:expr, $expr:expr) => {
+        Box::from(LambdaEntity::DepFunc(DependentFunction{bound_var: $bound_var, expr: $expr}))
+    };
+}
