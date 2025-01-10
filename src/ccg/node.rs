@@ -58,6 +58,45 @@ impl CCGNode {
             Self::inorder_traversal(&children[1], visit);
         }
     }
+
+    /// Performs an in-order traversal of the (binary) tree rooted at `root`
+    /// **but** returns only the leaf nodes (i.e. zero children).
+    /// The returned leaf nodes are each `Box<CCGNode>` (a brand-new boxed clone of each leaf).
+    pub fn inorder_leaves(root: &CCGNode) -> Vec<Box<CCGNode>> {
+        let mut leaves = Vec::new();
+
+        // Helper function for recursion
+        fn helper(node: &CCGNode, out: &mut Vec<Box<CCGNode>>) {
+            let children = node.children.borrow();
+            match children.len() {
+                0 => {
+                    // Leaf node => collect it
+                    out.push(Box::new(node.clone()));
+                }
+                1 => {
+                    // Single child => "in-order" just goes down that child
+                    helper(&children[0].borrow(), out);
+                }
+                2 => {
+                    // Standard in-order on a binary node:
+                    // 1) Left child
+                    helper(&children[0].borrow(), out);
+                    // (Skip the parent itself, since we only want leaves)
+                    // 2) Right child
+                    helper(&children[1].borrow(), out);
+                }
+                _ => {
+                    // If you allow more than 2 children, define how "in-order" works.
+                    for child_rc in children.iter() {
+                        helper(&child_rc.borrow(), out);
+                    }
+                }
+            }
+        }
+
+        helper(root, &mut leaves);
+        leaves
+    }
 }
 
 

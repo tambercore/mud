@@ -9,6 +9,7 @@ use crate::brill::brill_tagger::tag_sentence;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::initialize_tagger;
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
+use crate::ccg::node::CCGNode;
 use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::lambda_generation::ccg_to_lambda;
 use crate::lambda::reducible::*;
@@ -31,6 +32,11 @@ fn main() {
     // parse the ccg tree
     let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
     println!("ccg: \n{}", ccg);
+
+    let leaves = CCGNode::inorder_leaves(&ccg);
+    for leaf in leaves {
+        println!("{}", leaf.word.unwrap().text)
+    }
 
     // CCG to lambda
     let lambda_expression = ccg_to_lambda(ccg);
