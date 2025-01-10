@@ -4,61 +4,79 @@ use crate::ccg::word::CCGWord;
 use super::rule::CCGRule;
 use super::category::CCGType;
 use ascii_tree::{Tree::*, Tree, write_tree};
+use std::rc::{Rc, Weak};
+use std::cell::RefCell;
 
-
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct CCGNode {
 
-    #[serde(rename = "type")]
     pub node_type: CCGType,
 
-    #[serde(rename = "text")]
     pub word: Option<CCGWord>,
 
     pub rule: CCGRule,
-    pub children: Option<Vec<Box<CCGNode>>>, // Use Box to handle recursion
+
+    /// Strong references to children
+    pub children: RefCell<Vec<Rc<RefCell<CCGNode>>>>,
+
+    /// Weak reference to parent (to avoid cycles)
+    pub parent: RefCell<Option<Weak<RefCell<CCGNode>>>>,
 }
 
-
 impl CCGNode {
-    /// Performs an in-order traversal of the CCGNode tree.
-    /// Collects references to nodes in the provided vector in in-order sequence,
-    /// but only pushes nodes that contain a `Some` word.
-    pub fn inorder_traversal<'a>(&'a self, visit: &mut Vec<&'a CCGNode>) {
-        // Recursive case
-        if let Some(children) = &self.children {
-            if children.len() >= 1 {
-                children[0].inorder_traversal(visit);
-            }
-            if self.word.is_some() {
-                visit.push(self);
-            }
-            if children.len() >= 2 {
-                children[1].inorder_traversal(visit);
-            }
-        } else {
-            if self.word.is_some() {
-                visit.push(self);
-            }
+    /// Creates a new CCGNode wrapped in `Rc<RefCell<CCGNode>>`.
+    pub fn new(
+        node_type: CCGType,
+        word: Option<CCGWord>,
+        rule: CCGRule
+    ) -> Rc<RefCell<CCGNode>> {
+        Rc::new(RefCell::new(CCGNode {
+            node_type,
+            word,
+            rule,
+            children: RefCell::new(vec![]),
+            parent: RefCell::new(None),
+        }))
+    }
+
+    /// In-order traversal, collecting `Rc<RefCell<CCGNode>>` in `visit`.
+    /// Assumes at most 2 children.
+    pub fn inorder_traversal(node_rc: &Rc<RefCell<CCGNode>>, visit: &mut Vec<Rc<RefCell<CCGNode>>>) {
+        let binding = node_rc.borrow();
+        let children = binding.children.borrow();
+
+        // If there's a left child, recurse
+        if children.len() >= 1 {
+            Self::inorder_traversal(&children[0], visit);
+        }
+
+        // Add the current node
+        visit.push(Rc::clone(node_rc));
+
+        // If there's a right child, recurse
+        if children.len() >= 2 {
+            Self::inorder_traversal(&children[1], visit);
         }
     }
 }
+
 
 
 impl fmt::Display for CCGNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fn collect_words(node: &CCGNode) -> String {
             if let Some(word) = &node.word {
-                word.text.clone() // Terminal node with a word
-            } else if let Some(children) = &node.children {
+                // Terminal node with a word
+                word.text.clone()
+            } else {
+                // Recursively gather words from children
+                let children = node.children.borrow();
                 children
                     .iter()
-                    .map(|child| collect_words(child))
-                    .filter(|word| !word.is_empty())
+                    .map(|child_rc| collect_words(&child_rc.borrow()))
+                    .filter(|w| !w.is_empty())
                     .collect::<Vec<_>>()
                     .join(" ")
-            } else {
-                String::new() // No word and no children
             }
         }
 
@@ -66,24 +84,26 @@ impl fmt::Display for CCGNode {
             let aggregated_word = collect_words(node);
             let title = format!(
                 "'{}', {}, [{}]",
-                if aggregated_word.is_empty() {
-                    "".to_string()
-                } else {
-                    aggregated_word
-                },
+                aggregated_word,
                 node.node_type,
                 node.rule
             );
 
-            let children = if let Some(children) = &node.children {
-                children.iter().map(|child| to_ascii_tree(child)).collect()
-            } else {
-                vec![]
-            };
+            // Build ASCII children recursively
+            let children = node
+                .children
+                .borrow()
+                .iter()
+                .map(|child_rc| to_ascii_tree(&child_rc.borrow()))
+                .collect();
+
             Node(title, children)
         }
 
+        // Build the ASCII tree from `self`
         let ascii_tree = to_ascii_tree(self);
+
+        // Write it out
         let mut output = String::new();
         write_tree(&mut output, &ascii_tree).map_err(|_| fmt::Error)?;
         write!(f, "{}", output)

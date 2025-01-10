@@ -5,3 +5,4 @@ pub mod node;
 mod word;
 pub mod type_parser;
 mod tag_insertion;
+mod serde_parser;

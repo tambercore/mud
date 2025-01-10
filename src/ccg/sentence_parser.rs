@@ -1,6 +1,9 @@
 use std::{process::Command, fs::File, io::Read};
+use std::cell::RefCell;
+use std::rc::Rc;
 use serde_json::Error as SerdeError;
 use crate::brill::wordclass::Wordclass;
+use crate::ccg::serde_parser::parse_into_ccgnode;
 use super::tag_insertion::insert_tags;
 use super::node::{CCGNode};
 
@@ -32,27 +35,9 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
         .map_err(|_| "Failed to execute Python command. Ensure the virtual environment and lambeq are properly installed.");
 
     // Read and parse the resulting JSON file into a CCGNode.
-    let original_tree = ccgnode_parse("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
+    let original_tree = parse_into_ccgnode("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
+    let tagged_tree_rc = insert_tags(original_tree, vec_of_words_to_tags);
+    let tagged_tree: CCGNode = tagged_tree_rc.borrow().clone();
 
-    let tree = insert_tags(&original_tree, vec_of_words_to_tags);
-
-    tree
-}
-
-
-/// Reads a JSON file and attempts to deserialize it into a `CCGNode`.
-///
-/// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the file can't be read or parsed.
-pub(crate) fn ccgnode_parse(file_path: &str) -> Result<CCGNode, String> {
-    let mut content = String::new();
-
-    // Open the file and read its content into a string.
-    File::open(file_path)
-        .map_err(|e| format!("Failed to open file: {}", e))?
-        .read_to_string(&mut content)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
-
-    // Deserialize the JSON content into a CCGNode.
-    println!("Raw CCG Output:\n {}", content);
-    serde_json::from_str(&content).map_err(|e: SerdeError| format!("Failed to parse CCG from JSON: {}", e))
+    tagged_tree
 }

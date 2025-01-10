@@ -1,6 +1,11 @@
 #![allow(non_snake_case)]
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use crate::brill::wordclass::Wordclass;
+use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
+use crate::brill::brill_tagger::get_possible_tags;
 use crate::ccg::category::CCGType;
 use crate::ccg::node::CCGNode;
 use crate::ccg::rule::CCGRule;
@@ -11,25 +16,27 @@ use crate::lambda::application::Application;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::variable::Variable;
 use crate::{λAbs, λVar, λApp, λPred, λConj};
-use crate::brill::brill_tagger::get_possible_tags;
-use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
 
+/// For a given node type and node, build a lexical category (Box<LambdaEntity>).
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode) -> Box<LambdaEntity> {
-    
-
     match _type {
         CCGType::ForwardsFunctor(left, right) | CCGType::BackwardsFunctor(left, right) => {
-            let lexical_category = λAbs!(generate_lexical_category(*right, _node), generate_lexical_category(*left, _node));
+            // Recursively generate a lambda abstraction for functor categories
+            let lexical_category = λAbs!(
+                generate_lexical_category(*right, _node),
+                generate_lexical_category(*left, _node)
+            );
             generate_lexical_element(_node, lexical_category)
         }
-        _ => generate_lexical_element(_node, λVar!(_type.to_string()))
+        // If it's a simple (non-functor) category, just wrap it in a variable
+        _ => generate_lexical_element(_node, λVar!(_type.to_string())),
     }
 }
 
-
+/// Generate a lexical lambda entity (predicate or variable) based on a node’s word/tag.
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     if let Some(ccg_word) = &node.word {
-        // Compute a "local" mutated tag (does not affect the original node)
+        // If the node is a functor but the tag is NN or NNS, we might treat it as a VBZ
         let effective_tag = if [Wordclass::NN, Wordclass::NNS].contains(&ccg_word.tag)
             && matches!(node.node_type, CCGType::ForwardsFunctor(..) | CCGType::BackwardsFunctor(..))
         {
@@ -39,33 +46,35 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>) -> Box<
         };
 
         match effective_tag {
-            Wordclass::NNP => λVar!(ccg_word.text.clone()),
+            Wordclass::NNP | Wordclass::NN => λVar!(ccg_word.text.clone()),
             Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
-            _ => panic!("wordclass variant not implemented"),
+            _ => panic!("wordclass variant not implemented: {:?}", effective_tag),
         }
     } else {
-        panic!("expected word and tag on terminal node: {}", node);
+        panic!("Expected a word/tag on a terminal node: {}", node);
     }
 }
 
-
+/// Builds a lambda expression for a predicate with the given identifier.
 fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
-    
-
     let num_arguments = count_predicate_arguments(category.clone());
 
-    // todo: i have no idea why this works
+    // A small safeguard for unexpected zero-argument predicates
     if num_arguments == 0 {
-        return λVar!(String::from("tmp"))
+        return λVar!(String::from("tmp"));
     }
 
+    // Build argument list: x1, x2, ...
     let mut arguments = Vec::new();
     for i in 1..=num_arguments {
         arguments.push(λVar!(format!("x{}", i)));
     }
 
+    // Start with λPred!(identifier, [x1, x2, ...])
     let mut expression = λPred!(identifier, arguments);
-    for i in 1..=num_arguments {
+
+    // Then wrap it in λAbs! for each argument in reverse order
+    for i in (1..=num_arguments).rev() {
         let arg_name = format!("x{}", i);
         expression = λAbs!(λVar!(arg_name), expression);
     }
@@ -73,81 +82,88 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
     expression
 }
 
-
+/// Count how many arguments a functor category expects (by counting nested lambda Abs nodes).
 fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
     match *category {
         LambdaEntity::Abs(abs) => {
+            // Every Abs node might introduce an argument,
+            // but we also count inside its bound_var and body if they're Abs, too
             1 + count_predicate_arguments(abs.bound_var) + count_predicate_arguments(abs.body)
         }
-        LambdaEntity::Var(_) => 0,
-        LambdaEntity::Pred(_) => 0,
+        LambdaEntity::Var(_) | LambdaEntity::Pred(_) => 0,
         _ => panic!("Invalid application in lexical term"),
     }
 }
 
-
-fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode) {
-    let nodes_vec = maybe_nodes.expect("Expected a vector of nodes, found None.");
-    let first = nodes_vec.get(0).expect("Expected at least one node, found none.");
-    let second = nodes_vec.get(1).expect("Expected at least two nodes, found only one.");
-    ( (**first).clone(), (**second).clone() )
-}
-
-
-pub fn ccg_to_lambda (root: CCGNode) -> Box<LambdaEntity> {
-    //use CCGRule::*;
-    use LambdaEntity::*;
-
-    
+/// Convert a `CCGNode` (with rule + children) into a `LambdaEntity` expression.
+pub fn ccg_to_lambda(root: CCGNode) -> Box<LambdaEntity> {
     match root.rule {
-        // Base case: terminal nodes
+        // --- Base case: lexical/terminal nodes ---
         CCGRule::Lexical => generate_lexical_category(root.node_type.clone(), &root),
 
-        // Recursive case
+        // --- Recursive cases ---
         CCGRule::BackwardApplication => {
-            let (left, right) = unpack_children(root.children);
+            let children_borrowed = root.children.borrow();
+            if children_borrowed.len() < 2 {
+                panic!("Expected at least two children for BackwardApplication");
+            }
+            let left  = children_borrowed[0].borrow().clone();
+            let right = children_borrowed[1].borrow().clone();
             λApp!(ccg_to_lambda(right), ccg_to_lambda(left))
-
-        },
+        }
         CCGRule::ForwardApplication => {
-            let (left, right) = unpack_children(root.children);
+            let children_borrowed = root.children.borrow();
+            if children_borrowed.len() < 2 {
+                panic!("Expected at least two children for ForwardApplication");
+            }
+            let left  = children_borrowed[0].borrow().clone();
+            let right = children_borrowed[1].borrow().clone();
             λApp!(ccg_to_lambda(left), ccg_to_lambda(right))
         }
         CCGRule::Unary => {
-            if let Some(children) = &root.children {
-                if children.len() == 1 {
-                    ccg_to_lambda(*children[0].clone())
-                } else {
-                    panic!("Expected one child (unary rule).");
-                }
-            } else { panic!("Expected node to have children.") }
+            let children_borrowed = root.children.borrow();
+            if children_borrowed.len() == 1 {
+                let child = children_borrowed[0].borrow().clone();
+                ccg_to_lambda(child)
+            } else {
+                panic!("Expected exactly one child for a Unary rule, found {}", children_borrowed.len());
+            }
         }
         CCGRule::Conjunction => {
-            // gouda \ (and cheddar)
-            // if the "and" first combines with the left argument (gouda and) / cheddar.
-            // im not sure if lambeq does this
-            // todo fix indentation
+            let children_borrowed = root.children.borrow();
+            if children_borrowed.len() == 2 {
+                let lhs_type = children_borrowed[0].borrow().node_type.clone();
+                let rhs_type = children_borrowed[1].borrow().node_type.clone();
 
-            // if the type of the first argument is CONJ, then it is of the form "and --right--"
-            // lambda x . (x and ccg_to_lambda(arg2))
-            if let Some(children) = &root.children {
-                if children.len() == 2 {
-                    match (children[0].clone().node_type, children[1].clone().node_type) {
-                        (CCGType::Conjunction, rhs) => {λAbs!(λVar!(String::from("x1")), λConj!(λVar!(String::from("x1")), ccg_to_lambda(*children[1].clone())))}
-                        (lhs, CCGType::Conjunction) => {λAbs!(λVar!(String::from("x1")), λConj!(ccg_to_lambda(*children[0].clone()), λVar!(String::from("x1"))))}
-                        _ => panic!("Expecting CONJ type as child of Conjunction rule")
-
+                match (lhs_type, rhs_type) {
+                    // If the first child is the actual conjunction "and"
+                    (CCGType::Conjunction, _) => {
+                        λAbs!(
+                            λVar!("x1".to_string()),
+                            λConj!(
+                                λVar!("x1".to_string()),
+                                ccg_to_lambda(children_borrowed[1].borrow().clone())
+                            )
+                        )
                     }
-                } else {panic!("Expected 2 children in conjunction rule")}
-            } else {panic!("Expected conjunction rule to have children")}
-
-            // if the type of the second argument is CONJ, then it is of the form "--left-- and"
-            // lambda x . (ccg_to_lambda(arg1) and x)
-
-
-
+                    // If the second child is the actual conjunction "and"
+                    (_, CCGType::Conjunction) => {
+                        λAbs!(
+                            λVar!("x1".to_string()),
+                            λConj!(
+                                ccg_to_lambda(children_borrowed[0].borrow().clone()),
+                                λVar!("x1".to_string())
+                            )
+                        )
+                    }
+                    _ => panic!("Expecting at least one child to have type Conjunction (CCGType::Conjunction)"),
+                }
+            } else {
+                panic!("Expected exactly 2 children for Conjunction rule, found {}", children_borrowed.len());
+            }
         }
 
-        _ => panic!("Not implemented yet!")
+        // --- Anything else is not implemented in your match ---
+        _ => panic!("Not implemented yet!"),
     }
 }

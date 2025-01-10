@@ -1,45 +1,62 @@
 use crate::brill::wordclass::Wordclass;
 use crate::ccg::node::CCGNode;
 use crate::ccg::word::CCGWord;
+use std::rc::{Rc, Weak};
+use std::cell::RefCell;
 
-// Function that recursively add tags
-fn _insert_tags<I>(old_node: &CCGNode, words_and_tags_iter: &mut I) -> CCGNode where I: Iterator<Item = (String, Wordclass)>,
+fn _insert_tags<I>(old_node: &Rc<RefCell<CCGNode>>, words_and_tags_iter: &mut I, parent: Option<Weak<RefCell<CCGNode>>>, ) -> Rc<RefCell<CCGNode>> where I: Iterator<Item = (String, Wordclass)>,
 {
-    // Recur through children.
-    let new_children = old_node.children.as_ref().map(|child_vec| {
-        child_vec
-            .iter()
-            .map(|child| { Box::new(_insert_tags(child, words_and_tags_iter)) })
-            .collect()
-    });
+    // Extract old_node’s fields
+    let old_borrow = old_node.borrow();
+    let node_type = old_borrow.node_type.clone();
+    let rule = old_borrow.rule.clone();
+    let old_word = old_borrow.word.clone();
 
-    // If this node has a word, pull one (word, tag) from the iterator
-    let new_word = match &old_node.word {
-        Some(old_word) => {
-            // Grab the next (String, Wordclass) pair, if there isn't enough, something has gone wrong (panic!).
-            let (updated_text, updated_tag) = words_and_tags_iter
-                .next()
-                .expect("Ran out of Wordclass pairs while reconstructing CCG tree.");
+    drop(old_borrow);
+    // (We drop it here so we can borrow_mut() later without panic.)
 
-            Some(CCGWord {
-                text: updated_text,
-                tag: updated_tag,
-            })
+    // Create a new node
+    let new_node = Rc::new(RefCell::new(CCGNode {
+        node_type,
+        rule,
+        // If this node has a word, consume one (String, Wordclass) pair from the iterator
+        word: match old_word {
+            Some(_) => {
+                let (updated_text, updated_tag) = words_and_tags_iter
+                    .next()
+                    .expect("Ran out of Wordclass pairs while reconstructing CCG tree.");
+
+                Some(CCGWord {
+                    text: updated_text,
+                    tag: updated_tag,
+                })
+            }
+            None => None,
+        },
+        children: RefCell::new(vec![]),
+        parent: RefCell::new(parent),
+    }));
+
+    // Process children recursively
+    let old_borrow = old_node.borrow();
+    if !old_borrow.children.borrow().is_empty() {
+        for child_rc in old_borrow.children.borrow().iter() {
+            let child = _insert_tags(
+                child_rc,
+                words_and_tags_iter,
+                Some(Rc::downgrade(&new_node)),
+            );
+            new_node.borrow_mut().children.borrow_mut().push(child);
         }
-        None => None,
-    };
-
-    return CCGNode {
-        node_type: old_node.node_type.clone(),
-        rule: old_node.rule.clone(),
-        word: new_word,
-        children: new_children,
     }
+
+    new_node
 }
 
-
-// Function to insert tags
-pub fn insert_tags(old_tree: &CCGNode, words_and_tags: Vec<(String, Wordclass)>) -> CCGNode {
+pub fn insert_tags(
+    old_tree: Rc<RefCell<CCGNode>>,
+    words_and_tags: Vec<(String, Wordclass)>,
+) -> Rc<RefCell<CCGNode>> {
     let mut iter = words_and_tags.into_iter();
-    _insert_tags(old_tree, &mut iter)
+    _insert_tags(&old_tree, &mut iter, None)
 }
