@@ -27,41 +27,9 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) ->
 }
 
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &CCGNode) -> Box<LambdaEntity> {
-    println!("generate lexical element: currently considering {}", node);
 
     if let Some(ccg_word) = &node.word {
 
-        // If the word is every, construct a dependent function type
-        if ccg_word.text.to_lowercase() == "every" {
-            println!("root in dep fun: {}", root.clone());
-
-            // Retrieve the parent of the current node
-            let parent = node.get_parent(&root);
-            println!("parent of {} : {:?}", ccg_word.text, parent);
-
-            let sibling = node.get_sibling(&root);
-            println!("sibling of {} : {:?}", ccg_word.text, sibling);
-
-            if let (Some(p), Some(x)) = (parent, sibling) {
-                // Retrieve the sibling of the parent
-                let y = p.get_sibling(&root);
-
-                if let Some(y) = y {
-                    let reduced_x = ccg_to_lambda_recursive(x.clone(), root);
-                    let reduced_y = ccg_to_lambda_recursive(y.clone(), root);
-
-                    let ret = λDepFun!(reduced_x, reduced_y);
-
-                    println!("returning {:?}", ret);
-                    ret
-                } else {
-                    panic!("Parent has no sibling.");
-                }
-            } else {
-                panic!("Node is missing a parent or sibling.");
-            }
-
-        } else {
             // Compute a "local" mutated tag (does not affect the original node)
             let effective_tag = if [Wordclass::NN, Wordclass::NNS].contains(&ccg_word.tag)
                 && matches!(node.node_type, CCGType::ForwardsFunctor(..) | CCGType::BackwardsFunctor(..))
@@ -72,12 +40,10 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
             };
 
             match effective_tag {
-                Wordclass::NNP | Wordclass::NN  => λVar!(ccg_word.text.clone()),
+                Wordclass::NNP | Wordclass::NN => λVar!(ccg_word.text.clone()),
                 Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
                 _ => panic!("wordclass variant not implemented"),
             }
-        }
-
     } else {
         panic!("expected word and tag on terminal node: {}", node);
     }
@@ -123,55 +89,78 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
     ( (**first).clone(), (**second).clone() )
 }
 
-pub fn ccg_to_lambda(root: &CCGNode) -> Box<LambdaEntity> {
+pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
+    root.initialize_flags();
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
+
+pub fn ccg_to_product(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+
+    // retrieve the children (every man) (walks)
+
+    if let Some(children) = node.children {
+        let (quantifier_and_bound_var, expr) = (children[0].clone(), children[1].clone());
+        if let Some(expr_children) = quantifier_and_bound_var.children {
+            let (quantifier, bound_var) = (&expr_children[0], &expr_children[1]);
+            let reduced_bound_var = ccg_to_lambda_recursive(*bound_var.clone(), root);
+            λDepFun!(reduced_bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), reduced_bound_var.clone()))
+
+        } else {panic!("")}
+    } else { panic!("Expected quantification node to have children")}
+}
+
+// TODO: this was separated because root is passed in. Can be removed when a reference to the parent is stored.
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
-    match current_node.rule {
-        // Base case: terminal nodes
-        CCGRule::Lexical => {
-            let expr = generate_lexical_category(current_node.node_type.clone(), &current_node, root);
-            expr
-        },
+    if current_node.is_quantification_node {
+        ccg_to_product(current_node, root)
+    }
+    else {
+        match current_node.rule {
+            // Base case: terminal nodes
+            CCGRule::Lexical => {
+                let expr = generate_lexical_category(current_node.node_type.clone(), &current_node, root);
+                expr
+            },
 
-        // Recursive case
-        CCGRule::BackwardApplication => {
-            let (left, right) = unpack_children(current_node.children);
-            λApp!(ccg_to_lambda_recursive(right, root), ccg_to_lambda_recursive(left, root))
-        },
-        CCGRule::ForwardApplication => {
-            let (left, right) = unpack_children(current_node.children);
-            λApp!(ccg_to_lambda_recursive(left, root), ccg_to_lambda_recursive(right, root))
-        }
-        CCGRule::Unary => {
-            if let Some(children) = &current_node.children {
-                if children.len() == 1 {
-                    ccg_to_lambda_recursive(*children[0].clone(), root)
-                } else {
-                    panic!("Expected one child (unary rule).");
-                }
-            } else { panic!("Expected node to have children.") }
-        }
-        CCGRule::Conjunction => {
-            // Handle conjunction as before
-            if let Some(children) = &current_node.children {
-                if children.len() == 2 {
-                    match (children[0].clone().node_type, children[1].clone().node_type) {
-                        (CCGType::Conjunction, rhs) => {
-                            λAbs!(λVar!(String::from("x1")), λConj!(λVar!(String::from("x1")), ccg_to_lambda_recursive(*children[1].clone(), root)))
-                        }
-                        (lhs, CCGType::Conjunction) => {
-                            λAbs!(λVar!(String::from("x1")), λConj!(ccg_to_lambda_recursive(*children[0].clone(), root), λVar!(String::from("x1"))))
-                        }
-                        _ => panic!("Expecting CONJ type as child of Conjunction rule")
+            // Recursive case
+            CCGRule::BackwardApplication => {
+                let (left, right) = unpack_children(current_node.children);
+                λApp!(ccg_to_lambda_recursive(right, root), ccg_to_lambda_recursive(left, root))
+            },
+            CCGRule::ForwardApplication => {
+                let (left, right) = unpack_children(current_node.children);
+                λApp!(ccg_to_lambda_recursive(left, root), ccg_to_lambda_recursive(right, root))
+            }
+            CCGRule::Unary => {
+                if let Some(children) = &current_node.children {
+                    if children.len() == 1 {
+                        ccg_to_lambda_recursive(*children[0].clone(), root)
+                    } else {
+                        panic!("Expected one child (unary rule).");
                     }
-                } else { panic!("Expected 2 children in conjunction rule") }
-            } else { panic!("Expected conjunction rule to have children") }
-        }
+                } else { panic!("Expected node to have children.") }
+            }
+            CCGRule::Conjunction => {
+                // Handle conjunction as before
+                if let Some(children) = &current_node.children {
+                    if children.len() == 2 {
+                        match (children[0].clone().node_type, children[1].clone().node_type) {
+                            (CCGType::Conjunction, rhs) => {
+                                λAbs!(λVar!(String::from("x1")), λConj!(λVar!(String::from("x1")), ccg_to_lambda_recursive(*children[1].clone(), root)))
+                            }
+                            (lhs, CCGType::Conjunction) => {
+                                λAbs!(λVar!(String::from("x1")), λConj!(ccg_to_lambda_recursive(*children[0].clone(), root), λVar!(String::from("x1"))))
+                            }
+                            _ => panic!("Expecting CONJ type as child of Conjunction rule")
+                        }
+                    } else { panic!("Expected 2 children in conjunction rule") }
+                } else { panic!("Expected conjunction rule to have children") }
+            }
 
-        _ => panic!("Not implemented yet!")
+            _ => panic!("Not implemented yet!")
+        }
     }
 }

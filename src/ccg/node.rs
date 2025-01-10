@@ -18,6 +18,9 @@ pub struct CCGNode {
 
     pub rule: CCGRule,
     pub children: Option<Vec<Box<CCGNode>>>, // Use Box to handle recursion
+
+    #[serde(skip)]
+    pub is_quantification_node: bool
 }
 
 
@@ -106,17 +109,35 @@ impl CCGNode {
 
         find_parent(root, self, None)
     }
-    pub fn get_sibling<'a>(&'a self, root: &'a CCGNode) -> Option<&'a CCGNode> {
-        if let Some(parent) = self.get_parent(root) {
-            if let Some(children) = &parent.children {
-                for sibling in children {
-                    if **sibling != *self {
-                        return Some(sibling);
+
+
+    // Recursive function to initialize flags
+    pub fn initialize_flags(&mut self) {
+        // Set the flag to false by default
+        self.is_quantification_node = false;
+
+        // If condition `c` is met, set the flag to true
+        if let Some(children) = self.clone().children {
+            for c in children {
+                if let Some(grandchildren) = c.children {
+                    for g in grandchildren {
+                        if let Some(ccg_word) = g.word {
+                            if ccg_word.text.to_lowercase() == "every" {
+                                self.is_quantification_node = true;
+                                return;
+                            }
+                        }
                     }
                 }
             }
         }
-        None
+
+        // Recur for all children if they exist
+        if let Some(children) = &mut self.children {
+            for child in children.iter_mut() {
+                child.initialize_flags(); // Recursively initialize the child nodes
+            }
+        }
     }
 }
 

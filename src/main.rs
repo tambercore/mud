@@ -21,7 +21,7 @@ fn main() {
 
     // TODO: Contractions break the tagger (don't does not get a tag etc)
 
-    let sentence = "Every man walks";
+    let sentence = "Every man walks and eats cake and every woman talks";
 
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -29,11 +29,11 @@ fn main() {
     println!("vec_word_tag_tuples: {:?}", vec_of_word_tag_tuples);
 
     // parse the ccg tree
-    let ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
+    let mut ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
     println!("ccg: \n{}", ccg);
 
     // CCG to lambda
-    let lambda_expression = ccg_to_lambda(&ccg);
+    let lambda_expression = ccg_to_lambda(&mut ccg);
     println!("lambda: \n{}", lambda_expression);
 
     let reduction = (*lambda_expression).beta_reduce();

@@ -34,6 +34,7 @@ fn _insert_tags<I>(old_node: &CCGNode, words_and_tags_iter: &mut I) -> CCGNode w
         rule: old_node.rule.clone(),
         word: new_word,
         children: new_children,
+        is_quantification_node: old_node.is_quantification_node
     }
 }
 
