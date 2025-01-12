@@ -21,7 +21,7 @@ fn main() {
 
     // TODO: Contractions break the tagger (don't does not get a tag etc)
 
-    let sentence = "Every man walks and eats cake and every woman talks";
+    let sentence = "every man walks";
 
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
