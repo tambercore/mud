@@ -147,31 +147,53 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             }
 
             CCGRule::Conjunction => {
-                // Typically the node children are:
-                //    1) conj node ("and")
-                //    2) an S\NP (or similar) for the right conjunct
-                // so we just parse them, but we do not individually
-                // apply them. We build a function of type (S\NP) -> (S\NP).
-                // i.e.   \F. \x. F(x) ^ right(x)
+                let (left_child, right_child) = unpack_children(current_node.children);
 
-                let (left, right) = unpack_children(current_node.children);
+                // Usually `left_child` is the word "and"; `right_child` is the phrase
+                // you'd conjoin. Let's get the lambda for the right side:
+                let right_expr = ccg_to_lambda_recursive(right_child, root);
 
-                // We do not really use the 'left' expression (the word "and")
-                // except for verification or ignoring.
-                // The main content is in `right_expr` = ccg_to_lambda_recursive(right, root)
-                let right_expr = ccg_to_lambda_recursive(right, root);
+                // Now dispatch based on current_node.node_type to see if it's S\S, (S\NP)\(S\NP), etc.
+                match current_node.node_type {
 
-                // build \F. \x. conj(F x, right_expr x)
-                let f = λVar!("F".to_string());  // The left conjunct (like "runs" or "walks")
-                let x = λVar!("x".to_string());  // The eventual subject
-
-                let conj_body = λConj!(
-                    λApp!(f.clone(), x.clone()),
+                    // (S\NP)\(S\NP) => subject-sharing
+                    CCGType::BackwardsFunctor(ref a, ref b)
+                    if **a == CCGType::BackwardsFunctor(
+                        Box::new(CCGType::Sentence),
+                        Box::new(CCGType::NounPhrase)
+                    )
+                        && **b == CCGType::BackwardsFunctor(
+                        Box::new(CCGType::Sentence),
+                        Box::new(CCGType::NounPhrase)
+                    )
+                    => {
+                        let F = λVar!("F".to_string());
+                        let x = λVar!("x".to_string());
+                        let conj_body = λConj!(
+                    λApp!(F.clone(), x.clone()),
                     λApp!(right_expr, x.clone())
                 );
+                        λAbs!(F, λAbs!(x, conj_body))
+                    }
 
-                // final lambda is:  \F. \x.  [ F(x) ∧ right_expr(x) ]
-                λAbs!(f, λAbs!(x, conj_body))
+                    // (S \ S) => full sentence conj
+                    CCGType::BackwardsFunctor(ref a, ref b)
+                    if **a == CCGType::Sentence && **b == CCGType::Sentence =>
+                        {
+                            let P = λVar!("P".to_string());
+                            λAbs!(P.clone(), λConj!(P, right_expr))
+                        }
+
+                    // (S / S) => full sentence conj
+                    CCGType::ForwardsFunctor(ref a, ref b)
+                    if **a == CCGType::Sentence && **b == CCGType::Sentence =>
+                        {
+                            let P = λVar!("P".to_string());
+                            λAbs!(P.clone(), λConj!(P, right_expr))
+                        }
+
+                    _ => panic!("Unhandled conjunction type: {:?}", current_node.node_type),
+                }
             }
 
             _ => panic!("Not implemented yet!")
