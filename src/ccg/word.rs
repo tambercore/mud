@@ -8,6 +8,12 @@ pub struct CCGWord {
     pub tag: Wordclass
 }
 
+impl PartialEq for CCGWord {
+    fn eq(&self, other: &Self) -> bool {
+        self.text == other.text && self.tag == other.tag
+    }
+}
+
 // Implement Display for CCGWord
 impl fmt::Display for CCGWord {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

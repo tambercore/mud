@@ -1,4 +1,5 @@
 use crate::ccg::rule::CCGRule;
+use crate::lambda::dependent_function::DependentFunction;
 
 #[macro_export]
 macro_rules! λVar {
@@ -32,5 +33,12 @@ macro_rules! λPred {
 macro_rules! λConj {
     ($lhs:expr, $rhs:expr) => {
         Box::from(LambdaEntity::Conj(Conjunction{lhs: $lhs, rhs: $rhs}))
+    };
+}
+
+#[macro_export]
+macro_rules! λDepFun {
+    ($bound_var:expr, $expr:expr) => {
+        Box::from(LambdaEntity::DepFun(DependentFunction{bound_var: $bound_var, expr: $expr}))
     };
 }

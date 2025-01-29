@@ -5,6 +5,7 @@ use std::cmp::PartialEq;
 use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::conjunction::Conjunction;
+use crate::lambda::dependent_function::{DependentFunction};
 use crate::lambda::predicate::Predicate;
 use crate::λConj;
 
@@ -25,6 +26,7 @@ pub enum LambdaEntity {
     Var(Variable),         // Variable, e.g., x
     Pred(Predicate),       // Predicate, e.g. P(x)
     Conj(Conjunction),     // Conjunction, e.g. x ^ y
+    DepFun(DependentFunction) // Dependent Function, e.g. Π(x) (expr)
 }
 
 
@@ -39,6 +41,7 @@ impl fmt::Display for LambdaEntity {
             LambdaEntity::Var(internal) => write!(f, "{}", internal),
             LambdaEntity::Pred(internal) => write!(f, "{}", internal),
             LambdaEntity::Conj(internal) => write!(f, "{}", internal),
+            LambdaEntity::DepFun(internal) => write!(f, "{}", internal),
         }
     }
 }
@@ -53,6 +56,7 @@ impl Substitutable for LambdaEntity {
             LambdaEntity::Var(var) => { return var.substitute(source, target) }
             LambdaEntity::Pred(var) => { return var.substitute(source, target) }
             LambdaEntity::Conj(var) => { return var.substitute(source, target) }
+            LambdaEntity::DepFun(var) => { return var.substitute(source, target) }
         }
     }
 }
