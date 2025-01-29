@@ -40,9 +40,9 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
             };
 
             match effective_tag {
-                Wordclass::NNP | Wordclass::NN => λVar!(ccg_word.text.clone()),
+                Wordclass::NNP | Wordclass::NN | Wordclass::NNS => λVar!(ccg_word.text.clone()),
                 Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
-                _ => panic!("wordclass variant not implemented"),
+                _ => panic!("Wordclass variant not implemented: {}", effective_tag),
             }
     } else {
         panic!("expected word and tag on terminal node: {}", node);
