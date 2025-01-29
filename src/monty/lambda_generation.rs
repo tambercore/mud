@@ -155,27 +155,6 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
                 // Now dispatch based on current_node.node_type to see if it's S\S, (S\NP)\(S\NP), etc.
                 match current_node.node_type {
-
-                    // (S\NP)\(S\NP) => subject-sharing
-                    CCGType::BackwardsFunctor(ref a, ref b)
-                    if **a == CCGType::BackwardsFunctor(
-                        Box::new(CCGType::Sentence),
-                        Box::new(CCGType::NounPhrase)
-                    )
-                        && **b == CCGType::BackwardsFunctor(
-                        Box::new(CCGType::Sentence),
-                        Box::new(CCGType::NounPhrase)
-                    )
-                    => {
-                        let F = λVar!("F".to_string());
-                        let x = λVar!("x".to_string());
-                        let conj_body = λConj!(
-                    λApp!(F.clone(), x.clone()),
-                    λApp!(right_expr, x.clone())
-                );
-                        λAbs!(F, λAbs!(x, conj_body))
-                    }
-
                     // (S \ S) => full sentence conj
                     CCGType::BackwardsFunctor(ref a, ref b)
                     if **a == CCGType::Sentence && **b == CCGType::Sentence =>
@@ -192,7 +171,18 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
                             λAbs!(P.clone(), λConj!(P, right_expr))
                         }
 
-                    _ => panic!("Unhandled conjunction type: {:?}", current_node.node_type),
+                    // (S\NP)\  (S\NP) => subject-sharing
+                    CCGType::BackwardsFunctor(ref a, ref b)
+                    => {
+                        let F = λVar!("F".to_string());
+                        let x = λVar!("x".to_string());
+                        let conj_body = λConj!(
+                            λApp!(F.clone(), x.clone()),
+                            λApp!(right_expr, x.clone())
+                        );
+                        λAbs!(F, λAbs!(x, conj_body))
+                    }
+                    _ => panic!("Unhandled Conjunction Type")
                 }
             }
 
