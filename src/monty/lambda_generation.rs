@@ -147,32 +147,17 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             }
 
             CCGRule::Conjunction => {
-                // Typically the node children are:
-                //    1) conj node ("and")
-                //    2) an S\NP (or similar) for the right conjunct
-                // so we just parse them, but we do not individually
-                // apply them. We build a function of type (S\NP) -> (S\NP).
-                // i.e.   \F. \x. F(x) ^ right(x)
-
+                // conjunction combines on the right, according to ccgbank
                 let (left, right) = unpack_children(current_node.children);
-
-                // We do not really use the 'left' expression (the word "and")
-                // except for verification or ignoring.
-                // The main content is in `right_expr` = ccg_to_lambda_recursive(right, root)
                 let right_expr = ccg_to_lambda_recursive(right, root);
-
-                // build \F. \x. conj(F x, right_expr x)
-                let f = λVar!("F".to_string());  // The left conjunct (like "runs" or "walks")
-                let x = λVar!("x".to_string());  // The eventual subject
-
+                let x = λVar!("x".to_string());
                 let conj_body = λConj!(
-                    λApp!(f.clone(), x.clone()),
-                    λApp!(right_expr, x.clone())
+                    x.clone(),
+                    right_expr
                 );
-
-                // final lambda is:  \F. \x.  [ F(x) ∧ right_expr(x) ]
-                λAbs!(f, λAbs!(x, conj_body))
+                λAbs!(x, conj_body)
             }
+
 
             _ => panic!("Not implemented yet!")
         }
