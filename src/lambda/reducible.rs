@@ -96,7 +96,7 @@ impl Reducible for LambdaEntity {
             }
 
             LambdaEntity::DepFun(dep) => {
-                *λDepFun!(Box::from(dep.bound_var.clone()), Box::from(dep.expr.beta_reduce()))
+                *λDepFun!(Box::from(dep.bound_var.beta_reduce()), Box::from(dep.expr.beta_reduce()))
             }
 
             // Handle Non Computational Cases (i.e. vars and predicates)

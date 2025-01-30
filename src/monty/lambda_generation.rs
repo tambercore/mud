@@ -94,21 +94,45 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
-
 pub fn ccg_to_product(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
-    // retrieve the children (every man) (walks)
-
     if let Some(children) = node.children {
-        let (quantifier_and_bound_var, expr) = (children[0].clone(), children[1].clone());
+        let (first, second) = (children[0].clone(), children[1].clone());
+
+        let (quantifier_and_bound_var, expr) = {
+            let check_quantifier = |child: &CCGNode| {
+                child.children.as_ref().map_or(false, |children| {
+                    children.iter().any(|c| c.word.as_ref().map_or(false, |w| w.text.to_lowercase() == "every"))
+                })
+            };
+
+            if check_quantifier(&first) {
+                (first, second)
+            } else if check_quantifier(&second) {
+                (second, first)
+            } else {
+                panic!("Neither child has the expected quantifier structure: {:?} and {:?}", first, second);
+            }
+        };
+
         if let Some(expr_children) = quantifier_and_bound_var.children {
             let (quantifier, bound_var) = (&expr_children[0], &expr_children[1]);
             let reduced_bound_var = ccg_to_lambda_recursive(*bound_var.clone(), root);
-            λDepFun!(reduced_bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), reduced_bound_var.clone()))
-
-        } else {panic!("")}
-    } else { panic!("Expected quantification node to have children")}
+            λDepFun!(
+                reduced_bound_var.clone(),
+                λApp!(ccg_to_lambda_recursive(*expr.clone(), root), reduced_bound_var.clone())
+            )
+        } else {
+            panic!(
+                "quantifier_and_bound_var : {:?} has no children",
+                quantifier_and_bound_var
+            )
+        }
+    } else {
+        panic!("Expected quantification node to have children");
+    }
 }
+
 
 // TODO: this was separated because root is passed in. Can be removed when a reference to the parent is stored.
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
