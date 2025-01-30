@@ -1,62 +1,62 @@
 use std::fmt;
 use serde::Deserialize;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize)]
-pub enum CCGRule {
-    #[serde(rename = "BA")]
-    BackwardApplication,                    // "BA"
+    #[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize)]
+    pub enum CCGRule {
+        #[serde(rename = "BA")]
+        BackwardApplication,                    // "BA"
 
-    #[serde(rename = "BC")]
-    BackwardComposition,                    // "BC"
+        #[serde(rename = "BC")]
+        BackwardComposition,                    // "BC"
 
-    #[serde(rename = "BX")]
-    BackwardCrossedComposition,             // "BX"
+        #[serde(rename = "BX")]
+        BackwardCrossedComposition,             // "BX"
 
-    #[serde(rename = "BTR")]
-    BackwardTypeRaising,                    // "BTR"
+        #[serde(rename = "BTR")]
+        BackwardTypeRaising,                    // "BTR"
 
-    #[serde(rename = "CONJ")]
-    Conjunction,                            // "CONJ"
+        #[serde(rename = "CONJ")]
+        Conjunction,                            // "CONJ"
 
-    #[serde(rename = "FA")]
-    ForwardApplication,                     // "FA"
+        #[serde(rename = "FA")]
+        ForwardApplication,                     // "FA"
 
-    #[serde(rename = "FC")]
-    ForwardComposition,                     // "FC"
+        #[serde(rename = "FC")]
+        ForwardComposition,                     // "FC"
 
-    #[serde(rename = "FX")]
-    ForwardCrossedComposition,              // "FX"
+        #[serde(rename = "FX")]
+        ForwardCrossedComposition,              // "FX"
 
-    #[serde(rename = "FTR")]
-    ForwardTypeRaising,                     // "FTR"
+        #[serde(rename = "FTR")]
+        ForwardTypeRaising,                     // "FTR"
 
-    #[serde(rename = "GBC")]
-    GeneralizedBackwardComposition,         // "GBC"
+        #[serde(rename = "GBC")]
+        GeneralizedBackwardComposition,         // "GBC"
 
-    #[serde(rename = "GBX")]
-    GeneralizedBackwardCrossedComposition,  // "GBX"
+        #[serde(rename = "GBX")]
+        GeneralizedBackwardCrossedComposition,  // "GBX"
 
-    #[serde(rename = "GFC")]
-    GeneralizedForwardComposition,          // "GFC"
+        #[serde(rename = "GFC")]
+        GeneralizedForwardComposition,          // "GFC"
 
-    #[serde(rename = "GFX")]
-    GeneralizedForwardCrossedComposition,   // "GFX"
+        #[serde(rename = "GFX")]
+        GeneralizedForwardCrossedComposition,   // "GFX"
 
-    #[serde(rename = "L")]
-    Lexical,                                // "L"
+        #[serde(rename = "L")]
+        Lexical,                                // "L"
 
-    #[serde(rename = "LP")]
-    RemovePunctuationLeft,                  // "LP"
+        #[serde(rename = "LP")]
+        RemovePunctuationLeft,                  // "LP"
 
-    #[serde(rename = "RP")]
-    RemovePunctuationRight,                 // "RP"
+        #[serde(rename = "RP")]
+        RemovePunctuationRight,                 // "RP"
 
-    #[serde(rename = "U")]
-    Unary,                                  // "U"
+        #[serde(rename = "U")]
+        Unary,                                  // "U"
 
-    #[serde(rename = "UNK")]
-    Unknown,                                // "UNK"
-}
+        #[serde(rename = "UNK")]
+        Unknown,                                // "UNK"
+    }
 
 
 impl CCGRule {

@@ -40,9 +40,9 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
             };
 
             match effective_tag {
-                Wordclass::NNP | Wordclass::NN => λVar!(ccg_word.text.clone()),
+                Wordclass::NNP | Wordclass::NN | Wordclass::NNS => λVar!(ccg_word.text.clone()),
                 Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
-                _ => panic!("wordclass variant not implemented"),
+                _ => panic!("Wordclass variant not implemented: {}", effective_tag),
             }
     } else {
         panic!("expected word and tag on terminal node: {}", node);
@@ -130,10 +130,12 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
                 let (left, right) = unpack_children(current_node.children);
                 λApp!(ccg_to_lambda_recursive(right, root), ccg_to_lambda_recursive(left, root))
             },
+
             CCGRule::ForwardApplication => {
                 let (left, right) = unpack_children(current_node.children);
                 λApp!(ccg_to_lambda_recursive(left, root), ccg_to_lambda_recursive(right, root))
             }
+
             CCGRule::Unary => {
                 if let Some(children) = &current_node.children {
                     if children.len() == 1 {
@@ -143,21 +145,33 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
                     }
                 } else { panic!("Expected node to have children.") }
             }
+
             CCGRule::Conjunction => {
-                // Handle conjunction as before
-                if let Some(children) = &current_node.children {
-                    if children.len() == 2 {
-                        match (children[0].clone().node_type, children[1].clone().node_type) {
-                            (CCGType::Conjunction, rhs) => {
-                                λAbs!(λVar!(String::from("x1")), λConj!(λVar!(String::from("x1")), ccg_to_lambda_recursive(*children[1].clone(), root)))
-                            }
-                            (lhs, CCGType::Conjunction) => {
-                                λAbs!(λVar!(String::from("x1")), λConj!(ccg_to_lambda_recursive(*children[0].clone(), root), λVar!(String::from("x1"))))
-                            }
-                            _ => panic!("Expecting CONJ type as child of Conjunction rule")
-                        }
-                    } else { panic!("Expected 2 children in conjunction rule") }
-                } else { panic!("Expected conjunction rule to have children") }
+                // Typically the node children are:
+                //    1) conj node ("and")
+                //    2) an S\NP (or similar) for the right conjunct
+                // so we just parse them, but we do not individually
+                // apply them. We build a function of type (S\NP) -> (S\NP).
+                // i.e.   \F. \x. F(x) ^ right(x)
+
+                let (left, right) = unpack_children(current_node.children);
+
+                // We do not really use the 'left' expression (the word "and")
+                // except for verification or ignoring.
+                // The main content is in `right_expr` = ccg_to_lambda_recursive(right, root)
+                let right_expr = ccg_to_lambda_recursive(right, root);
+
+                // build \F. \x. conj(F x, right_expr x)
+                let f = λVar!("F".to_string());  // The left conjunct (like "runs" or "walks")
+                let x = λVar!("x".to_string());  // The eventual subject
+
+                let conj_body = λConj!(
+                    λApp!(f.clone(), x.clone()),
+                    λApp!(right_expr, x.clone())
+                );
+
+                // final lambda is:  \F. \x.  [ F(x) ∧ right_expr(x) ]
+                λAbs!(f, λAbs!(x, conj_body))
             }
 
             _ => panic!("Not implemented yet!")

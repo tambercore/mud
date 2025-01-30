@@ -33,12 +33,36 @@ impl Reducible for LambdaEntity {
                         // Continue reducing the substituted body
                         substituted_body.beta_reduce()
                     }
-                    // If the function part is not an Abstraction, attempt to reduce the argument (rhs)
-                    _ => {
-                        let reduced_rhs = application.rhs.beta_reduce();
+                    LambdaEntity::Conj(conjunction) => {
+                        // NEW: Distribute 'rhs' over both sides of Conj(...).
+                        let reduced_arg = application.rhs.beta_reduce();
 
-                        // Return the application with the reduced lhs and rhs
-                        *λApp!(Box::from(reduced_lhs), Box::from(reduced_rhs))
+                        // Build (e1 arg) and (e2 arg), then reduce them
+                        let lhs_applied = LambdaEntity::App(Application {
+                            lhs: Box::new(*conjunction.lhs.clone()),
+                            rhs: Box::new(reduced_arg.clone()),
+                        })
+                            .beta_reduce();
+
+                        let rhs_applied = LambdaEntity::App(Application {
+                            lhs: Box::new(*conjunction.rhs.clone()),
+                            rhs: Box::new(reduced_arg.clone()),
+                        })
+                            .beta_reduce();
+
+                        // Rebuild as Conj( ... , ... )
+                        LambdaEntity::Conj(Conjunction {
+                            lhs: Box::new(lhs_applied),
+                            rhs: Box::new(rhs_applied),
+                        })
+                    }
+                    other => {
+                        // If not an Abs or Conj, reduce the rhs and rebuild App
+                        let reduced_rhs = application.rhs.beta_reduce();
+                        LambdaEntity::App(Application {
+                            lhs: Box::new(other),
+                            rhs: Box::new(reduced_rhs),
+                        })
                     }
                 }
             }
