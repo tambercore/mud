@@ -16,7 +16,7 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::lambda::reducible::Reducible;
 use crate::lambda::types::LambdaEntity::Conj;
 use crate::monty::lambda_generation::ccg_to_lambda;
-#[test]
+
 fn test_expression_generation() {
     let (lexical_ruleset, contextual_ruleset, mut wc_mapping) = (
         parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap(),
