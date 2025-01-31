@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::predicate::Predicate;
 use crate::lambda::variable::Variable;
+use crate::lambda::dependent_function::DependentFunction;
 
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::{λAbs, λApp, λPred, λConj, λVar, λDepFun};
@@ -17,6 +18,7 @@ use crate::lambda::reducible::Reducible;
 use crate::lambda::types::LambdaEntity::Conj;
 use crate::monty::lambda_generation::ccg_to_lambda;
 
+#[test]
 fn test_expression_generation() {
     let (lexical_ruleset, contextual_ruleset, mut wc_mapping) = (
         parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap(),
@@ -44,6 +46,16 @@ fn test_expression_generation() {
                     λPred!("runs".to_string(), vec![λVar!("man".to_string())])
                 ),
                 λPred!("eats".to_string(), vec![λVar!("man".to_string()), λVar!("cake".to_string())])
+            )
+        ),
+        (
+            "every man and every woman and every child likes brie",
+            λConj!(
+                λDepFun!(λVar!("man".to_string()), λPred!("likes".to_string(), vec![λVar!("man".to_string()), λVar!("brie".to_string())])),
+                λConj!(
+                    λDepFun!(λVar!("woman".to_string()), λPred!("likes".to_string(), vec![λVar!("woman".to_string()), λVar!("brie".to_string())])),
+                    λDepFun!(λVar!("child".to_string()), λPred!("likes".to_string(), vec![λVar!("child".to_string()), λVar!("brie".to_string())]))
+                )
             )
         )
     ];

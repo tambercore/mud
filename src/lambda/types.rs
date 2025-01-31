@@ -68,6 +68,7 @@ impl Expandable for LambdaEntity {
             match self {
                 LambdaEntity::Pred(ref predicate) => predicate.expand(),
                 LambdaEntity::Conj(ref conjunction) => conjunction.expand(),
+                LambdaEntity::DepFun(ref function) => function.expand(),
                 _ => Box::from(self.clone()),
             }
         }

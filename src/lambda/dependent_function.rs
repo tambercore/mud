@@ -59,6 +59,16 @@ impl fmt::Display for DependentFunction {
 /// Implements the `Expandable` trait for `DependentFunction`, enabling recursive expansion logic.
 impl Expandable for DependentFunction {
     fn expand(&self) -> Box<LambdaEntity> {
-            todo!()
+        match &*self.bound_var {
+            LambdaEntity::Conj(conjunction) => {
+                let lhs_expanded = λDepFun!(conjunction.lhs.clone(), self.expr.substitute(&self.bound_var, &conjunction.lhs)).expand();
+                let rhs_expanded = λDepFun!(conjunction.rhs.clone(), self.expr.substitute(&self.bound_var, &conjunction.rhs)).expand();
+
+                Box::from(λConj!(lhs_expanded, rhs_expanded))
+            }
+            _ => {
+                Box::from(λDepFun!(self.bound_var.expand(), self.expr.expand()))
+            }
         }
     }
+}
