@@ -42,7 +42,10 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
             match effective_tag {
                 Wordclass::NNP | Wordclass::NN | Wordclass::NNS => λVar!(ccg_word.text.clone()),
                 Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
-                Wordclass::DT => λVar!(String::from("EVERY")), //todo: fix
+
+                // Since determiners always get forwards/backwards applied to something else, and we want to ignore it here.
+                // We can substitute this for some identity function, i.e. \x . x (woman) --b--> woman
+                Wordclass::DT => λAbs!(λVar!("ID1".parse().unwrap()), λVar!("ID1".parse().unwrap())),
                 _ => panic!("Wordclass variant not implemented: {}", effective_tag),
             }
     } else {
