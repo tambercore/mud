@@ -24,15 +24,30 @@ jobs:
           profile: minimal
           components: clippy
 
+      # Install Python and create virtual environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      
+      - name: Create and activate virtual environment
+        run: |
+          python -m venv data/lambeq/lambeq_env
+          source data/lambeq/lambeq_env/bin/activate
+          pip install --upgrade pip
+          pip install lambeq
+      
       # Build the project
       - name: Run cargo build
         id: build_step
         run: cargo build --verbose
 
-      # Run tests
+      # Run tests with virtual environment activated
       - name: Run cargo test
         id: test_step
-        run: cargo test --verbose
+        run: |
+          source data/lambeq/lambeq_env/bin/activate
+          cargo test --verbose
 
       # Post comment on the pull request with build and test results
       - name: Post comment on PR
@@ -52,7 +67,6 @@ jobs:
             message += `Greetings mere humanoid, it seems you have summoned me by creating a pull request. I tried to build and test the [hottnat](https://github.com/tambercore/hottnat) rust project, here are the [github action](https://github.com/tambercore/hottnat/actions) results. 🤖\n`;
             message += `- \`cargo build\` ${buildOutcome === 'success' ? '✅' : '❌'}\n`;
             message += `- \`cargo test\` ${testOutcome === 'success' ? '✅' : '❌'}\n`;
-            
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
