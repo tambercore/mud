@@ -42,6 +42,7 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
             match effective_tag {
                 Wordclass::NNP | Wordclass::NN | Wordclass::NNS => λVar!(ccg_word.text.clone()),
                 Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
+                Wordclass::DT => λVar!(String::from("EVERY")), //todo: fix
                 _ => panic!("Wordclass variant not implemented: {}", effective_tag),
             }
     } else {
@@ -52,7 +53,6 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
 fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     let num_arguments = count_predicate_arguments(category.clone());
 
-    // todo: i have no idea why this works
     if num_arguments == 0 {
         return λVar!(String::from("tmp"))
     }
@@ -96,43 +96,41 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
 
 pub fn ccg_to_product(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
+    // todo
+    // make this recursive.
+
+    // retrieve the children (every man) (walks)
+    println!("QUANTIFICATION NODE: {}", node);
+
     if let Some(children) = node.children {
-        let (first, second) = (children[0].clone(), children[1].clone());
+        let (quantifier_and_bound_var, expr) = (children[0].clone(), children[1].clone());
 
-        let (quantifier_and_bound_var, expr) = {
-            let check_quantifier = |child: &CCGNode| {
-                child.children.as_ref().map_or(false, |children| {
-                    children.iter().any(|c| c.word.as_ref().map_or(false, |w| w.text.to_lowercase() == "every"))
-                })
-            };
+        // TODO:
+        // quantifier and bound var may be "every, man" "every, man and woman" "(every, man), (and every, woman)"
+        // must recursively separate the quantifier from the bound var
 
-            if check_quantifier(&first) {
-                (first, second)
-            } else if check_quantifier(&second) {
-                (second, first)
-            } else {
-                panic!("Neither child has the expected quantifier structure: {:?} and {:?}", first, second);
-            }
-        };
+        let bound_var = build_bound_variable(*quantifier_and_bound_var, root);
+        λDepFun!(bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var.clone()))
 
-        if let Some(expr_children) = quantifier_and_bound_var.children {
-            let (quantifier, bound_var) = (&expr_children[0], &expr_children[1]);
-            let reduced_bound_var = ccg_to_lambda_recursive(*bound_var.clone(), root);
-            λDepFun!(
-                reduced_bound_var.clone(),
-                λApp!(ccg_to_lambda_recursive(*expr.clone(), root), reduced_bound_var.clone())
-            )
-        } else {
-            panic!(
-                "quantifier_and_bound_var : {:?} has no children",
-                quantifier_and_bound_var
-            )
-        }
-    } else {
-        panic!("Expected quantification node to have children");
-    }
+    } else { panic!("Expected quantification node to have children")}
 }
 
+pub fn build_bound_variable(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+    if let Some(children) = bound_var.children.clone() {
+        if let (quant, bound_var) = (&children[0].clone(), &children[1].clone()) {
+            let reduced_bound = ccg_to_lambda_recursive(*bound_var.clone(), root);
+
+            // BASE CASE: quant is "every"
+            if let Some(word) = quant.clone().word {
+                if word.text.to_lowercase() == "every" {
+                    return reduced_bound;
+                }
+            }
+            // RECURSIVE CASE: quant is complex
+            return λApp!(reduced_bound, build_bound_variable(*quant.clone(), root));
+        } else { panic!("Expected quantification node to have two children")}
+    } else { panic!("Expected quantification node to have children")}
+}
 
 // TODO: this was separated because root is passed in. Can be removed when a reference to the parent is stored.
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {

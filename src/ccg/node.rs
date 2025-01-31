@@ -132,23 +132,20 @@ impl CCGNode {
         }
 
         if let Some(children) = &mut self.children {
-            if children.len() == 2 {
-                let mut both_quantification = true;
-
                 for child in children.iter_mut() {
                     child.initialize_flags();
-                    if !child.is_quantification_node {
-                        both_quantification = false;
+                    if child.is_quantification_node {
+                        if let Some(grandchildren) = &mut child.children {
+                            for grandchild in grandchildren.iter_mut() {
+                                grandchild.initialize_flags();
+                                if grandchild.is_quantification_node {
+                                    grandchild.is_quantification_node = false;
+                                    child.is_quantification_node = false;
+                                    self.is_quantification_node = true;
+                                }
+                            }
+                        }
                     }
-                }
-
-                if both_quantification {
-                    println!("both quantification");
-                    for child in children.iter_mut() {
-                        child.is_quantification_node = false;
-                    }
-                    self.is_quantification_node = true;
-                }
             }
         }
     }
