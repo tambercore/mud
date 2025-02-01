@@ -42,6 +42,10 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
             match effective_tag {
                 Wordclass::NNP | Wordclass::NN | Wordclass::NNS => λVar!(ccg_word.text.clone()),
                 Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
+
+                // Since determiners always get forwards/backwards applied to something else, and we want to ignore it here.
+                // We can substitute this for some identity function, i.e. \x . x (woman) --b--> woman
+                Wordclass::DT => λAbs!(λVar!("ID1".parse().unwrap()), λVar!("ID1".parse().unwrap())),
                 _ => panic!("Wordclass variant not implemented: {}", effective_tag),
             }
     } else {
@@ -52,7 +56,6 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
 fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     let num_arguments = count_predicate_arguments(category.clone());
 
-    // todo: i have no idea why this works
     if num_arguments == 0 {
         return λVar!(String::from("tmp"))
     }
@@ -94,19 +97,41 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
-
 pub fn ccg_to_product(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
+    // todo
+    // make this recursive.
+
     // retrieve the children (every man) (walks)
+    println!("QUANTIFICATION NODE: {}", node);
 
     if let Some(children) = node.children {
         let (quantifier_and_bound_var, expr) = (children[0].clone(), children[1].clone());
-        if let Some(expr_children) = quantifier_and_bound_var.children {
-            let (quantifier, bound_var) = (&expr_children[0], &expr_children[1]);
-            let reduced_bound_var = ccg_to_lambda_recursive(*bound_var.clone(), root);
-            λDepFun!(reduced_bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), reduced_bound_var.clone()))
 
-        } else {panic!("")}
+        // TODO:
+        // quantifier and bound var may be "every, man" "every, man and woman" "(every, man), (and every, woman)"
+        // must recursively separate the quantifier from the bound var
+
+        let bound_var = build_bound_variable(*quantifier_and_bound_var, root);
+        λDepFun!(bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var.clone()))
+
+    } else { panic!("Expected quantification node to have children")}
+}
+
+pub fn build_bound_variable(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+    if let Some(children) = bound_var.children.clone() {
+        if let (quant, bound_var) = (&children[0].clone(), &children[1].clone()) {
+            let reduced_bound = ccg_to_lambda_recursive(*bound_var.clone(), root);
+
+            // BASE CASE: quant is "every"
+            if let Some(word) = quant.clone().word {
+                if word.text.to_lowercase() == "every" {
+                    return reduced_bound;
+                }
+            }
+            // RECURSIVE CASE: quant is complex
+            return λApp!(reduced_bound, build_bound_variable(*quant.clone(), root));
+        } else { panic!("Expected quantification node to have two children")}
     } else { panic!("Expected quantification node to have children")}
 }
 
@@ -147,32 +172,17 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             }
 
             CCGRule::Conjunction => {
-                // Typically the node children are:
-                //    1) conj node ("and")
-                //    2) an S\NP (or similar) for the right conjunct
-                // so we just parse them, but we do not individually
-                // apply them. We build a function of type (S\NP) -> (S\NP).
-                // i.e.   \F. \x. F(x) ^ right(x)
-
+                // conjunction combines on the right, according to ccgbank
                 let (left, right) = unpack_children(current_node.children);
-
-                // We do not really use the 'left' expression (the word "and")
-                // except for verification or ignoring.
-                // The main content is in `right_expr` = ccg_to_lambda_recursive(right, root)
                 let right_expr = ccg_to_lambda_recursive(right, root);
-
-                // build \F. \x. conj(F x, right_expr x)
-                let f = λVar!("F".to_string());  // The left conjunct (like "runs" or "walks")
-                let x = λVar!("x".to_string());  // The eventual subject
-
+                let x = λVar!("x".to_string());
                 let conj_body = λConj!(
-                    λApp!(f.clone(), x.clone()),
-                    λApp!(right_expr, x.clone())
+                    x.clone(),
+                    right_expr
                 );
-
-                // final lambda is:  \F. \x.  [ F(x) ∧ right_expr(x) ]
-                λAbs!(f, λAbs!(x, conj_body))
+                λAbs!(x, conj_body)
             }
+
 
             _ => panic!("Not implemented yet!")
         }

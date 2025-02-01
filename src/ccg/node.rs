@@ -116,7 +116,6 @@ impl CCGNode {
         // Set the flag to false by default
         self.is_quantification_node = false;
 
-        // If condition `c` is met, set the flag to true
         if let Some(children) = self.clone().children {
             for c in children {
                 if let Some(grandchildren) = c.children {
@@ -124,7 +123,7 @@ impl CCGNode {
                         if let Some(ccg_word) = g.word {
                             if ccg_word.text.to_lowercase() == "every" {
                                 self.is_quantification_node = true;
-                                return;
+                                //return;
                             }
                         }
                     }
@@ -132,10 +131,21 @@ impl CCGNode {
             }
         }
 
-        // Recur for all children if they exist
         if let Some(children) = &mut self.children {
-            for child in children.iter_mut() {
-                child.initialize_flags(); // Recursively initialize the child nodes
+                for child in children.iter_mut() {
+                    child.initialize_flags();
+                    if child.is_quantification_node {
+                        if let Some(grandchildren) = &mut child.children {
+                            for grandchild in grandchildren.iter_mut() {
+                                grandchild.initialize_flags();
+                                if grandchild.is_quantification_node {
+                                    grandchild.is_quantification_node = false;
+                                    child.is_quantification_node = false;
+                                    self.is_quantification_node = true;
+                                }
+                            }
+                        }
+                    }
             }
         }
     }
