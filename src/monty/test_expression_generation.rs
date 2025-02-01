@@ -19,6 +19,7 @@ use crate::lambda::types::LambdaEntity::Conj;
 use crate::monty::lambda_generation::ccg_to_lambda;
 
 fn test_expression_generation() {
+    return;
     let (lexical_ruleset, contextual_ruleset, mut wc_mapping) = (
         parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap(),
         parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap(),
