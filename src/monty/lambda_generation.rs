@@ -99,73 +99,50 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
-pub fn ccg_to_product(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
-
-    println!("UNIVERSAL QUANTIFIER");
+pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
     if let Some(children) = node.children {
-        let (quantifier_and_bound_var, expr) = (children[0].clone(), children[1].clone());
-        let bound_var = build_bound_variable_universal(*quantifier_and_bound_var, root);
-        λDepFun!(bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var.clone()))
+        let (quantifier, expr) = (children[0].clone(), children[1].clone());
+        if node.is_universal_quantification_node {
+            let bound_var_fn = build_bound_variable(*quantifier, root, UNIVERSAL_QUANTIFIERS.to_owned());
+            λDepFun!(bound_var_fn.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var_fn))
 
-    } else { panic!("Expected quantification node to have children")}
+        } else {
+            let bound_var_fn = build_bound_variable(*quantifier, root, EXISTENTIAL_QUANTIFIERS.to_owned());
+            λDepSum!(bound_var_fn.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var_fn))
+        }
+    } else {
+        panic!("Expected quantification node to have children")
+    }
 }
 
-pub fn ccg_to_sum(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
-    println!("EXISTENTIAL QUANTIFIER");
-
-    if let Some(children) = node.children {
-        let (quantifier_and_bound_var, expr) = (children[0].clone(), children[1].clone());
-        let bound_var = build_bound_variable_existential(*quantifier_and_bound_var, root);
-        λDepSum!(bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var.clone()))
-
-    } else { panic!("Expected quantification node to have children")}
-}
-
-pub fn build_bound_variable_universal(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+fn build_bound_variable(bound_var: CCGNode, root: &CCGNode, quantifiers: Vec<String>) -> Box<LambdaEntity> {
     if let Some(children) = bound_var.children.clone() {
         if let (quant, bound_var) = (&children[0].clone(), &children[1].clone()) {
             let reduced_bound = ccg_to_lambda_recursive(*bound_var.clone(), root);
 
-            // BASE CASE: quant is "every"
             if let Some(word) = quant.clone().word {
-                if UNIVERSAL_QUANTIFIERS.contains(&word.text.to_lowercase()) {
+                if quantifiers.contains(&word.text.to_lowercase()) {
                     return reduced_bound;
                 }
             }
-            // RECURSIVE CASE: quant is not terminal
-            return λApp!(reduced_bound, build_bound_variable_universal(*quant.clone(), root));
-        } else { panic!("Expected quantification node to have two children")}
-    } else { panic!("Expected quantification node to have children")}
+            return λApp!(reduced_bound, build_bound_variable(*quant.clone(), root, quantifiers));
+        } else {
+            panic!("Expected quantification node to have two children")
+        }
+    } else {
+        panic!("Expected quantification node to have children")
+    }
 }
 
-pub fn build_bound_variable_existential(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
-    if let Some(children) = bound_var.children.clone() {
-        if let (quant, bound_var) = (&children[0].clone(), &children[1].clone()) {
-            let reduced_bound = ccg_to_lambda_recursive(*bound_var.clone(), root);
-
-            // BASE CASE: quant is "some"
-            if let Some(word) = quant.clone().word {
-                if EXISTENTIAL_QUANTIFIERS.contains(&word.text.to_lowercase()) {
-                    return reduced_bound;
-                }
-            }
-            // RECURSIVE CASE: quant is not terminal
-            return λApp!(reduced_bound, build_bound_variable_existential(*quant.clone(), root));
-        } else { panic!("Expected quantification node to have two children")}
-    } else { panic!("Expected quantification node to have children")}
-}
 
 // TODO: this was separated because root is passed in. Can be removed when a reference to the parent is stored.
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
-    if current_node.is_universal_quantification_node {
-        ccg_to_product(current_node.clone(), root)
-    }
-    else if current_node.is_existential_quantification_node {
-        ccg_to_sum(current_node.clone(), root)
+    if current_node.is_universal_quantification_node | current_node.is_existential_quantification_node {
+        ccg_to_quantifier(current_node.clone(), root)
     }
 
     else {
