@@ -5,11 +5,11 @@ use std::path::Path;
 use once_cell::sync::Lazy;
 
 pub static UNIVERSAL_QUANTIFIERS: Lazy<Vec<String>> = Lazy::new(|| {
-    read_quantifiers().unwrap()
+    read_universal_quantifiers().unwrap()
 });
 
-pub fn read_quantifiers() -> io::Result<Vec<String>> {
-    let path = Path::new("data/every_quantifiers.txt");
+pub fn read_universal_quantifiers() -> io::Result<Vec<String>> {
+    let path = Path::new("data/universal_quantifiers.txt");
     let file = File::open(&path)?;
     let reader = io::BufReader::new(file);
 
