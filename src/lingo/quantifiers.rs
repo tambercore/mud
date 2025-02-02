@@ -7,8 +7,7 @@ use once_cell::sync::Lazy;
 pub static UNIVERSAL_QUANTIFIERS: Lazy<Vec<String>> = Lazy::new(|| {
     read_universal_quantifiers().unwrap()
 });
-
-pub fn read_universal_quantifiers() -> io::Result<Vec<String>> {
+fn read_universal_quantifiers() -> io::Result<Vec<String>> {
     let path = Path::new("data/universal_quantifiers.txt");
     let file = File::open(&path)?;
     let reader = io::BufReader::new(file);
