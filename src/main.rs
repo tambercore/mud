@@ -5,6 +5,7 @@ mod wordnet;
 mod lingo;
 mod monty;
 
+use std::ptr::read;
 use crate::brill::brill_tagger::tag_sentence;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::initialize_tagger;
@@ -13,15 +14,16 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::lambda_generation::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
-
 fn main() {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
+
+
     // TODO: Contractions break the tagger (don't does not get a tag etc)
 
-    let sentence = "every man and every woman and every child likes brie";
+    let sentence = "all man likes cheese";
 
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -42,3 +44,4 @@ fn main() {
     let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
     println!("expanded expression: {}", expanded_expression)
 }
+

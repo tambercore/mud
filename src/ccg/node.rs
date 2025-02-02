@@ -5,7 +5,7 @@ use crate::ccg::word::CCGWord;
 use super::rule::CCGRule;
 use super::category::CCGType;
 use ascii_tree::{Tree::*, Tree, write_tree};
-
+use crate::lingo::quantifiers::UNIVERSAL_QUANTIFIERS;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CCGNode {
@@ -121,7 +121,7 @@ impl CCGNode {
                 if let Some(grandchildren) = c.children {
                     for g in grandchildren {
                         if let Some(ccg_word) = g.word {
-                            if ccg_word.text.to_lowercase() == "every" {
+                            if UNIVERSAL_QUANTIFIERS.contains(&ccg_word.text.to_lowercase()) {
                                 self.is_quantification_node = true;
                                 //return;
                             }
