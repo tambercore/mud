@@ -15,7 +15,7 @@ use crate::lambda::variable::Variable;
 use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun};
 use crate::brill::brill_tagger::get_possible_tags;
 use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
-use crate::wordnet::interface::read_quantifiers;
+use crate::lingo::quantifiers::read_quantifiers;
 use once_cell::sync::Lazy;
 
 static EVERY_QUANTIFIERS: Lazy<Vec<String>> = Lazy::new(|| {

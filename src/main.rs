@@ -14,8 +14,6 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::lambda_generation::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
-use crate::wordnet::interface::read_quantifiers;
-
 fn main() {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
