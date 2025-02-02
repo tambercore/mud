@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use std::fs::File;
+use std::io;
 use std::io::Read;
+use std::path::Path;
 use serde_json::Value;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use crate::wordnet::postag::WordnetTag;
 use crate::wordnet::wordnode::Wordnode;
-
+use std::io::{BufRead};
 
 // Define a static singleton for word meanings
 static WORD_MEANINGS: Lazy<Mutex<HashMap<String, Vec<Wordnode>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
@@ -75,4 +77,14 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
 pub fn get_meanings(word: &str) -> Option<Vec<Wordnode>> {
     let meanings = WORD_MEANINGS.lock().unwrap();
     meanings.get(word).cloned()
+}
+
+pub fn read_quantifiers() -> io::Result<Vec<String>> {
+    let path = Path::new("data/every_quantifiers.txt");
+    let file = File::open(&path)?;
+    let reader = io::BufReader::new(file);
+
+    let lines: Vec<String> = reader.lines().collect::<Result<_, _>>()?;
+
+    Ok(lines)
 }
