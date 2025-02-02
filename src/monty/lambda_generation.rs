@@ -13,14 +13,9 @@ use crate::lambda::conjunction::Conjunction;
 use crate::lambda::dependent_function::DependentFunction;
 use crate::lambda::variable::Variable;
 use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun};
-use crate::brill::brill_tagger::get_possible_tags;
-use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
-use crate::lingo::quantifiers::read_quantifiers;
-use once_cell::sync::Lazy;
+use crate::lingo::quantifiers::UNIVERSAL_QUANTIFIERS;
 
-static UNIVERSAL_QUANTIFIERS: Lazy<Vec<String>> = Lazy::new(|| {
-    read_quantifiers().unwrap()
-});
+
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     match _type {
@@ -99,7 +94,7 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
 }
 
 pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
-    root.initialize_flags(UNIVERSAL_QUANTIFIERS.to_owned());
+    root.initialize_flags();
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
