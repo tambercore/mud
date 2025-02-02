@@ -5,7 +5,7 @@ use crate::ccg::word::CCGWord;
 use super::rule::CCGRule;
 use super::category::CCGType;
 use ascii_tree::{Tree::*, Tree, write_tree};
-use crate::lingo::quantifiers::UNIVERSAL_QUANTIFIERS;
+use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CCGNode {
@@ -20,7 +20,10 @@ pub struct CCGNode {
     pub children: Option<Vec<Box<CCGNode>>>, // Use Box to handle recursion
 
     #[serde(skip)]
-    pub is_quantification_node: bool
+    pub is_universal_quantification_node: bool,
+
+    #[serde(skip)]
+    pub is_existential_quantification_node: bool
 }
 
 
@@ -92,7 +95,7 @@ impl CCGNode {
             target: &CCGNode,
             parent: Option<&'a CCGNode>,
         ) -> Option<&'a CCGNode> {
-            if current == target{
+            if current == target {
                 return parent;
             }
 
@@ -110,20 +113,24 @@ impl CCGNode {
         find_parent(root, self, None)
     }
 
-
     // Recursive function to initialize flags
     pub fn initialize_flags(&mut self) {
-        // Set the flag to false by default
-        self.is_quantification_node = false;
+        // Set the flags to false by default
+        self.is_existential_quantification_node = false;
+        self.is_universal_quantification_node = false;
 
         if let Some(children) = self.clone().children {
             for c in children {
                 if let Some(grandchildren) = c.children {
                     for g in grandchildren {
                         if let Some(ccg_word) = g.word {
-                            if UNIVERSAL_QUANTIFIERS.contains(&ccg_word.text.to_lowercase()) {
-                                self.is_quantification_node = true;
-                                //return;
+                            let word_text = ccg_word.text.to_lowercase();
+                            if UNIVERSAL_QUANTIFIERS.contains(&word_text) {
+                                self.is_universal_quantification_node = true;
+                                // return;
+                            } else if EXISTENTIAL_QUANTIFIERS.contains(&word_text) {
+                                self.is_existential_quantification_node = true;
+                                // return;
                             }
                         }
                     }
@@ -132,20 +139,34 @@ impl CCGNode {
         }
 
         if let Some(children) = &mut self.children {
-                for child in children.iter_mut() {
-                    child.initialize_flags();
-                    if child.is_quantification_node {
-                        if let Some(grandchildren) = &mut child.children {
-                            for grandchild in grandchildren.iter_mut() {
-                                grandchild.initialize_flags();
-                                if grandchild.is_quantification_node {
-                                    grandchild.is_quantification_node = false;
-                                    child.is_quantification_node = false;
-                                    self.is_quantification_node = true;
-                                }
+            for child in children.iter_mut() {
+                child.initialize_flags();
+
+                if child.is_universal_quantification_node {
+                    if let Some(grandchildren) = &mut child.children {
+                        for grandchild in grandchildren.iter_mut() {
+                            grandchild.initialize_flags();
+                            if grandchild.is_universal_quantification_node {
+                                grandchild.is_universal_quantification_node = false;
+                                child.is_universal_quantification_node = false;
+                                self.is_universal_quantification_node = true;
                             }
                         }
                     }
+                }
+
+                if child.is_existential_quantification_node {
+                    if let Some(grandchildren) = &mut child.children {
+                        for grandchild in grandchildren.iter_mut() {
+                            grandchild.initialize_flags();
+                            if grandchild.is_existential_quantification_node {
+                                grandchild.is_existential_quantification_node = false;
+                                child.is_existential_quantification_node = false;
+                                self.is_existential_quantification_node = true;
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -12,8 +12,9 @@ use crate::lambda::application::Application;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::dependent_function::DependentFunction;
 use crate::lambda::variable::Variable;
-use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun};
-use crate::lingo::quantifiers::UNIVERSAL_QUANTIFIERS;
+use crate::lambda::dependent_sum::DependentSum;
+use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun, λDepSum};
+use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
 
 
 
@@ -100,17 +101,29 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
 
 pub fn ccg_to_product(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
-    println!("QUANTIFICATION NODE: {}", node);
+    println!("UNIVERSAL QUANTIFIER");
 
     if let Some(children) = node.children {
         let (quantifier_and_bound_var, expr) = (children[0].clone(), children[1].clone());
-        let bound_var = build_bound_variable(*quantifier_and_bound_var, root);
+        let bound_var = build_bound_variable_universal(*quantifier_and_bound_var, root);
         λDepFun!(bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var.clone()))
 
     } else { panic!("Expected quantification node to have children")}
 }
 
-pub fn build_bound_variable(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+pub fn ccg_to_sum(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+
+    println!("EXISTENTIAL QUANTIFIER");
+
+    if let Some(children) = node.children {
+        let (quantifier_and_bound_var, expr) = (children[0].clone(), children[1].clone());
+        let bound_var = build_bound_variable_existential(*quantifier_and_bound_var, root);
+        λDepSum!(bound_var.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var.clone()))
+
+    } else { panic!("Expected quantification node to have children")}
+}
+
+pub fn build_bound_variable_universal(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     if let Some(children) = bound_var.children.clone() {
         if let (quant, bound_var) = (&children[0].clone(), &children[1].clone()) {
             let reduced_bound = ccg_to_lambda_recursive(*bound_var.clone(), root);
@@ -121,8 +134,25 @@ pub fn build_bound_variable(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEnt
                     return reduced_bound;
                 }
             }
-            // RECURSIVE CASE: quant is complex
-            return λApp!(reduced_bound, build_bound_variable(*quant.clone(), root));
+            // RECURSIVE CASE: quant is not terminal
+            return λApp!(reduced_bound, build_bound_variable_universal(*quant.clone(), root));
+        } else { panic!("Expected quantification node to have two children")}
+    } else { panic!("Expected quantification node to have children")}
+}
+
+pub fn build_bound_variable_existential(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+    if let Some(children) = bound_var.children.clone() {
+        if let (quant, bound_var) = (&children[0].clone(), &children[1].clone()) {
+            let reduced_bound = ccg_to_lambda_recursive(*bound_var.clone(), root);
+
+            // BASE CASE: quant is "some"
+            if let Some(word) = quant.clone().word {
+                if EXISTENTIAL_QUANTIFIERS.contains(&word.text.to_lowercase()) {
+                    return reduced_bound;
+                }
+            }
+            // RECURSIVE CASE: quant is not terminal
+            return λApp!(reduced_bound, build_bound_variable_existential(*quant.clone(), root));
         } else { panic!("Expected quantification node to have two children")}
     } else { panic!("Expected quantification node to have children")}
 }
@@ -131,9 +161,13 @@ pub fn build_bound_variable(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEnt
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
-    if current_node.is_quantification_node {
-        ccg_to_product(current_node, root)
+    if current_node.is_universal_quantification_node {
+        ccg_to_product(current_node.clone(), root)
     }
+    else if current_node.is_existential_quantification_node {
+        ccg_to_sum(current_node.clone(), root)
+    }
+
     else {
         match current_node.rule {
             // Base case: terminal nodes
