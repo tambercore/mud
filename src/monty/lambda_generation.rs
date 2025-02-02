@@ -18,7 +18,7 @@ use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
 use crate::lingo::quantifiers::read_quantifiers;
 use once_cell::sync::Lazy;
 
-static EVERY_QUANTIFIERS: Lazy<Vec<String>> = Lazy::new(|| {
+static UNIVERSAL_QUANTIFIERS: Lazy<Vec<String>> = Lazy::new(|| {
     read_quantifiers().unwrap()
 });
 
@@ -99,7 +99,7 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
 }
 
 pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
-    root.initialize_flags(EVERY_QUANTIFIERS.to_owned());
+    root.initialize_flags(UNIVERSAL_QUANTIFIERS.to_owned());
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
@@ -122,7 +122,7 @@ pub fn build_bound_variable(bound_var: CCGNode, root: &CCGNode) -> Box<LambdaEnt
 
             // BASE CASE: quant is "every"
             if let Some(word) = quant.clone().word {
-                if EVERY_QUANTIFIERS.contains(&word.text.to_lowercase()) {
+                if UNIVERSAL_QUANTIFIERS.contains(&word.text.to_lowercase()) {
                     return reduced_bound;
                 }
             }

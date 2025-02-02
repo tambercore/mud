@@ -112,7 +112,7 @@ impl CCGNode {
 
 
     // Recursive function to initialize flags
-    pub fn initialize_flags(&mut self, every_quantifiers: Vec<String>) {
+    pub fn initialize_flags(&mut self, universal_quantifiers: Vec<String>) {
         // Set the flag to false by default
         self.is_quantification_node = false;
 
@@ -121,7 +121,7 @@ impl CCGNode {
                 if let Some(grandchildren) = c.children {
                     for g in grandchildren {
                         if let Some(ccg_word) = g.word {
-                            if every_quantifiers.contains(&ccg_word.text.to_lowercase()) {
+                            if universal_quantifiers.contains(&ccg_word.text.to_lowercase()) {
                                 self.is_quantification_node = true;
                                 //return;
                             }
@@ -133,11 +133,11 @@ impl CCGNode {
 
         if let Some(children) = &mut self.children {
                 for child in children.iter_mut() {
-                    child.initialize_flags(every_quantifiers.clone());
+                    child.initialize_flags(universal_quantifiers.clone());
                     if child.is_quantification_node {
                         if let Some(grandchildren) = &mut child.children {
                             for grandchild in grandchildren.iter_mut() {
-                                grandchild.initialize_flags(every_quantifiers.clone());
+                                grandchild.initialize_flags(universal_quantifiers.clone());
                                 if grandchild.is_quantification_node {
                                     grandchild.is_quantification_node = false;
                                     child.is_quantification_node = false;
