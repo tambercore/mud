@@ -100,24 +100,29 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
 }
 
 pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+    let bound_var_node = node.get_sibling(root).expect("Expected quantification node to have a sibling");
+    let bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
+    let expr_node = node.backtrack_until_rhs(root).expect("Expected expression in quantification node");
+    let expr = ccg_to_lambda_recursive(expr_node.clone(), root);
 
-    if let Some(children) = node.children {
-        let (quantifier, expr) = (children[0].clone(), children[1].clone());
-        if node.is_universal_quantification_node {
-            let bound_var_fn = build_bound_variable(*quantifier, root, UNIVERSAL_QUANTIFIERS.to_owned());
-            λDepFun!(bound_var_fn.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var_fn))
+    println!("quantifier: {} bound variable: {} expr: {}", node, bound_var, expr);
 
-        } else {
-            let bound_var_fn = build_bound_variable(*quantifier, root, EXISTENTIAL_QUANTIFIERS.to_owned());
-            λDepSum!(bound_var_fn.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var_fn))
-        }
-    } else {
-        panic!("Expected quantification node to have children")
+    if node.is_universal_quantification_node {
+        //let bound_var = build_bound_variable(bound_var_node.clone(), root, UNIVERSAL_QUANTIFIERS.to_owned());
+
+        λDepFun!(bound_var.clone(), λApp!(expr, bound_var))
     }
+    else if node.is_existential_quantification_node {
+        //let bound_var = build_bound_variable(bound_var_node.clone(), root, EXISTENTIAL_QUANTIFIERS.to_owned());
+        λDepSum!(bound_var.clone(), λApp!(expr, bound_var))
+    }
+    else {panic!("Expected quantification node to be existential or universal")}
 }
 
 
 fn build_bound_variable(bound_var: CCGNode, root: &CCGNode, quantifiers: Vec<String>) -> Box<LambdaEntity> {
+
+    // todo: alter this to work with the new quantification node
     if let Some(children) = bound_var.children.clone() {
         if let (quant, bound_var) = (&children[0].clone(), &children[1].clone()) {
             let reduced_bound = ccg_to_lambda_recursive(*bound_var.clone(), root);
