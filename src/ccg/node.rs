@@ -119,54 +119,18 @@ impl CCGNode {
         self.is_existential_quantification_node = false;
         self.is_universal_quantification_node = false;
 
-        if let Some(children) = self.clone().children {
-            for c in children {
-                if let Some(grandchildren) = c.children {
-                    for g in grandchildren {
-                        if let Some(ccg_word) = g.word {
-                            let word_text = ccg_word.text.to_lowercase();
-                            if UNIVERSAL_QUANTIFIERS.contains(&word_text) {
-                                self.is_universal_quantification_node = true;
-                                // return;
-                            } else if EXISTENTIAL_QUANTIFIERS.contains(&word_text) {
-                                self.is_existential_quantification_node = true;
-                                // return;
-                            }
-                        }
-                    }
-                }
+        if let Some(ccg_word) = self.clone().word {
+            let word_text = ccg_word.text.to_lowercase();
+            if UNIVERSAL_QUANTIFIERS.contains(&word_text) {
+                self.is_universal_quantification_node = true;
+            } else if EXISTENTIAL_QUANTIFIERS.contains(&word_text) {
+                self.is_existential_quantification_node = true;
             }
         }
 
-        if let Some(children) = &mut self.children {
+        if let Some(children) = &mut self.clone().children {
             for child in children.iter_mut() {
                 child.initialize_flags();
-
-                if child.is_universal_quantification_node {
-                    if let Some(grandchildren) = &mut child.children {
-                        for grandchild in grandchildren.iter_mut() {
-                            grandchild.initialize_flags();
-                            if grandchild.is_universal_quantification_node {
-                                grandchild.is_universal_quantification_node = false;
-                                child.is_universal_quantification_node = false;
-                                self.is_universal_quantification_node = true;
-                            }
-                        }
-                    }
-                }
-
-                if child.is_existential_quantification_node {
-                    if let Some(grandchildren) = &mut child.children {
-                        for grandchild in grandchildren.iter_mut() {
-                            grandchild.initialize_flags();
-                            if grandchild.is_existential_quantification_node {
-                                grandchild.is_existential_quantification_node = false;
-                                child.is_existential_quantification_node = false;
-                                self.is_existential_quantification_node = true;
-                            }
-                        }
-                    }
-                }
             }
         }
     }
