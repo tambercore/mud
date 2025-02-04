@@ -141,6 +141,7 @@ impl CCGNode {
             if let Some(children) = &parent.children {
                 if let Some(rhs) = children.last() {
                     if **rhs != *current && !rhs.contains_quantification_node() {
+                        println!("RETURNING {}", rhs);
                         return Some(rhs);
                     }
                 }
@@ -151,8 +152,8 @@ impl CCGNode {
     }
 
     /// Checks if a node or its descendants contain a quantification node.
-    fn contains_quantification_node(&self) -> bool {
-        if self.is_universal_quantification_node | self.is_universal_quantification_node {
+    pub fn contains_quantification_node(&self) -> bool {
+        if self.is_universal_quantification_node || self.is_existential_quantification_node {
             return true;
         }
         if let Some(children) = &self.children {
