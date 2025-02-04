@@ -1,6 +1,5 @@
 module adjectives where
 
-
 {- 
    We start by assuming that there is a type of objects, `Entity`.
    We also assume that there is some distinguished object, which we call `Elephant`
@@ -21,7 +20,7 @@ postulate
 postulate
   isElephant : Entity → Set
   isLarge    : Entity → Set
-
+  isAnimal   : Entity → Set
 
 
 {- 
@@ -56,3 +55,20 @@ record Elephant : Set where
 {- Great, now we can show that given some Large Elephant, we can construct an Elephant -}
 largeElephantToElephant : LargeElephant → Elephant
 largeElephantToElephant le = elephant (LargeElephant.e₁ le) (LargeElephant.proofElephant le)
+
+record Animal : Set where
+    constructor animal
+    field
+        e₁              : Entity
+        proofAnimal     : isAnimal e₁
+
+{-
+    But what if we have something expecting an Animal - an elephant is an animal surely!
+    We can do this by postulating a directional path between proof's of Elephant and proof's of Animal
+-}
+postulate
+    elephantImpliesAnimal : (e : Entity) → isElephant e → isAnimal e
+
+ElephantToAnimal : Elephant → Animal
+ElephantToAnimal ele = animal (Elephant.e₁ ele)
+                              (elephantImpliesAnimal (Elephant.e₁ ele) (Elephant.proofElephant ele))
