@@ -100,94 +100,95 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
 }
 
 pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+    let bound_var_node = node.get_sibling(root).expect("Expected quantification node to have a sibling");
+    let bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
+    let quantified_phrase = node.get_parent(root).expect("Expected quantification node to have a parent");
+    let expr_node = quantified_phrase.backtrack_until_rhs(root).expect("Expected expression in quantification node");
+    let expr = ccg_to_lambda_recursive(expr_node.clone(), root);
 
-    if let Some(children) = node.children {
-        let (quantifier, expr) = (children[0].clone(), children[1].clone());
-        if node.is_universal_quantification_node {
-            let bound_var_fn = build_bound_variable(*quantifier, root, UNIVERSAL_QUANTIFIERS.to_owned());
-            λDepFun!(bound_var_fn.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var_fn))
-
-        } else {
-            let bound_var_fn = build_bound_variable(*quantifier, root, EXISTENTIAL_QUANTIFIERS.to_owned());
-            λDepSum!(bound_var_fn.clone(), λApp!(ccg_to_lambda_recursive(*expr.clone(), root), bound_var_fn))
-        }
-    } else {
-        panic!("Expected quantification node to have children")
+    if node.is_universal_quantification_node {
+        λDepFun!(bound_var.clone(), λApp!(expr, bound_var))
     }
+    else if node.is_existential_quantification_node {
+        λDepSum!(bound_var.clone(), λApp!(expr, bound_var))
+    }
+    else {panic!("Expected quantification node to be existential or universal")}
 }
 
 
-fn build_bound_variable(bound_var: CCGNode, root: &CCGNode, quantifiers: Vec<String>) -> Box<LambdaEntity> {
-    if let Some(children) = bound_var.children.clone() {
-        if let (quant, bound_var) = (&children[0].clone(), &children[1].clone()) {
-            let reduced_bound = ccg_to_lambda_recursive(*bound_var.clone(), root);
-
-            if let Some(word) = quant.clone().word {
-                if quantifiers.contains(&word.text.to_lowercase()) {
-                    return reduced_bound;
-                }
-            }
-            return λApp!(reduced_bound, build_bound_variable(*quant.clone(), root, quantifiers));
-        } else {
-            panic!("Expected quantification node to have two children")
-        }
-    } else {
-        panic!("Expected quantification node to have children")
-    }
-}
 
 
-// TODO: this was separated because root is passed in. Can be removed when a reference to the parent is stored.
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
-    if current_node.is_universal_quantification_node | current_node.is_existential_quantification_node {
-        ccg_to_quantifier(current_node.clone(), root)
+    // Handle quantifier nodes
+    if current_node.is_universal_quantification_node || current_node.is_existential_quantification_node {
+        return ccg_to_quantifier(current_node.clone(), root);
     }
 
-    else {
-        match current_node.rule {
-            // Base case: terminal nodes
-            CCGRule::Lexical => {
-                let expr = generate_lexical_category(current_node.node_type.clone(), &current_node, root);
-                expr
-            },
-
-            // Recursive case
-            CCGRule::BackwardApplication => {
-                let (left, right) = unpack_children(current_node.children);
-                λApp!(ccg_to_lambda_recursive(right, root), ccg_to_lambda_recursive(left, root))
-            },
-
-            CCGRule::ForwardApplication => {
-                let (left, right) = unpack_children(current_node.children);
-                λApp!(ccg_to_lambda_recursive(left, root), ccg_to_lambda_recursive(right, root))
-            }
-
-            CCGRule::Unary => {
-                if let Some(children) = &current_node.children {
-                    if children.len() == 1 {
-                        ccg_to_lambda_recursive(*children[0].clone(), root)
-                    } else {
-                        panic!("Expected one child (unary rule).");
-                    }
-                } else { panic!("Expected node to have children.") }
-            }
-
-            CCGRule::Conjunction => {
-                // conjunction combines on the right, according to ccgbank
-                let (left, right) = unpack_children(current_node.children);
-                let right_expr = ccg_to_lambda_recursive(right, root);
-                let x = λVar!("x".to_string());
-                let conj_body = λConj!(
-                    x.clone(),
-                    right_expr
-                );
-                λAbs!(x, conj_body)
-            }
-
-
-            _ => panic!("Not implemented yet!")
+    match current_node.rule {
+        // Base case: terminal nodes
+        CCGRule::Lexical => {
+            let expr = generate_lexical_category(current_node.node_type.clone(), &current_node, root);
+            return expr;
         }
+
+        // Recursive case: Backward Application
+        CCGRule::BackwardApplication => {
+
+            let (left, right) = unpack_children(current_node.children);
+
+            // left hand side is quantified expression. right hand side is expr
+            // e.g. EVERY MAN, LIKES CHEESE
+            if left.contains_quantification_node() && !right.contains_quantification_node() {
+                    return ccg_to_lambda_recursive(left.clone(), root);
+            }
+
+
+            return λApp!(
+                ccg_to_lambda_recursive(right, root),
+                ccg_to_lambda_recursive(left, root)
+            );
+        }
+
+        // Recursive case: Forward Application
+        CCGRule::ForwardApplication => {
+
+            let (left, right) = unpack_children(current_node.children);
+            if left.contains_quantification_node() {
+                return ccg_to_lambda_recursive(left.clone(), root);
+            }
+
+            return λApp!(
+                ccg_to_lambda_recursive(left, root),
+                ccg_to_lambda_recursive(right, root)
+            );
+        }
+
+        // Unary rules must have exactly one child
+        CCGRule::Unary => {
+            if let Some(children) = &current_node.children {
+                if children.len() == 1 {
+                    return ccg_to_lambda_recursive(*children[0].clone(), root);
+                } else {
+                    panic!("Expected one child (unary rule).");
+                }
+            } else {
+                panic!("Expected node to have children.");
+            }
+        }
+
+        // Conjunction rule
+        CCGRule::Conjunction => {
+            // Conjunction combines on the right according to CCGBank
+            let (left, right) = unpack_children(current_node.children);
+            let right_expr = ccg_to_lambda_recursive(right, root);
+            let x = λVar!("x".to_string());
+            let conj_body = λConj!(x.clone(), right_expr);
+            return λAbs!(x, conj_body);
+        }
+
+        _ => panic!("Not implemented yet!"),
     }
 }
+

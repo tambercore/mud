@@ -5,6 +5,7 @@ use crate::ccg::word::CCGWord;
 use super::rule::CCGRule;
 use super::category::CCGType;
 use ascii_tree::{Tree::*, Tree, write_tree};
+use uuid::Uuid;
 use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -23,9 +24,12 @@ pub struct CCGNode {
     pub is_universal_quantification_node: bool,
 
     #[serde(skip)]
-    pub is_existential_quantification_node: bool
-}
+    pub is_existential_quantification_node: bool,
 
+    // a unique identifier to differentiate nodes with the same text
+    #[serde(skip)]
+    pub id: Uuid
+}
 
 
 impl PartialEq for CCGNode {
@@ -42,6 +46,10 @@ impl PartialEq for CCGNode {
 
         // Compare rules
         if self.rule != other.rule {
+            return false;
+        }
+
+        if self.id != other.id {
             return false;
         }
 
@@ -89,7 +97,6 @@ impl CCGNode {
 
     /// Finds the parent of a given node within the tree.
     pub fn get_parent<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
-        println!("Searching parent of node: {}", self);
         fn find_parent<'a>(
             current: &'a CCGNode,
             target: &CCGNode,
@@ -113,60 +120,71 @@ impl CCGNode {
         find_parent(root, self, None)
     }
 
+    /// Finds a sibling of the given node within the tree.
+    pub fn get_sibling<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
+        if let Some(parent) = self.get_parent(root) {
+            if let Some(children) = &parent.children {
+                for child in children {
+                    if **child != *self {
+                        return Some(child);
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// Backtracks up from a node until there is a rhs child which does not contain a quantification node
+    pub fn backtrack_until_rhs<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
+        let mut current = self;
+        while let Some(parent) = current.get_parent(root) {
+            if let Some(children) = &parent.children {
+                if let Some(rhs) = children.last() {
+                    if **rhs != *current && !rhs.contains_quantification_node() {
+                        println!("RETURNING {}", rhs);
+                        return Some(rhs);
+                    }
+                }
+            }
+            current = parent;
+        }
+        None
+    }
+
+    /// Checks if a node or its descendants contain a quantification node.
+    pub fn contains_quantification_node(&self) -> bool {
+        if self.is_universal_quantification_node || self.is_existential_quantification_node {
+            return true;
+        }
+        if let Some(children) = &self.children {
+            for child in children {
+                if child.contains_quantification_node() {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+
     // Recursive function to initialize flags
     pub fn initialize_flags(&mut self) {
         // Set the flags to false by default
         self.is_existential_quantification_node = false;
         self.is_universal_quantification_node = false;
 
-        if let Some(children) = self.clone().children {
-            for c in children {
-                if let Some(grandchildren) = c.children {
-                    for g in grandchildren {
-                        if let Some(ccg_word) = g.word {
-                            let word_text = ccg_word.text.to_lowercase();
-                            if UNIVERSAL_QUANTIFIERS.contains(&word_text) {
-                                self.is_universal_quantification_node = true;
-                                // return;
-                            } else if EXISTENTIAL_QUANTIFIERS.contains(&word_text) {
-                                self.is_existential_quantification_node = true;
-                                // return;
-                            }
-                        }
-                    }
-                }
+        if let Some(ccg_word) = self.clone().word {
+            let word_text = ccg_word.text.to_lowercase();
+            if UNIVERSAL_QUANTIFIERS.contains(&word_text) {
+                self.is_universal_quantification_node = true;
+            } else if EXISTENTIAL_QUANTIFIERS.contains(&word_text) {
+                self.is_existential_quantification_node = true;
             }
         }
 
         if let Some(children) = &mut self.children {
             for child in children.iter_mut() {
                 child.initialize_flags();
-
-                if child.is_universal_quantification_node {
-                    if let Some(grandchildren) = &mut child.children {
-                        for grandchild in grandchildren.iter_mut() {
-                            grandchild.initialize_flags();
-                            if grandchild.is_universal_quantification_node {
-                                grandchild.is_universal_quantification_node = false;
-                                child.is_universal_quantification_node = false;
-                                self.is_universal_quantification_node = true;
-                            }
-                        }
-                    }
-                }
-
-                if child.is_existential_quantification_node {
-                    if let Some(grandchildren) = &mut child.children {
-                        for grandchild in grandchildren.iter_mut() {
-                            grandchild.initialize_flags();
-                            if grandchild.is_existential_quantification_node {
-                                grandchild.is_existential_quantification_node = false;
-                                child.is_existential_quantification_node = false;
-                                self.is_existential_quantification_node = true;
-                            }
-                        }
-                    }
-                }
             }
         }
     }
