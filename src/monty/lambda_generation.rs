@@ -32,24 +32,24 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
 
     if let Some(ccg_word) = &node.word {
 
-            // Compute a "local" mutated tag (does not affect the original node)
-            let effective_tag = if [Wordclass::NN, Wordclass::NNS].contains(&ccg_word.tag)
-                && matches!(node.node_type, CCGType::ForwardsFunctor(..) | CCGType::BackwardsFunctor(..))
-            {
-                Wordclass::VBZ
-            } else {
-                ccg_word.tag
-            };
+        // Compute a "local" mutated tag (does not affect the original node)
+        let effective_tag = if [Wordclass::NN, Wordclass::NNS].contains(&ccg_word.tag)
+            && matches!(node.node_type, CCGType::ForwardsFunctor(..) | CCGType::BackwardsFunctor(..))
+        {
+            Wordclass::VBZ
+        } else {
+            ccg_word.tag
+        };
 
-            match effective_tag {
-                Wordclass::NNP | Wordclass::NN | Wordclass::NNS => λVar!(ccg_word.text.clone()),
-                Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
+        match effective_tag {
+            Wordclass::NNP | Wordclass::NN | Wordclass::NNS => λVar!(ccg_word.text.clone()),
+            Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
 
-                // Since determiners always get forwards/backwards applied to something else, and we want to ignore it here.
-                // We can substitute this for some identity function, i.e. \x . x (woman) --b--> woman
-                Wordclass::DT => λAbs!(λVar!("ID1".parse().unwrap()), λVar!("ID1".parse().unwrap())),
-                _ => panic!("Wordclass variant not implemented: {}", effective_tag),
-            }
+            // Since determiners always get forwards/backwards applied to something else, and we want to ignore it here.
+            // We can substitute this for some identity function, i.e. \x . x (woman) --b--> woman
+            Wordclass::DT => λAbs!(λVar!("ID1".parse().unwrap()), λVar!("ID1".parse().unwrap())),
+            _ => panic!("Wordclass variant not implemented: {}", effective_tag),
+        }
     } else {
         panic!("expected word and tag on terminal node: {}", node);
     }
@@ -103,8 +103,18 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     let bound_var_node = node.get_sibling(root).expect("Expected quantification node to have a sibling");
     let bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
     let quantified_phrase = node.get_parent(root).expect("Expected quantification node to have a parent");
-    let expr_node = quantified_phrase.backtrack_until_rhs(root).expect("Expected expression in quantification node");
-    let expr = ccg_to_lambda_recursive(expr_node.clone(), root);
+
+    let expr;
+    if let Some(expr_node) = quantified_phrase.backtrack_until_rhs(root) {
+        expr = ccg_to_lambda_recursive(expr_node.clone(), root);
+    } else if let Some(expr_node) = quantified_phrase.backtrack_until_lhs(root) {
+        let lhs = expr_node.get_sibling(root).expect("Expected quantification node to have a sibling");
+        let (left, right) = unpack_children(lhs.clone().children);
+        expr = λApp!(ccg_to_lambda_recursive(left.clone(), root), ccg_to_lambda_recursive(expr_node.clone(), root));
+
+    } else {
+        panic!("Expected expression on left or right");
+    }
 
     if node.is_universal_quantification_node {
         λDepFun!(bound_var.clone(), λApp!(expr, bound_var))
@@ -114,7 +124,6 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     }
     else {panic!("Expected quantification node to be existential or universal")}
 }
-
 
 
 
@@ -141,7 +150,12 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             // left hand side is quantified expression. right hand side is expr
             // e.g. EVERY MAN, LIKES CHEESE
             if left.contains_quantification_node() && !right.contains_quantification_node() {
-                    return ccg_to_lambda_recursive(left.clone(), root);
+                return ccg_to_lambda_recursive(left.clone(), root);
+            }
+            // right hand side is quantified expression. left hand side is expr
+            // e.g. JOHN, LIKES EVERY CHEESE
+            if right.contains_quantification_node() && !left.contains_quantification_node() {
+                return ccg_to_lambda_recursive(right.clone(), root);
             }
 
 
@@ -155,8 +169,15 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
         CCGRule::ForwardApplication => {
 
             let (left, right) = unpack_children(current_node.children);
+
+            // right hand side is quantified expression. left hand side is expr
+            // e.g. JOHN LIKES, EVERY CHEESE
             if left.contains_quantification_node() {
                 return ccg_to_lambda_recursive(left.clone(), root);
+            }
+
+            if right.contains_quantification_node() {
+                return ccg_to_lambda_recursive(right.clone(), root);
             }
 
             return λApp!(
@@ -191,4 +212,3 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
         _ => panic!("Not implemented yet!"),
     }
 }
-

@@ -141,8 +141,22 @@ impl CCGNode {
             if let Some(children) = &parent.children {
                 if let Some(rhs) = children.last() {
                     if **rhs != *current && !rhs.contains_quantification_node() {
-                        println!("RETURNING {}", rhs);
                         return Some(rhs);
+                    }
+                }
+            }
+            current = parent;
+        }
+        None
+    }
+
+    pub fn backtrack_until_lhs<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
+        let mut current = self;
+        while let Some(parent) = current.get_parent(root) {
+            if parent.node_type == CCGType::Sentence {
+                if let Some(children) = &parent.children {
+                    if let Some(lhs) = children.first() {
+                        return Some(lhs);
                     }
                 }
             }

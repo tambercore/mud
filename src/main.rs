@@ -19,11 +19,10 @@ fn main() {
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-
-
     // TODO: Contractions break the tagger (don't does not get a tag etc)
 
-    let sentence = "every man and some woman likes cheese and beans";
+    //let sentence = "every man and some woman likes cheese";
+    let sentence = "john likes every cheese and every man and some woman likes gouda";
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 
