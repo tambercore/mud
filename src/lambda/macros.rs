@@ -1,5 +1,6 @@
 use crate::ccg::rule::CCGRule;
 use crate::lambda::dependent_function::DependentFunction;
+use crate::lambda::dependent_sum::DependentSum;
 
 #[macro_export]
 macro_rules! λVar {
@@ -40,5 +41,12 @@ macro_rules! λConj {
 macro_rules! λDepFun {
     ($bound_var:expr, $expr:expr) => {
         Box::from(LambdaEntity::DepFun(DependentFunction{bound_var: $bound_var, expr: $expr}))
+    };
+}
+
+#[macro_export]
+macro_rules! λDepSum {
+    ($bound_var:expr, $expr:expr) => {
+        Box::from(LambdaEntity::DepSum(DependentSum{bound_var: $bound_var, expr: $expr}))
     };
 }

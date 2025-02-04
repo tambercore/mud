@@ -1,10 +1,11 @@
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
 use crate::lambda::predicate::Predicate;
+use crate::lambda::dependent_sum::DependentSum;
 use crate::lambda::dependent_function::DependentFunction;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::*;
-use crate::{λAbs, λApp, λPred, λConj, λDepFun};
+use crate::{λAbs, λApp, λPred, λConj, λDepFun, λDepSum};
 
 
 /// Trait defining a function to reduce the lambda entity using a normal-order reduction strategy
@@ -93,6 +94,10 @@ impl Reducible for LambdaEntity {
 
             LambdaEntity::Conj(conjunction) => {
                 *λConj!(Box::from(conjunction.lhs.beta_reduce()), Box::from(conjunction.rhs.beta_reduce()))
+            }
+
+            LambdaEntity::DepSum(dep) => {
+                *λDepSum!(Box::from(dep.bound_var.beta_reduce()), Box::from(dep.expr.beta_reduce()))
             }
 
             LambdaEntity::DepFun(dep) => {

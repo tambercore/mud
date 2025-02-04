@@ -17,7 +17,7 @@ pub struct DependentFunction {
 /// Implementation of Partial Equality for DependentFunction, used in substitution.
 impl PartialEq<LambdaEntity> for DependentFunction {
     fn eq(&self, other: &LambdaEntity) -> bool {
-        if let LambdaEntity::DepFun(fun) = other {
+        if let LambdaEntity::DepSum(fun) = other {
             self.bound_var == fun.bound_var && self.expr == fun.expr
         } else {
             false
