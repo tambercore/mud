@@ -106,8 +106,6 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     let expr_node = quantified_phrase.backtrack_until_rhs(root).expect("Expected expression in quantification node");
     let expr = ccg_to_lambda_recursive(expr_node.clone(), root);
 
-    println!("bound var: {} expr: {}", bound_var_node, expr_node);
-
     if node.is_universal_quantification_node {
         λDepFun!(bound_var.clone(), λApp!(expr, bound_var))
     }
@@ -120,7 +118,6 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
 
 
-// TODO: this was separated because root is passed in. Can be removed when a reference to the parent is stored.
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
@@ -128,8 +125,6 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
     if current_node.is_universal_quantification_node || current_node.is_existential_quantification_node {
         return ccg_to_quantifier(current_node.clone(), root);
     }
-
-
 
     match current_node.rule {
         // Base case: terminal nodes
@@ -143,7 +138,9 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
             let (left, right) = unpack_children(current_node.children);
 
-            if left.contains_quantification_node() {
+            // left hand side is quantified expression. right hand side is expr
+            // e.g. EVERY MAN, LIKES CHEESE
+            if left.contains_quantification_node() && !right.contains_quantification_node() {
                     return ccg_to_lambda_recursive(left.clone(), root);
             }
 
@@ -156,13 +153,6 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
         // Recursive case: Forward Application
         CCGRule::ForwardApplication => {
-
-            // Handle quantifier siblings (do not consider bound variables twice)
-            /*if let Some(sibling) = current_node.get_sibling(root) {
-                if sibling.is_universal_quantification_node || sibling.is_existential_quantification_node {
-                    return ccg_to_quantifier(sibling.clone(), root);
-                }
-            }*/
 
             let (left, right) = unpack_children(current_node.children);
             if left.contains_quantification_node() {
