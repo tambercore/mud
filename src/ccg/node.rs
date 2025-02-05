@@ -156,7 +156,9 @@ impl CCGNode {
             if parent.node_type == CCGType::Sentence {
                 if let Some(children) = &parent.children {
                     if let Some(lhs) = children.first() {
-                        return Some(lhs);
+                        if !lhs.contains_quantification_node() {
+                            return Some(lhs);
+                        }
                     }
                 }
             }

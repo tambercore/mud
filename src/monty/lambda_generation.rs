@@ -101,7 +101,7 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
 
 pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     let bound_var_node = node.get_sibling(root).expect("Expected quantification node to have a sibling");
-    let bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
+    let mut bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
     let quantified_phrase = node.get_parent(root).expect("Expected quantification node to have a parent");
 
     let expr;
@@ -110,10 +110,21 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     } else if let Some(expr_node) = quantified_phrase.backtrack_until_lhs(root) {
         let lhs = expr_node.get_sibling(root).expect("Expected quantification node to have a sibling");
         let (left, right) = unpack_children(lhs.clone().children);
-        expr = λApp!(ccg_to_lambda_recursive(left.clone(), root), ccg_to_lambda_recursive(expr_node.clone(), root));
+        let mut applied_var = ccg_to_lambda_recursive(expr_node.clone(), root);
+        (bound_var, applied_var) = (applied_var, bound_var);
+        expr = λApp!(ccg_to_lambda_recursive(left.clone(), root), applied_var);
+        println!("expr: {}", expr)
 
     } else {
-        panic!("Expected expression on left or right");
+        // both expressions are quantifiers e.g. EVERY MAN, LIKES EVERY CHEESE
+        let left_quantifier = node.get_sibling(root).expect("Expected left quantifier sibling");
+        let right_quantifier = quantified_phrase.get_sibling(root).expect("Expected right quantifier sibling");
+
+        let left_expr = ccg_to_lambda_recursive(left_quantifier.clone(), root);
+        let right_expr = ccg_to_lambda_recursive(right_quantifier.clone(), root);
+
+        expr = λApp!(left_expr, right_expr);
+
     }
 
     if node.is_universal_quantification_node {
