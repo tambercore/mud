@@ -144,10 +144,8 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
     use LambdaEntity::*;
 
     // Handle quantifier nodes
-    if let Some(word) = current_node.clone().word {
-        if UNIVERSAL_QUANTIFIERS.contains(&word.text) || EXISTENTIAL_QUANTIFIERS.contains(&word.text) {
-            return ccg_to_quantifier(current_node.clone(), root);
-        }
+    if current_node.is_quantification_node() {
+        return ccg_to_quantifier(current_node.clone(), root);
     }
 
     match current_node.rule {
@@ -173,9 +171,9 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
                 return ccg_to_lambda_recursive(right.clone(), root);
             }
 
-            if right.contains_quantification_node() && left.contains_quantification_node() {
+            /*if right.contains_quantification_node() && left.contains_quantification_node() {
                 return ccg_to_lambda_recursive(left.clone(), root);
-            }
+            }*/
 
 
 

@@ -163,11 +163,7 @@ impl CCGNode {
 
     /// Checks if a node or its descendants contain a quantification node.
     pub fn contains_quantification_node(&self) -> bool {
-        if let Some(word) = &self.word {
-            if UNIVERSAL_QUANTIFIERS.contains(&word.text) || EXISTENTIAL_QUANTIFIERS.contains(&word.text) {
-                return true;
-            }
-        }
+        if self.is_quantification_node() {return true;}
 
         if let Some(children) = &self.children {
             for child in children {
@@ -177,6 +173,14 @@ impl CCGNode {
             }
         }
         false
+    }
+
+    pub fn is_quantification_node(&self) -> bool {
+        if let Some(word) = &self.word {
+            if UNIVERSAL_QUANTIFIERS.contains(&word.text) || EXISTENTIAL_QUANTIFIERS.contains(&word.text) {
+                return true;
+            }
+        } false
     }
 }
 
