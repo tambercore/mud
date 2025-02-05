@@ -14,6 +14,7 @@ use crate::lambda::dependent_function::DependentFunction;
 use crate::lambda::variable::Variable;
 use crate::lambda::dependent_sum::DependentSum;
 use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun, λDepSum};
+use crate::brill::contextual_rulespec::left_bigram;
 use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
 
 
@@ -95,7 +96,6 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
 }
 
 pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
-    root.initialize_flags();
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
@@ -105,6 +105,7 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     let quantified_phrase = node.get_parent(root).expect("Expected quantification node to have a parent");
 
     let expr;
+
     if let Some(expr_node) = quantified_phrase.backtrack_until_rhs(root) {
         expr = ccg_to_lambda_recursive(expr_node.clone(), root);
     } else if let Some(expr_node) = quantified_phrase.backtrack_until_lhs(root) {
@@ -117,33 +118,36 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
     } else {
         // both expressions are quantifiers e.g. EVERY MAN, LIKES EVERY CHEESE
-        let left_quantifier = node.get_sibling(root).expect("Expected left quantifier sibling");
         let right_quantifier = quantified_phrase.get_sibling(root).expect("Expected right quantifier sibling");
-
-        let left_expr = ccg_to_lambda_recursive(left_quantifier.clone(), root);
         let right_expr = ccg_to_lambda_recursive(right_quantifier.clone(), root);
 
-        expr = λApp!(left_expr, right_expr);
+        println!("left expr: {} \n right expr: {}", bound_var, right_expr);
+
+        expr = right_expr
 
     }
 
-    if node.is_universal_quantification_node {
-        λDepFun!(bound_var.clone(), λApp!(expr, bound_var))
+    if let Some(word) = node.word {
+        if UNIVERSAL_QUANTIFIERS.contains(&word.text) {
+            λDepFun!(bound_var.clone(), λApp!(expr, bound_var))
+        }
+        else if EXISTENTIAL_QUANTIFIERS.contains(&word.text) {
+            λDepSum!(bound_var.clone(), λApp!(expr, bound_var))
+        }
+        else {panic!("Expected quantification node to be existential or universal")}
     }
-    else if node.is_existential_quantification_node {
-        λDepSum!(bound_var.clone(), λApp!(expr, bound_var))
-    }
-    else {panic!("Expected quantification node to be existential or universal")}
+    else {panic!("Expected quantification node to be terminal")}
 }
-
 
 
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
     // Handle quantifier nodes
-    if current_node.is_universal_quantification_node || current_node.is_existential_quantification_node {
-        return ccg_to_quantifier(current_node.clone(), root);
+    if let Some(word) = current_node.clone().word {
+        if UNIVERSAL_QUANTIFIERS.contains(&word.text) || EXISTENTIAL_QUANTIFIERS.contains(&word.text) {
+            return ccg_to_quantifier(current_node.clone(), root);
+        }
     }
 
     match current_node.rule {
@@ -169,6 +173,12 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
                 return ccg_to_lambda_recursive(right.clone(), root);
             }
 
+            if right.contains_quantification_node() && left.contains_quantification_node() {
+                return ccg_to_lambda_recursive(left.clone(), root);
+            }
+
+
+
 
             return λApp!(
                 ccg_to_lambda_recursive(right, root),
@@ -183,11 +193,11 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
             // right hand side is quantified expression. left hand side is expr
             // e.g. JOHN LIKES, EVERY CHEESE
-            if left.contains_quantification_node() {
+            if left.contains_quantification_node() && !right.contains_quantification_node() {
                 return ccg_to_lambda_recursive(left.clone(), root);
             }
 
-            if right.contains_quantification_node() {
+            if right.contains_quantification_node() && !left.contains_quantification_node() {
                 return ccg_to_lambda_recursive(right.clone(), root);
             }
 

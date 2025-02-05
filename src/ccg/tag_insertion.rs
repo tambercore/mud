@@ -35,8 +35,6 @@ fn _insert_tags<I>(old_node: &CCGNode, words_and_tags_iter: &mut I) -> CCGNode w
         rule: old_node.rule.clone(),
         word: new_word,
         children: new_children,
-        is_universal_quantification_node: old_node.is_universal_quantification_node,
-        is_existential_quantification_node: old_node.is_existential_quantification_node,
         id: Uuid::new_v4(), // Generate a unique ID
     }
 }
