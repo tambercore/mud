@@ -179,7 +179,7 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             }
 
             // TODO: this is wrong in some cases part of the sentence is not reduced, and in others it results in incorrect derivations
-            if right.contains_quantification_node() && left.contains_quantification_node() {
+            if right.contains_quantification_node() && left.contains_quantification_node() && left.clone().node_type != CCGType::Sentence && right.clone().node_type != CCGType::Sentence {
                 return ccg_to_lambda_recursive(left.clone(), root);
             }
 
