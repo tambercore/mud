@@ -178,8 +178,9 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
                 return ccg_to_lambda_recursive(right.clone(), root);
             }
 
-            // TODO: this is wrong in some cases part of the sentence is not reduced, and in others it results in incorrect derivations
-            if right.contains_quantification_node() && left.contains_quantification_node() && left.clone().node_type != CCGType::Sentence && right.clone().node_type != CCGType::Sentence {
+            // both sides are quantified expressions
+            // e.g. EVERY MAN, LIKES SOME CHEESE
+            if current_node.node_type == CCGType::Sentence && right.contains_quantification_node() && left.contains_quantification_node() && left.clone().node_type != CCGType::Sentence && right.clone().node_type != CCGType::Sentence {
                 return ccg_to_lambda_recursive(left.clone(), root);
             }
 

@@ -58,8 +58,14 @@ impl Reducible for LambdaEntity {
                         })
                     }
                     LambdaEntity::DepFun(function) => {
+                        // Perform substitution: replace the bound variable with the argument (rhs) in the body
+                        let substituted_body = function
+                            .substitute(&function.expr, &application.rhs);
 
-                        println!("REDUCING FUN: {}", function);
+                        // Continue reducing the substituted body
+                        substituted_body.beta_reduce()
+                    }
+                    LambdaEntity::DepSum(function) => {
                         // Perform substitution: replace the bound variable with the argument (rhs) in the body
                         let substituted_body = function
                             .substitute(&function.expr, &application.rhs);

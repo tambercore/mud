@@ -1,7 +1,7 @@
 use std::cmp::PartialEq;
 use crate::lambda::types::{Expandable, LambdaEntity, Substitutable};
 use crate::lambda::conjunction::Conjunction;
-use crate::{λConj, λPred, λDepSum};
+use crate::{λConj, λPred, λDepSum, λDepFun};
 use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::reducible::Reducible;
@@ -35,7 +35,12 @@ impl Substitutable for DependentSum {
             return Box::new(target.clone());
         }
 
-        λDepSum!(self.bound_var.substitute(source, target), self.expr.substitute(source, target))
+        match *self.clone().expr {
+            LambdaEntity:: Abs(abstraction) => {
+                λDepSum!(self.bound_var.substitute(&*abstraction.clone().bound_var, target), self.expr.substitute(&*abstraction.clone().bound_var, target))
+            }
+            _ => {λDepSum!(self.clone().bound_var, self.clone().expr)}
+        }
     }
 }
 
