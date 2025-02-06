@@ -27,16 +27,13 @@ impl Reducible for LambdaEntity {
                     // If the reduced lhs is an Abstraction, perform substitution
                     LambdaEntity::Abs(abstraction) => {
 
-                        println!("substituting {}", application);
                         // Perform substitution: replace the bound variable with the argument (rhs) in the body
                         let substituted_body = abstraction
                             .body
                             .substitute(&abstraction.bound_var, &application.rhs);
 
                         // Continue reducing the substituted body
-                        let expr = substituted_body.beta_reduce();
-                        println!("expr: {}", expr);
-                        expr
+                        substituted_body.beta_reduce()
                     }
                     LambdaEntity::Conj(conjunction) => {
                         // NEW: Distribute 'rhs' over both sides of Conj(...).

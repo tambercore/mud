@@ -35,6 +35,7 @@ impl Substitutable for DependentSum {
             return Box::new(target.clone());
         }
 
+        // If the EXPR of a dependent sum is an abstraction, perform substitution inside the EXPR.
         match *self.clone().expr {
             LambdaEntity:: Abs(abstraction) => {
                 λDepSum!(self.bound_var.substitute(&*abstraction.clone().bound_var, target), self.expr.substitute(&*abstraction.clone().bound_var, target))
