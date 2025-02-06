@@ -104,46 +104,27 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     let mut bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
     let quantified_phrase = node.get_parent(root).expect("Expected quantification node to have a parent");
 
-    let expr;
-
-    if let Some(expr_node) = quantified_phrase.backtrack_until_rhs(root) {
-        expr = ccg_to_lambda_recursive(expr_node.clone(), root);
+    let expr = if let Some(expr_node) = quantified_phrase.backtrack_until_rhs(root) {
+        // The quantifier is on the left hand side. e.g. "EVERY MAN, LIKES CHEESE"
+        ccg_to_lambda_recursive(expr_node.clone(), root)
     } else if let Some(expr_node) = quantified_phrase.backtrack_until_lhs(root) {
+        // The quantifier is on the right hand side. e.g. "JOHN, LIKES EVERY CHEESE"
         let lhs = expr_node.get_sibling(root).expect("Expected quantification node to have a sibling");
-        let (left, right) = unpack_children(lhs.clone().children);
+        let (left, _) = unpack_children(lhs.clone().children);
         let mut applied_var = ccg_to_lambda_recursive(expr_node.clone(), root);
         (bound_var, applied_var) = (applied_var, bound_var);
-        expr = λApp!(ccg_to_lambda_recursive(left.clone(), root), applied_var);
-        println!("expr: {}", expr)
-
+        λApp!(ccg_to_lambda_recursive(left.clone(), root), applied_var)
     } else {
-        // both expressions are quantifiers e.g. EVERY MAN, LIKES EVERY CHEESE
-        // TODO: apply the bound_var before the recursive call.
-
-        println!("left expr: {}", bound_var);
-
+        // The quantifiers are on both sides. e.g. "EVERY MAN, LIKES SOME CHEESE"
         let right_quantifier = quantified_phrase.get_sibling(root).expect("Expected right quantifier sibling");
+        ccg_to_lambda_recursive(right_quantifier.clone(), root)
+    };
 
-        let right_expr = ccg_to_lambda_recursive(right_quantifier.clone(), root);
-
-        println!("right expr: {}", right_expr);
-
-
-
-        expr = right_expr
-
+    match node.word.map(|w| w.text) {
+        Some(q) if UNIVERSAL_QUANTIFIERS.contains(&q) => λDepFun!(bound_var.clone(), λApp!(expr, bound_var)),
+        Some(q) if EXISTENTIAL_QUANTIFIERS.contains(&q) => λDepSum!(bound_var.clone(), λApp!(expr, bound_var)),
+        _ => panic!("Expected quantification node to be existential or universal"),
     }
-
-    if let Some(word) = node.word {
-        if UNIVERSAL_QUANTIFIERS.contains(&word.text) {
-            λDepFun!(bound_var.clone(), λApp!(expr, bound_var))
-        }
-        else if EXISTENTIAL_QUANTIFIERS.contains(&word.text) {
-            λDepSum!(bound_var.clone(), λApp!(expr, bound_var))
-        }
-        else {panic!("Expected quantification node to be existential or universal")}
-    }
-    else {panic!("Expected quantification node to be terminal")}
 }
 
 
