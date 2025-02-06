@@ -118,10 +118,17 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
     } else {
         // both expressions are quantifiers e.g. EVERY MAN, LIKES EVERY CHEESE
+        // TODO: apply the bound_var before the recursive call.
+
+        println!("left expr: {}", bound_var);
+
         let right_quantifier = quantified_phrase.get_sibling(root).expect("Expected right quantifier sibling");
+
         let right_expr = ccg_to_lambda_recursive(right_quantifier.clone(), root);
 
-        println!("left expr: {} \n right expr: {}", bound_var, right_expr);
+        println!("right expr: {}", right_expr);
+
+
 
         expr = right_expr
 
@@ -171,12 +178,10 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
                 return ccg_to_lambda_recursive(right.clone(), root);
             }
 
-            /*if right.contains_quantification_node() && left.contains_quantification_node() {
+            // TODO: this is wrong in some cases part of the sentence is not reduced, and in others it results in incorrect derivations
+            if right.contains_quantification_node() && left.contains_quantification_node() {
                 return ccg_to_lambda_recursive(left.clone(), root);
-            }*/
-
-
-
+            }
 
             return λApp!(
                 ccg_to_lambda_recursive(right, root),

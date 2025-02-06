@@ -57,6 +57,16 @@ impl Reducible for LambdaEntity {
                             rhs: Box::new(rhs_applied),
                         })
                     }
+                    LambdaEntity::DepFun(function) => {
+
+                        println!("REDUCING FUN: {}", function);
+                        // Perform substitution: replace the bound variable with the argument (rhs) in the body
+                        let substituted_body = function
+                            .substitute(&function.expr, &application.rhs);
+
+                        // Continue reducing the substituted body
+                        substituted_body.beta_reduce()
+                    }
                     other => {
                         // If not an Abs or Conj, reduce the rhs and rebuild App
                         let reduced_rhs = application.rhs.beta_reduce();
