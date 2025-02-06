@@ -14,7 +14,6 @@ use crate::lambda::dependent_function::DependentFunction;
 use crate::lambda::variable::Variable;
 use crate::lambda::dependent_sum::DependentSum;
 use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun, λDepSum};
-use crate::brill::contextual_rulespec::left_bigram;
 use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
 
 
