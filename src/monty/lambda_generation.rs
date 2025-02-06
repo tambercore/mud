@@ -95,43 +95,43 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
 }
 
 pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
-    root.initialize_flags();
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
 pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     let bound_var_node = node.get_sibling(root).expect("Expected quantification node to have a sibling");
-    let bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
+    let mut bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
     let quantified_phrase = node.get_parent(root).expect("Expected quantification node to have a parent");
 
-    let expr;
-    if let Some(expr_node) = quantified_phrase.backtrack_until_rhs(root) {
-        expr = ccg_to_lambda_recursive(expr_node.clone(), root);
+    let expr = if let Some(expr_node) = quantified_phrase.backtrack_until_rhs(root) {
+        // The quantifier is on the left hand side. e.g. "EVERY MAN, LIKES CHEESE"
+        ccg_to_lambda_recursive(expr_node.clone(), root)
     } else if let Some(expr_node) = quantified_phrase.backtrack_until_lhs(root) {
+        // The quantifier is on the right hand side. e.g. "JOHN, LIKES EVERY CHEESE"
         let lhs = expr_node.get_sibling(root).expect("Expected quantification node to have a sibling");
-        let (left, right) = unpack_children(lhs.clone().children);
-        expr = λApp!(ccg_to_lambda_recursive(left.clone(), root), ccg_to_lambda_recursive(expr_node.clone(), root));
-
+        let (left, _) = unpack_children(lhs.clone().children);
+        let mut applied_var = ccg_to_lambda_recursive(expr_node.clone(), root);
+        (bound_var, applied_var) = (applied_var, bound_var);
+        λApp!(ccg_to_lambda_recursive(left.clone(), root), applied_var)
     } else {
-        panic!("Expected expression on left or right");
-    }
+        // The quantifiers are on both sides. e.g. "EVERY MAN, LIKES SOME CHEESE"
+        let right_quantifier = quantified_phrase.get_sibling(root).expect("Expected right quantifier sibling");
+        ccg_to_lambda_recursive(right_quantifier.clone(), root)
+    };
 
-    if node.is_universal_quantification_node {
-        λDepFun!(bound_var.clone(), λApp!(expr, bound_var))
+    match node.word.map(|w| w.text) {
+        Some(q) if UNIVERSAL_QUANTIFIERS.contains(&q) => λDepFun!(bound_var.clone(), λApp!(expr, bound_var)),
+        Some(q) if EXISTENTIAL_QUANTIFIERS.contains(&q) => λDepSum!(bound_var.clone(), λApp!(expr, bound_var)),
+        _ => panic!("Expected quantification node to be existential or universal"),
     }
-    else if node.is_existential_quantification_node {
-        λDepSum!(bound_var.clone(), λApp!(expr, bound_var))
-    }
-    else {panic!("Expected quantification node to be existential or universal")}
 }
-
 
 
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
     // Handle quantifier nodes
-    if current_node.is_universal_quantification_node || current_node.is_existential_quantification_node {
+    if current_node.is_quantification_node() {
         return ccg_to_quantifier(current_node.clone(), root);
     }
 
@@ -158,6 +158,11 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
                 return ccg_to_lambda_recursive(right.clone(), root);
             }
 
+            // both sides are quantified expressions
+            // e.g. EVERY MAN, LIKES SOME CHEESE
+            if current_node.node_type == CCGType::Sentence && right.contains_quantification_node() && left.contains_quantification_node() && left.clone().node_type != CCGType::Sentence && right.clone().node_type != CCGType::Sentence {
+                return ccg_to_lambda_recursive(left.clone(), root);
+            }
 
             return λApp!(
                 ccg_to_lambda_recursive(right, root),
@@ -172,11 +177,11 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
             // right hand side is quantified expression. left hand side is expr
             // e.g. JOHN LIKES, EVERY CHEESE
-            if left.contains_quantification_node() {
+            if left.contains_quantification_node() && !right.contains_quantification_node() {
                 return ccg_to_lambda_recursive(left.clone(), root);
             }
 
-            if right.contains_quantification_node() {
+            if right.contains_quantification_node() && !left.contains_quantification_node() {
                 return ccg_to_lambda_recursive(right.clone(), root);
             }
 

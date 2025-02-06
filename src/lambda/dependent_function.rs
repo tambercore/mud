@@ -35,7 +35,13 @@ impl Substitutable for DependentFunction {
             return Box::new(target.clone());
         }
 
-        λDepFun!(self.bound_var.substitute(source, target), self.expr.substitute(source, target))
+        // If the EXPR of a dependent function is an abstraction, perform substitution inside the EXPR.
+        match *self.clone().expr {
+            LambdaEntity:: Abs(abstraction) => {
+                λDepFun!(self.bound_var.substitute(&*abstraction.clone().bound_var, target), self.expr.substitute(&*abstraction.clone().bound_var, target))
+            }
+            _ => {λDepFun!(self.clone().bound_var, self.clone().expr)}
+        }
     }
 }
 

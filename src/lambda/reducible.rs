@@ -26,6 +26,7 @@ impl Reducible for LambdaEntity {
                 match reduced_lhs {
                     // If the reduced lhs is an Abstraction, perform substitution
                     LambdaEntity::Abs(abstraction) => {
+
                         // Perform substitution: replace the bound variable with the argument (rhs) in the body
                         let substituted_body = abstraction
                             .body
@@ -56,6 +57,17 @@ impl Reducible for LambdaEntity {
                             lhs: Box::new(lhs_applied),
                             rhs: Box::new(rhs_applied),
                         })
+                    }
+                    LambdaEntity::DepFun(function) => {
+                        // Continue reducing the substituted body
+                        let body = λApp!(function.expr, application.clone().rhs).beta_reduce();
+                        *λDepFun!(function.bound_var, Box::from(body))
+
+                    }
+                    LambdaEntity::DepSum(function) => {
+                        // Continue reducing the substituted body
+                        let body = λApp!(function.expr, application.clone().rhs).beta_reduce();
+                        *λDepSum!(function.bound_var, Box::from(body))
                     }
                     other => {
                         // If not an Abs or Conj, reduce the rhs and rebuild App

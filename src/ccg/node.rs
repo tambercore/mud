@@ -20,12 +20,6 @@ pub struct CCGNode {
     pub rule: CCGRule,
     pub children: Option<Vec<Box<CCGNode>>>, // Use Box to handle recursion
 
-    #[serde(skip)]
-    pub is_universal_quantification_node: bool,
-
-    #[serde(skip)]
-    pub is_existential_quantification_node: bool,
-
     // a unique identifier to differentiate nodes with the same text
     #[serde(skip)]
     pub id: Uuid
@@ -156,7 +150,9 @@ impl CCGNode {
             if parent.node_type == CCGType::Sentence {
                 if let Some(children) = &parent.children {
                     if let Some(lhs) = children.first() {
-                        return Some(lhs);
+                        if !lhs.contains_quantification_node() {
+                            return Some(lhs);
+                        }
                     }
                 }
             }
@@ -167,9 +163,8 @@ impl CCGNode {
 
     /// Checks if a node or its descendants contain a quantification node.
     pub fn contains_quantification_node(&self) -> bool {
-        if self.is_universal_quantification_node || self.is_existential_quantification_node {
-            return true;
-        }
+        if self.is_quantification_node() {return true;}
+
         if let Some(children) = &self.children {
             for child in children {
                 if child.contains_quantification_node() {
@@ -180,27 +175,12 @@ impl CCGNode {
         false
     }
 
-
-    // Recursive function to initialize flags
-    pub fn initialize_flags(&mut self) {
-        // Set the flags to false by default
-        self.is_existential_quantification_node = false;
-        self.is_universal_quantification_node = false;
-
-        if let Some(ccg_word) = self.clone().word {
-            let word_text = ccg_word.text.to_lowercase();
-            if UNIVERSAL_QUANTIFIERS.contains(&word_text) {
-                self.is_universal_quantification_node = true;
-            } else if EXISTENTIAL_QUANTIFIERS.contains(&word_text) {
-                self.is_existential_quantification_node = true;
+    pub fn is_quantification_node(&self) -> bool {
+        if let Some(word) = &self.word {
+            if UNIVERSAL_QUANTIFIERS.contains(&word.text) || EXISTENTIAL_QUANTIFIERS.contains(&word.text) {
+                return true;
             }
-        }
-
-        if let Some(children) = &mut self.children {
-            for child in children.iter_mut() {
-                child.initialize_flags();
-            }
-        }
+        } false
     }
 }
 
