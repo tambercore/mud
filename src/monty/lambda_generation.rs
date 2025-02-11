@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread::current;
 use crate::brill::wordclass::Wordclass;
 use crate::ccg::category::CCGType;
@@ -16,6 +17,12 @@ use crate::lambda::dependent_sum::DependentSum;
 use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun, λDepSum};
 use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
 
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+fn get_next_var() -> String {
+    let id = COUNTER.fetch_add(1, Ordering::SeqCst);
+    format!("x{}", id)
+}
 
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
@@ -45,12 +52,12 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
             // NNP : Proper Nouns are unique (variables)
             Wordclass::NNP => λVar!(ccg_word.text.clone(), String::from("Ind")),
             // Common Nouns are types
-            Wordclass::NN | Wordclass::NNS => λVar!(String::from("x"), ccg_word.text.clone()),
+            Wordclass::NN | Wordclass::NNS => λVar!(get_next_var(), ccg_word.text.clone()),
             Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
 
             // Since determiners always get forwards/backwards applied to something else, and we want to ignore it here.
             // We can substitute this for some identity function, i.e. \x . x (woman) --b--> woman
-            Wordclass::DT => λAbs!(λVar!(String::from("x"), "ID1".parse().unwrap()), λVar!(String::from("x"), "ID1".parse().unwrap())),
+            Wordclass::DT => λAbs!(λVar!(get_next_var(), "ID1".parse().unwrap()), λVar!(get_next_var(), "ID1".parse().unwrap())),
             _ => panic!("Wordclass variant not implemented: {}", effective_tag),
         }
     } else {
@@ -67,13 +74,12 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
 
     let mut arguments = Vec::new();
     for i in 1..=num_arguments {
-        arguments.push(λVar!(String::from("x"), format!("x{}", i)));
+        arguments.push(λVar!(get_next_var(), String::from("x")));
     }
 
-    let mut expression = λPred!(identifier, arguments);
-    for i in 1..=num_arguments {
-        let arg_name = format!("x{}", i);
-        expression = λAbs!(λVar!(String::from("x"), arg_name), expression);
+    let mut expression = λPred!(identifier, arguments.clone());
+    for arg in arguments.clone() {
+        expression = λAbs!(arg, expression);
     }
 
     expression
@@ -212,7 +218,7 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             // Conjunction combines on the right according to CCGBank
             let (left, right) = unpack_children(current_node.children);
             let right_expr = ccg_to_lambda_recursive(right, root);
-            let x = λVar!(String::from("x"), "x".to_string());
+            let x = λVar!(get_next_var(), "x".to_string());
             let conj_body = λConj!(x.clone(), right_expr);
             return λAbs!(x, conj_body);
         }

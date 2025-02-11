@@ -5,6 +5,8 @@ use crate::{λConj, λPred, λDepFun};
 use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::reducible::Reducible;
+use crate::lambda::types::LambdaEntity::Var;
+use crate::lambda::variable::Variable;
 
 /// Structure to define Π(x) (expr)
 #[derive(Clone, Debug, PartialEq)]
@@ -56,7 +58,13 @@ impl Reducible for DependentFunction {
 /// Implementation of Pretty Prints for DependentFunction
 impl fmt::Display for DependentFunction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if let (Var(variable)) = *self.clone().bound_var {
+            write!(f, "Π({}: {}) ({})", variable.name, variable.var_type, self.expr)
+        }
+        else {
             write!(f, "Π({}) ({})", self.bound_var, self.expr)
+        }
+
         }
     }
 

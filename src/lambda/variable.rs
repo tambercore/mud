@@ -35,6 +35,6 @@ impl PartialEq<LambdaEntity> for Variable {
 /// Implementing Pretty Print
 impl fmt::Display for Variable {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} : {}", self.name, self.var_type)
+        write!(f, "{}", self.name)
     }
 }

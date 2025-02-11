@@ -5,6 +5,7 @@ use crate::{λConj, λPred, λDepSum, λDepFun};
 use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::reducible::Reducible;
+use crate::lambda::types::LambdaEntity::Var;
 
 /// Structure to define Σ(x) (expr)
 #[derive(Clone, Debug, PartialEq)]
@@ -55,8 +56,15 @@ impl Reducible for DependentSum {
 
 /// Implementation of Pretty Prints for DependentSum
 impl fmt::Display for DependentSum {
+
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "Σ({}) ({})", self.bound_var, self.expr)
+        if let (Var(variable)) = *self.clone().bound_var {
+            write!(f, "Σ({}: {}) ({})", variable.name, variable.var_type, self.expr)
+        }
+        else {
+            write!(f, "Σ({}) ({})", self.bound_var, self.expr)
+        }
+
     }
 }
 
