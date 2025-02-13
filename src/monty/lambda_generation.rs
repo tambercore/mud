@@ -110,6 +110,7 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
 pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     let bound_var_node = node.get_sibling(root).expect("Expected quantification node to have a sibling");
     let mut bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
+    let mut applied_var = bound_var.clone();
     let quantified_phrase = node.get_parent(root).expect("Expected quantification node to have a parent");
 
     let expr = if let Some(expr_node) = quantified_phrase.backtrack_until_rhs(root) {
@@ -119,9 +120,9 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
         // The quantifier is on the right hand side. e.g. "JOHN, LIKES EVERY CHEESE"
         let lhs = expr_node.get_sibling(root).expect("Expected quantification node to have a sibling");
         let (left, _) = unpack_children(lhs.clone().children);
-        let mut applied_var = ccg_to_lambda_recursive(expr_node.clone(), root);
-        (bound_var, applied_var) = (applied_var, bound_var);
-        λApp!(ccg_to_lambda_recursive(left.clone(), root), applied_var)
+        applied_var = ccg_to_lambda_recursive(expr_node.clone(), root);
+
+        λApp!(ccg_to_lambda_recursive(left.clone(), root), bound_var.clone())
     } else {
         // The quantifiers are on both sides. e.g. "EVERY MAN, LIKES SOME CHEESE"
         let right_quantifier = quantified_phrase.get_sibling(root).expect("Expected right quantifier sibling");
@@ -129,8 +130,8 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     };
 
     match node.word.map(|w| w.text) {
-        Some(q) if UNIVERSAL_QUANTIFIERS.contains(&q) => λDepFun!(bound_var.clone(), λApp!(expr, bound_var)),
-        Some(q) if EXISTENTIAL_QUANTIFIERS.contains(&q) => λDepSum!(bound_var.clone(), λApp!(expr, bound_var)),
+        Some(q) if UNIVERSAL_QUANTIFIERS.contains(&q) => λDepFun!(bound_var.clone(), λApp!(expr, applied_var)),
+        Some(q) if EXISTENTIAL_QUANTIFIERS.contains(&q) => λDepSum!(bound_var.clone(), λApp!(expr, applied_var)),
         _ => panic!("Expected quantification node to be existential or universal"),
     }
 }
