@@ -31,7 +31,9 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) ->
             let lexical_category = λAbs!(generate_lexical_category(*right, _node, root), generate_lexical_category(*left, _node, root));
             generate_lexical_element(_node, lexical_category, root)
         }
-        _ => generate_lexical_element(_node, λVar!(String::from("temp"), String::from("temp")), root)
+        // The category argument is used to determine the arity of a node.
+        // Its name is temporary and not used.
+        _ => generate_lexical_element(_node, λVar!(String::from("temp"), _type.to_string()), root)
     }
 }
 
