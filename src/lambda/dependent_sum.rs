@@ -58,12 +58,7 @@ impl Reducible for DependentSum {
 impl fmt::Display for DependentSum {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let (Var(variable)) = *self.clone().bound_var {
-            write!(f, "Σ({}: {}) ({})", variable.name, variable.var_type, self.expr)
-        }
-        else {
             write!(f, "Σ({}) ({})", self.bound_var, self.expr)
-        }
 
     }
 }

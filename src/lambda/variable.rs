@@ -8,7 +8,6 @@ use std::fmt::Formatter;
 #[derive(Clone, Debug, PartialEq)]
 pub struct Variable {
     pub name: String,
-    pub var_type: String
 }
 
 
@@ -16,7 +15,7 @@ pub struct Variable {
 impl Substitutable for Variable {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
         if self == source { Box::from(target.clone()) }
-        else { λVar!(self.name.clone(), self.var_type.clone()) }
+        else { λVar!(self.name.clone()) }
     }
 }
 
@@ -25,7 +24,7 @@ impl Substitutable for Variable {
 impl PartialEq<LambdaEntity> for Variable {
     fn eq(&self, other: &LambdaEntity) -> bool {
         match other {
-            LambdaEntity::Var(other_name) => *self.name == *other_name.name && *self.var_type == *other_name.var_type,
+            LambdaEntity::Var(other_name) => *self.name == *other_name.name,
             _ => false
         }
     }

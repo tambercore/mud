@@ -58,13 +58,7 @@ impl Reducible for DependentFunction {
 /// Implementation of Pretty Prints for DependentFunction
 impl fmt::Display for DependentFunction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let (Var(variable)) = *self.clone().bound_var {
-            write!(f, "Π({}: {}) ({})", variable.name, variable.var_type, self.expr)
-        }
-        else {
             write!(f, "Π({}) ({})", self.bound_var, self.expr)
-        }
-
         }
     }
 

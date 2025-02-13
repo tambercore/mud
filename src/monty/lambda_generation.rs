@@ -16,6 +16,7 @@ use crate::lambda::variable::Variable;
 use crate::lambda::dependent_sum::DependentSum;
 use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun, λDepSum};
 use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
+use crate::monty::typing_context::{insert_into_context, TYPING_CONTEXT};
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
@@ -33,7 +34,7 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) ->
         }
         // The category argument is used to determine the arity of a node.
         // Its name is temporary and not used.
-        _ => generate_lexical_element(_node, λVar!(String::from("temp"), _type.to_string()), root)
+        _ => generate_lexical_element(_node, λVar!(_type.to_string()), root)
     }
 }
 
@@ -52,14 +53,24 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
 
         match effective_tag {
             // NNP : Proper Nouns are unique (variables)
-            Wordclass::NNP => λVar!(ccg_word.text.clone(), String::from("Ind")),
+
+            Wordclass::NNP => {
+                insert_into_context(ccg_word.text.clone(), String::from("Ind"));
+                λVar!(ccg_word.text.clone())
+            },
             // Common Nouns are types
-            Wordclass::NN | Wordclass::NNS => λVar!(get_next_var(), ccg_word.text.clone()),
+            Wordclass::NN | Wordclass::NNS => {
+                let iden = get_next_var();
+                insert_into_context(iden.clone(), ccg_word.text.clone());
+                λVar!(iden.clone())
+            },
             Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
 
             // Since determiners always get forwards/backwards applied to something else, and we want to ignore it here.
             // We can substitute this for some identity function, i.e. \x . x (woman) --b--> woman
-            Wordclass::DT => λAbs!(λVar!(get_next_var(), "ID1".parse().unwrap()), λVar!(get_next_var(), "ID1".parse().unwrap())),
+            Wordclass::DT => {
+                λAbs!(λVar!("ID1".parse().unwrap()), λVar!("ID1".parse().unwrap()))
+            },
             _ => panic!("Wordclass variant not implemented: {}", effective_tag),
         }
     } else {
@@ -71,12 +82,12 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
     let num_arguments = count_predicate_arguments(category.clone());
 
     if num_arguments == 0 {
-        return λVar!(String::from("x"), String::from("tmp"))
+        return λVar!(String::from("tmp"))
     }
 
     let mut arguments = Vec::new();
     for i in 1..=num_arguments {
-        arguments.push(λVar!(get_next_var(), String::from("x")));
+        arguments.push(λVar!(get_next_var()));
     }
 
     let mut expression = λPred!(identifier, arguments.clone());
@@ -221,7 +232,7 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             // Conjunction combines on the right according to CCGBank
             let (left, right) = unpack_children(current_node.children);
             let right_expr = ccg_to_lambda_recursive(right, root);
-            let x = λVar!(get_next_var(), "x".to_string());
+            let x = λVar!("x".to_string());
             let conj_body = λConj!(x.clone(), right_expr);
             return λAbs!(x, conj_body);
         }
