@@ -27,7 +27,7 @@ fn test_predicate_expansion() {
         )]
     );
     assert_eq!(
-       (*conj_in_conj).expand(),
+        (*conj_in_conj).expand(),
         λConj!(
             λPred!("P".to_string(), vec![λVar!("x".to_string())]),
             λConj!(

@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread::current;
 use crate::brill::wordclass::Wordclass;
 use crate::ccg::category::CCGType;
@@ -15,7 +16,14 @@ use crate::lambda::variable::Variable;
 use crate::lambda::dependent_sum::DependentSum;
 use crate::{λAbs, λVar, λApp, λPred, λConj, λDepFun, λDepSum};
 use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
+use crate::monty::typing_context::{insert_into_context, TYPING_CONTEXT};
 
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+fn get_next_var() -> String {
+    let id = COUNTER.fetch_add(1, Ordering::SeqCst);
+    format!("x{}", id)
+}
 
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
@@ -24,6 +32,8 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) ->
             let lexical_category = λAbs!(generate_lexical_category(*right, _node, root), generate_lexical_category(*left, _node, root));
             generate_lexical_element(_node, lexical_category, root)
         }
+        // The category argument is used to determine the arity of a node.
+        // Its name is temporary and not used.
         _ => generate_lexical_element(_node, λVar!(_type.to_string()), root)
     }
 }
@@ -42,12 +52,25 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
         };
 
         match effective_tag {
-            Wordclass::NNP | Wordclass::NN | Wordclass::NNS => λVar!(ccg_word.text.clone()),
+            // NNP : Proper Nouns are unique (variables)
+
+            Wordclass::NNP => {
+                insert_into_context(ccg_word.text.clone(), String::from("Ind"));
+                λVar!(ccg_word.text.clone())
+            },
+            // Common Nouns are types
+            Wordclass::NN | Wordclass::NNS => {
+                let iden = get_next_var();
+                insert_into_context(iden.clone(), ccg_word.text.clone());
+                λVar!(iden.clone())
+            },
             Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
 
             // Since determiners always get forwards/backwards applied to something else, and we want to ignore it here.
             // We can substitute this for some identity function, i.e. \x . x (woman) --b--> woman
-            Wordclass::DT => λAbs!(λVar!("ID1".parse().unwrap()), λVar!("ID1".parse().unwrap())),
+            Wordclass::DT => {
+                λAbs!(λVar!("ID1".parse().unwrap()), λVar!("ID1".parse().unwrap()))
+            },
             _ => panic!("Wordclass variant not implemented: {}", effective_tag),
         }
     } else {
@@ -64,13 +87,12 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
 
     let mut arguments = Vec::new();
     for i in 1..=num_arguments {
-        arguments.push(λVar!(format!("x{}", i)));
+        arguments.push(λVar!(get_next_var()));
     }
 
-    let mut expression = λPred!(identifier, arguments);
-    for i in 1..=num_arguments {
-        let arg_name = format!("x{}", i);
-        expression = λAbs!(λVar!(arg_name), expression);
+    let mut expression = λPred!(identifier, arguments.clone());
+    for arg in arguments.clone() {
+        expression = λAbs!(arg, expression);
     }
 
     expression
@@ -101,6 +123,7 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
 pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     let bound_var_node = node.get_sibling(root).expect("Expected quantification node to have a sibling");
     let mut bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
+    let mut applied_var = bound_var.clone();
     let quantified_phrase = node.get_parent(root).expect("Expected quantification node to have a parent");
 
     let expr = if let Some(expr_node) = quantified_phrase.backtrack_until_rhs(root) {
@@ -110,9 +133,9 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
         // The quantifier is on the right hand side. e.g. "JOHN, LIKES EVERY CHEESE"
         let lhs = expr_node.get_sibling(root).expect("Expected quantification node to have a sibling");
         let (left, _) = unpack_children(lhs.clone().children);
-        let mut applied_var = ccg_to_lambda_recursive(expr_node.clone(), root);
-        (bound_var, applied_var) = (applied_var, bound_var);
-        λApp!(ccg_to_lambda_recursive(left.clone(), root), applied_var)
+        applied_var = ccg_to_lambda_recursive(expr_node.clone(), root);
+
+        λApp!(ccg_to_lambda_recursive(left.clone(), root), bound_var.clone())
     } else {
         // The quantifiers are on both sides. e.g. "EVERY MAN, LIKES SOME CHEESE"
         let right_quantifier = quantified_phrase.get_sibling(root).expect("Expected right quantifier sibling");
@@ -120,8 +143,8 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     };
 
     match node.word.map(|w| w.text) {
-        Some(q) if UNIVERSAL_QUANTIFIERS.contains(&q) => λDepFun!(bound_var.clone(), λApp!(expr, bound_var)),
-        Some(q) if EXISTENTIAL_QUANTIFIERS.contains(&q) => λDepSum!(bound_var.clone(), λApp!(expr, bound_var)),
+        Some(q) if UNIVERSAL_QUANTIFIERS.contains(&q) => λDepFun!(bound_var.clone(), λApp!(expr, applied_var)),
+        Some(q) if EXISTENTIAL_QUANTIFIERS.contains(&q) => λDepSum!(bound_var.clone(), λApp!(expr, applied_var)),
         _ => panic!("Expected quantification node to be existential or universal"),
     }
 }

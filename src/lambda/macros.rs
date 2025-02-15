@@ -4,8 +4,8 @@ use crate::lambda::dependent_sum::DependentSum;
 
 #[macro_export]
 macro_rules! λVar {
-    ($type_expr:expr) => {
-        Box::from(LambdaEntity::Var(Variable{name: $type_expr}))
+    ($name_expr:expr) => {
+        Box::from(LambdaEntity::Var(Variable{name: $name_expr}))
     };
 }
 

@@ -5,6 +5,8 @@ use crate::{λConj, λPred, λDepFun};
 use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::reducible::Reducible;
+use crate::lambda::types::LambdaEntity::Var;
+use crate::lambda::variable::Variable;
 
 /// Structure to define Π(x) (expr)
 #[derive(Clone, Debug, PartialEq)]
