@@ -4,6 +4,7 @@ mod lambda;
 mod wordnet;
 mod lingo;
 mod monty;
+mod type_theory;
 
 use crate::brill::brill_tagger::tag_sentence;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
