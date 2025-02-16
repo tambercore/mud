@@ -14,11 +14,18 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::lambda_generation::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
+use crate::type_theory::temp::print_agda_examples;
 
 fn main() {
+
+    print_agda_examples();
+
+    return;
+
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
+
 
     // TODO: Contractions break the tagger (don't does not get a tag etc)
 
