@@ -5,6 +5,8 @@ use crate::{λConj, λPred, λDepFun};
 use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::reducible::Reducible;
+use crate::lambda::types::LambdaEntity::Var;
+use crate::lambda::variable::Variable;
 
 /// Structure to define Π(x) (expr)
 #[derive(Clone, Debug, PartialEq)]
@@ -17,7 +19,7 @@ pub struct DependentFunction {
 /// Implementation of Partial Equality for DependentFunction, used in substitution.
 impl PartialEq<LambdaEntity> for DependentFunction {
     fn eq(&self, other: &LambdaEntity) -> bool {
-        if let LambdaEntity::DepFun(fun) = other {
+        if let LambdaEntity::DepSum(fun) = other {
             self.bound_var == fun.bound_var && self.expr == fun.expr
         } else {
             false
@@ -35,7 +37,13 @@ impl Substitutable for DependentFunction {
             return Box::new(target.clone());
         }
 
-        λDepFun!(self.bound_var.substitute(source, target), self.expr.substitute(source, target))
+        // If the EXPR of a dependent function is an abstraction, perform substitution inside the EXPR.
+        match *self.clone().expr {
+            LambdaEntity:: Abs(abstraction) => {
+                λDepFun!(self.bound_var.substitute(&*abstraction.clone().bound_var, target), self.expr.substitute(&*abstraction.clone().bound_var, target))
+            }
+            _ => {λDepFun!(self.clone().bound_var, self.clone().expr)}
+        }
     }
 }
 

@@ -14,10 +14,11 @@ pub struct Abstraction {
 /// Implementation of λ-substitution for λ-Abstractions.
 impl Substitutable for Abstraction {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
+
         let bound_variable = &self.bound_var;
         let subexpr = &self.body;
 
-        // If we're substituting the bound variable ignore.
+        /// If we're substituting the bound variable ignore.
         // TODO: We should fix this at some point, using De Bruijin Indicies, renaming the BV.
         if *&self.bound_var == Box::from(source.clone()) {
             λAbs!(bound_variable.clone(), subexpr.clone())

@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use std::fs::File;
+use std::io;
 use std::io::Read;
+use std::path::Path;
 use serde_json::Value;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use crate::wordnet::postag::WordnetTag;
 use crate::wordnet::wordnode::Wordnode;
-
+use std::io::{BufRead};
 
 // Define a static singleton for word meanings
 static WORD_MEANINGS: Lazy<Mutex<HashMap<String, Vec<Wordnode>>>> = Lazy::new(|| Mutex::new(HashMap::new()));

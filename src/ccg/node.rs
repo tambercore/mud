@@ -5,7 +5,8 @@ use crate::ccg::word::CCGWord;
 use super::rule::CCGRule;
 use super::category::CCGType;
 use ascii_tree::{Tree::*, Tree, write_tree};
-
+use uuid::Uuid;
+use crate::lingo::quantifiers::{UNIVERSAL_QUANTIFIERS, EXISTENTIAL_QUANTIFIERS};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct CCGNode {
@@ -19,10 +20,10 @@ pub struct CCGNode {
     pub rule: CCGRule,
     pub children: Option<Vec<Box<CCGNode>>>, // Use Box to handle recursion
 
+    // a unique identifier to differentiate nodes with the same text
     #[serde(skip)]
-    pub is_quantification_node: bool
+    pub id: Uuid
 }
-
 
 
 impl PartialEq for CCGNode {
@@ -39,6 +40,10 @@ impl PartialEq for CCGNode {
 
         // Compare rules
         if self.rule != other.rule {
+            return false;
+        }
+
+        if self.id != other.id {
             return false;
         }
 
@@ -86,13 +91,12 @@ impl CCGNode {
 
     /// Finds the parent of a given node within the tree.
     pub fn get_parent<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
-        println!("Searching parent of node: {}", self);
         fn find_parent<'a>(
             current: &'a CCGNode,
             target: &CCGNode,
             parent: Option<&'a CCGNode>,
         ) -> Option<&'a CCGNode> {
-            if current == target{
+            if current == target {
                 return parent;
             }
 
@@ -110,44 +114,73 @@ impl CCGNode {
         find_parent(root, self, None)
     }
 
-
-    // Recursive function to initialize flags
-    pub fn initialize_flags(&mut self) {
-        // Set the flag to false by default
-        self.is_quantification_node = false;
-
-        if let Some(children) = self.clone().children {
-            for c in children {
-                if let Some(grandchildren) = c.children {
-                    for g in grandchildren {
-                        if let Some(ccg_word) = g.word {
-                            if ccg_word.text.to_lowercase() == "every" {
-                                self.is_quantification_node = true;
-                                //return;
-                            }
-                        }
+    /// Finds a sibling of the given node within the tree.
+    pub fn get_sibling<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
+        if let Some(parent) = self.get_parent(root) {
+            if let Some(children) = &parent.children {
+                for child in children {
+                    if **child != *self {
+                        return Some(child);
                     }
                 }
             }
         }
+        None
+    }
 
-        if let Some(children) = &mut self.children {
-                for child in children.iter_mut() {
-                    child.initialize_flags();
-                    if child.is_quantification_node {
-                        if let Some(grandchildren) = &mut child.children {
-                            for grandchild in grandchildren.iter_mut() {
-                                grandchild.initialize_flags();
-                                if grandchild.is_quantification_node {
-                                    grandchild.is_quantification_node = false;
-                                    child.is_quantification_node = false;
-                                    self.is_quantification_node = true;
-                                }
-                            }
+    /// Backtracks up from a node until there is a rhs child which does not contain a quantification node
+    pub fn backtrack_until_rhs<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
+        let mut current = self;
+        while let Some(parent) = current.get_parent(root) {
+            if let Some(children) = &parent.children {
+                if let Some(rhs) = children.last() {
+                    if **rhs != *current && !rhs.contains_quantification_node() {
+                        return Some(rhs);
+                    }
+                }
+            }
+            current = parent;
+        }
+        None
+    }
+
+    pub fn backtrack_until_lhs<'a>(&self, root: &'a CCGNode) -> Option<&'a CCGNode> {
+        let mut current = self;
+        while let Some(parent) = current.get_parent(root) {
+            if parent.node_type == CCGType::Sentence {
+                if let Some(children) = &parent.children {
+                    if let Some(lhs) = children.first() {
+                        if !lhs.contains_quantification_node() {
+                            return Some(lhs);
                         }
                     }
+                }
+            }
+            current = parent;
+        }
+        None
+    }
+
+    /// Checks if a node or its descendants contain a quantification node.
+    pub fn contains_quantification_node(&self) -> bool {
+        if self.is_quantification_node() {return true;}
+
+        if let Some(children) = &self.children {
+            for child in children {
+                if child.contains_quantification_node() {
+                    return true;
+                }
             }
         }
+        false
+    }
+
+    pub fn is_quantification_node(&self) -> bool {
+        if let Some(word) = &self.word {
+            if UNIVERSAL_QUANTIFIERS.contains(&word.text) || EXISTENTIAL_QUANTIFIERS.contains(&word.text) {
+                return true;
+            }
+        } false
     }
 }
 
