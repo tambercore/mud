@@ -26,19 +26,7 @@ fn get_next_var() -> String {
 }
 
 
-fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
-    match _type {
-        CCGType::ForwardsFunctor(left, right) | CCGType::BackwardsFunctor(left, right) => {
-            let lexical_category = λAbs!(generate_lexical_category(*right, _node, root), generate_lexical_category(*left, _node, root));
-            generate_lexical_element(_node, lexical_category, root)
-        }
-        // The category argument is used to determine the arity of a node.
-        // Its name is temporary and not used.
-        _ => generate_lexical_element(_node, λVar!(_type.to_string()), root)
-    }
-}
-
-fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &CCGNode) -> Box<LambdaEntity> {
+fn generate_lexical_element(node: &CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
 
     if let Some(ccg_word) = &node.word {
 
@@ -53,7 +41,6 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
 
         match effective_tag {
             // NNP : Proper Nouns are unique (variables)
-
             Wordclass::NNP => {
                 insert_into_context(ccg_word.text.clone(), String::from("Ind"));
                 λVar!(ccg_word.text.clone())
@@ -64,7 +51,22 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
                 insert_into_context(iden.clone(), ccg_word.text.clone());
                 λVar!(iden.clone())
             },
-            Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), category),
+            // Adjectives are predicates
+            // john likes tasty cheese -> likes(john, x) ^ tasty(x)
+            Wordclass::JJ => {
+
+                let subject = node.get_sibling(root).expect("Expected adjective to have a sibling.");
+                let num_args = count_predicate_arguments(node.clone().node_type);
+                println!("num args: {num_args}");
+                let predicate = generate_predicate(ccg_word.text.clone(), count_predicate_arguments(node.clone().node_type));
+                λAbs!(λVar!(String::from("a")), λConj!(predicate, λVar!(String::from("a"))))
+
+            },
+
+            // Wordclass::JJ => generate_predicate(ccg_word.text.clone(), count_predicate_arguments(category.clone())),
+
+            // Verbs are predicates
+            Wordclass::VBZ => generate_predicate(ccg_word.text.clone(), count_predicate_arguments(node.clone().node_type)),
 
             // Since determiners always get forwards/backwards applied to something else, and we want to ignore it here.
             // We can substitute this for some identity function, i.e. \x . x (woman) --b--> woman
@@ -78,8 +80,7 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
     }
 }
 
-fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
-    let num_arguments = count_predicate_arguments(category.clone());
+fn generate_predicate(identifier: String, num_arguments: i32) -> Box<LambdaEntity> {
 
     if num_arguments == 0 {
         return λVar!(String::from("tmp"))
@@ -98,14 +99,12 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
     expression
 }
 
-fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
-    match *category {
-        LambdaEntity::Abs(abs) => {
-            1 + count_predicate_arguments(abs.bound_var) + count_predicate_arguments(abs.body)
+fn count_predicate_arguments(category: CCGType) -> i32 {
+    match category {
+        CCGType::ForwardsFunctor(left, right) | CCGType::BackwardsFunctor(left, right)  => {
+            1 + count_predicate_arguments(*left) + count_predicate_arguments(*right)
         }
-        LambdaEntity::Var(_) => 0,
-        LambdaEntity::Pred(_) => 0,
-        _ => panic!("Invalid application in lexical term"),
+        _ => 0
     }
 }
 
@@ -161,7 +160,7 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
     match current_node.rule {
         // Base case: terminal nodes
         CCGRule::Lexical => {
-            let expr = generate_lexical_category(current_node.node_type.clone(), &current_node, root);
+            let expr = generate_lexical_element(&current_node, root);
             return expr;
         }
 
