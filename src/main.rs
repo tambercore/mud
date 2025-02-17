@@ -17,8 +17,12 @@ use crate::monty::lambda_generation::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
+use crate::type_theory::temp::print_agda_examples;
 
 fn main() {
+
+    print_agda_examples();
+    return;
 
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
@@ -28,7 +32,7 @@ fn main() {
     // TODO: Contractions break the tagger (don't does not get a tag etc)
 
     // let sentence = "every man likes John";
-    let sentence = "John likes every cheese and every man and some woman likes brie";
+    let sentence = "every man likes cake and cheese";
     // let sentence = "John likes every cheese";
     // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -53,4 +57,3 @@ fn main() {
     let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
     println!("expanded expression: {}", expanded_expression)
 }
-
