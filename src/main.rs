@@ -4,6 +4,7 @@ mod lambda;
 mod wordnet;
 mod lingo;
 mod monty;
+mod type_theory;
 
 use std::collections::HashMap;
 use std::ptr::read;
@@ -16,10 +17,13 @@ use crate::monty::lambda_generation::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
+
 fn main() {
+
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
+
 
     // TODO: Contractions break the tagger (don't does not get a tag etc)
 
