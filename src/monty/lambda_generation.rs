@@ -20,10 +20,13 @@ use crate::monty::typing_context::{insert_into_context, TYPING_CONTEXT};
 
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
+
+
 fn get_next_var() -> String {
     let id = COUNTER.fetch_add(1, Ordering::SeqCst);
     format!("x{}", id)
 }
+
 
 
 fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
@@ -32,11 +35,14 @@ fn generate_lexical_category(_type: CCGType, _node: &CCGNode, root: &CCGNode) ->
             let lexical_category = λAbs!(generate_lexical_category(*right, _node, root), generate_lexical_category(*left, _node, root));
             generate_lexical_element(_node, lexical_category, root)
         }
+
         // The category argument is used to determine the arity of a node.
         // Its name is temporary and not used.
         _ => generate_lexical_element(_node, λVar!(_type.to_string()), root)
     }
 }
+
+
 
 fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &CCGNode) -> Box<LambdaEntity> {
 
@@ -78,6 +84,8 @@ fn generate_lexical_element(node: &CCGNode, category: Box<LambdaEntity>, root: &
     }
 }
 
+
+
 fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<LambdaEntity> {
     let num_arguments = count_predicate_arguments(category.clone());
 
@@ -98,6 +106,8 @@ fn generate_predicate(identifier: String, category: Box<LambdaEntity>) -> Box<La
     expression
 }
 
+
+
 fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
     match *category {
         LambdaEntity::Abs(abs) => {
@@ -109,6 +119,8 @@ fn count_predicate_arguments(category: Box<LambdaEntity>) -> i32 {
     }
 }
 
+
+
 fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode) {
     let nodes_vec = maybe_nodes.expect("Expected a vector of nodes, found None.");
     let first = nodes_vec.get(0).expect("Expected at least one node, found none.");
@@ -116,11 +128,16 @@ fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode)
     ( (**first).clone(), (**second).clone() )
 }
 
+
+
 pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
     ccg_to_lambda_recursive(root.clone(), root)
 }
 
+
+
 pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
+
     let bound_var_node = node.get_sibling(root).expect("Expected quantification node to have a sibling");
     let mut bound_var = ccg_to_lambda_recursive(bound_var_node.clone(), root);
     let mut applied_var = bound_var.clone();
@@ -148,6 +165,7 @@ pub fn ccg_to_quantifier(node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
         _ => panic!("Expected quantification node to be existential or universal"),
     }
 }
+
 
 
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
@@ -183,7 +201,12 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
             // both sides are quantified expressions
             // e.g. EVERY MAN, LIKES SOME CHEESE
-            if current_node.node_type == CCGType::Sentence && right.contains_quantification_node() && left.contains_quantification_node() && left.clone().node_type != CCGType::Sentence && right.clone().node_type != CCGType::Sentence {
+            if current_node.node_type == CCGType::Sentence &&
+                right.contains_quantification_node() &&
+                left.contains_quantification_node() &&
+                left.clone().node_type != CCGType::Sentence &&
+                right.clone().node_type != CCGType::Sentence {
+
                 return ccg_to_lambda_recursive(left.clone(), root);
             }
 
@@ -198,21 +221,22 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
             let (left, right) = unpack_children(current_node.children);
 
-            // right hand side is quantified expression. left hand side is expr
-            // e.g. JOHN LIKES, EVERY CHEESE
+            /*// Right hand side is quantified expression. left hand side is expr
+            // EXPR <QUANTIFIER> <BOUND> i.e. JOHN LIKES <EVERY> <CHEESE>
             if left.contains_quantification_node() && !right.contains_quantification_node() {
                 return ccg_to_lambda_recursive(left.clone(), root);
             }
 
             if right.contains_quantification_node() && !left.contains_quantification_node() {
                 return ccg_to_lambda_recursive(right.clone(), root);
-            }
+            }*/
 
             return λApp!(
                 ccg_to_lambda_recursive(left, root),
                 ccg_to_lambda_recursive(right, root)
             );
         }
+
 
         // Unary rules must have exactly one child
         CCGRule::Unary => {
@@ -227,9 +251,9 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             }
         }
 
-        // Conjunction rule
+
+        // Conjunction rule combines on the right according to CCGBank
         CCGRule::Conjunction => {
-            // Conjunction combines on the right according to CCGBank
             let (left, right) = unpack_children(current_node.children);
             let right_expr = ccg_to_lambda_recursive(right, root);
             let x = λVar!("x".to_string());

@@ -229,3 +229,13 @@ impl fmt::Display for CCGNode {
         write!(f, "{}", output)
     }
 }
+
+
+
+/* Function to unpack the children of a given CCG node */
+pub fn unpack_children(maybe_nodes: Option<Vec<Box<CCGNode>>>) -> (CCGNode, CCGNode) {
+    let nodes_vec = maybe_nodes.expect("Expected a vector of nodes, found None.");
+    let first = nodes_vec.get(0).expect("Expected at least one node, found none.");
+    let second = nodes_vec.get(1).expect("Expected at least two nodes, found only one.");
+    ( (**first).clone(), (**second).clone() )
+}
