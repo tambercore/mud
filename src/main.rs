@@ -17,8 +17,12 @@ use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
+use crate::type_theory::temp::print_agda_examples;
 
 fn main() {
+
+    print_agda_examples();
+    return;
 
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
@@ -49,4 +53,3 @@ fn main() {
     let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
     println!("\n\nExpands to: {}", expanded_expression)
 }
-
