@@ -9,6 +9,7 @@ pub struct RecordField(pub String, pub AgdaType);
 
 
 /* Entire Record Definition */
+#[derive(Clone, Debug, PartialEq)]
 pub struct RecordDefinition {
     pub(crate) record_name: String,
     pub(crate) constructor_name: String,

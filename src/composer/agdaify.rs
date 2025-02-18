@@ -1,4 +1,4 @@
-use crate::composer::postulate::{AgdaFile, PostulateEntry};
+use crate::composer::postulate::{AgdaFile, AgdaStructure, PostulateEntry};
 use crate::composer::structures::{AgdaType};
 
 
@@ -63,6 +63,12 @@ impl AgdaFile {
             let typ_str = format_agda_type(agda_type);
             // Each postulate becomes a line in the Agda output.
             code.push_str(&format!("  {} : {}\n", name, typ_str));
+        }
+        
+        for def in &self.definitions {
+            match def {
+                AgdaStructure::RecordDef(rec) => { code.push_str( &format!("\n{}\n", rec.agdaify())) }
+            }
         }
         code
     }

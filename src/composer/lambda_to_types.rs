@@ -1,5 +1,5 @@
 use crate::ccg::rule::CCGRule;
-use crate::composer::postulate::{initialise_agda_file, AgdaFile, PostulateEntry, PostulateInserter};
+use crate::composer::postulate::{initialise_agda_file, AgdaFile, AgdaStructure, PostulateEntry, PostulateInserter};
 use crate::composer::record::{RecordDefinition, RecordField};
 use crate::composer::structures::{AgdaType};
 use crate::composer::structures::AgdaType::Simple;
@@ -80,13 +80,12 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
 
     /* Now, we need to insert the record for it */
     let rec = RecordDefinition {
-        record_name: iden.clone(),
+        record_name: format!("{}ᵣ", iden.clone()),
         constructor_name: format!("c_{}", iden.clone()),
         fields: fields,
     };
 
-    let s = rec.agdaify();
-    println!("{}", s)
+    f.definitions.push(AgdaStructure::RecordDef(rec));
 
 }
 
@@ -113,8 +112,7 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile) {
     /* We need to also update the postulate to include the isType function */
     f.insert_postulate(PostulateEntry(format!("is{}", iden), generate_function_header(1)));
 
-    let s = rec.agdaify();
-    println!("{}", s)
+    f.definitions.push(AgdaStructure::RecordDef(rec));
 }
 
 

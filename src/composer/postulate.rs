@@ -1,17 +1,23 @@
 
 /* Structure for Postulate Entry */
+use crate::composer::record::RecordDefinition;
 use crate::composer::structures::AgdaType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PostulateEntry(pub String, pub AgdaType);
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum AgdaStructure {
+    RecordDef(RecordDefinition),
+}
 
 
 /* Structure for the Entire Agda File */
 #[derive(Clone, Debug, PartialEq)]
 pub struct AgdaFile {
     pub filename: String,
-    pub postulate: Vec<PostulateEntry>
+    pub postulate: Vec<PostulateEntry>,
+    pub definitions: Vec<AgdaStructure>,
 }
 
 
@@ -20,6 +26,7 @@ pub fn initialise_agda_file() -> AgdaFile {
     let mut f = AgdaFile{
         filename: "test".to_string(),
         postulate: vec!(),
+        definitions: vec!(),
     };
 
     /* Add `Entity : Set` as a declaration */
