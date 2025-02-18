@@ -6,7 +6,7 @@ use crate::lambda::abstraction::Abstraction;
 use crate::lambda::variable::Variable;
 use crate::lambda::predicate::Predicate;
 use crate::{λAbs, λVar, λPred};
-use crate::monty::fresh_variable::{fresh_variable, to_unicode_subscript};
+use crate::monty::fresh_variable::{fresh_variable, reset_counter, to_unicode_subscript};
 
 
 
@@ -44,6 +44,8 @@ pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
         /* Functor Types should bind variable into predicates through an abstraction */
         ForwardsFunctor(l, r) |
             BackwardsFunctor(r, l) => {
+
+            reset_counter();
             gen_predicate(word, node.clone().node_type, 0)
         }
 

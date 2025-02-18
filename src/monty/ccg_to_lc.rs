@@ -4,8 +4,10 @@ use crate::ccg::node::{unpack_children, CCGNode};
 use crate::ccg::rule::CCGRule::{BackwardApplication, ForwardApplication};
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
+use crate::lambda::conjunction::Conjunction;
+use crate::lambda::abstraction::Abstraction;
 use crate::monty::lambda_generation::ccg_to_quantifier;
-use crate::{λApp, λVar};
+use crate::{λAbs, λApp, λConj, λVar};
 use crate::ccg::rule::CCGRule;
 use crate::lambda::application::Application;
 use crate::monty::handle_lexical::lexical_to_lambda;
@@ -47,6 +49,14 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             let children = current_node.children.as_ref().expect("Expected node to have children.");
             if children.len() != 1 { panic!("Expected one child (unary rule)."); }
             ccg_to_lambda_recursive(*children[0].clone(), root)
+        }
+
+        CCGRule::Conjunction => {
+            let (left, right) = unpack_children(current_node.children);
+            let right_expr = ccg_to_lambda_recursive(right, root);
+            let x = λVar!("x꜀".to_string());
+            let conj_body = λConj!(x.clone(), right_expr);
+            return λAbs!(x, conj_body);
         }
 
         _ => { panic!("Aah!") }

@@ -25,7 +25,7 @@ fn main() {
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
 
-    let sentence = "john likes cake";
+    let sentence = "john likes cheese and jack loves crackers";
 
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 
@@ -46,7 +46,7 @@ fn main() {
     let reduction = (*lambda_expression).beta_reduce();
     println!("\n\nReduces to: \n{}", reduction);
 
-    // let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
-    // println!("expanded expression: {}", expanded_expression)
+    let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
+    println!("\n\nExpands to: {}", expanded_expression)
 }
 

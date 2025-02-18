@@ -30,3 +30,8 @@ pub fn fresh_variable() -> String {
     let count = COUNTER.fetch_add(1, Ordering::Relaxed) + 1;
     format!("x{}", to_unicode_subscript(count))
 }
+
+/// Resets the global counter to zero.
+pub fn reset_counter() {
+    COUNTER.store(0, Ordering::Relaxed);
+}

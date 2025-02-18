@@ -42,7 +42,7 @@ impl Substitutable for Conjunction {
 /// Implementation of Pretty Prints for Conjunctions
 impl fmt::Display for Conjunction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ^ {}", self.lhs, self.rhs)
+        write!(f, "{} × {}", self.lhs, self.rhs)
 
     }
 }
