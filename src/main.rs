@@ -5,6 +5,7 @@ mod wordnet;
 mod lingo;
 mod monty;
 mod type_theory;
+mod composer;
 
 use std::collections::HashMap;
 use std::ptr::read;
@@ -21,21 +22,15 @@ use crate::type_theory::temp::print_agda_examples;
 
 fn main() {
 
-    print_agda_examples();
-    return;
-
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-
-    let sentence = "john likes cheese and jack loves crackers";
+    let sentence = "amber loves cake";
 
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 
-    // println!("vec_word_tag_tuples: {:?}", vec_of_word_tag_tuples);
-
-    // parse the ccg tree
+    // Parse into the ccg tree
     let mut ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
     println!("Lambeq's CCG: \n{}", ccg);
 
@@ -45,8 +40,8 @@ fn main() {
     // CCG to lambda
     let lambda_expression = ccg_to_lambda(&mut ccg);
     println!("Result: \n{}", lambda_expression);
-    // println!("context: \n{:?}", TYPING_CONTEXT.lock().unwrap());
 
+    // Reduce, then expand.
     let reduction = (*lambda_expression).beta_reduce();
     println!("\n\nReduces to: \n{}", reduction);
 
