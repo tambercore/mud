@@ -3,21 +3,49 @@ use crate::composer::structures::{AgdaType};
 
 
 
-/* Helper function to format AgdaType as an Agda type string. */
-pub fn format_agda_type(agda_type: &AgdaType) -> String {
+/// Helper function that prints an AgdaType with awareness of operator precedence.
+/// Lower numbers indicate looser binding; we wrap in parentheses when the inner
+/// expression's binding (my_prec) is less than the context (prec).
+fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
     match agda_type {
         AgdaType::Simple(s) => s.clone(),
+
         AgdaType::Function(from, to) => {
-            let from_str = format_agda_type(from);
-            let to_str = format_agda_type(to);
-            format!("{} → {}", from_str, to_str)
+            // Function arrow (→) has precedence level 1.
+            let my_prec = 1;
+            // Use a tighter context for the left-hand side.
+            let from_str = format_agda_type_prec(from, my_prec + 1);
+            let to_str = format_agda_type_prec(to, my_prec);
+            let s = format!("{} → {}", from_str, to_str);
+            if my_prec < prec { format!("({})", s) } else { s }
         }
+
         AgdaType::Application(func, arg) => {
-            let from_str = format_agda_type(func);
-            let to_str = format_agda_type(arg);
-            format!("{} {}", from_str, to_str)
+            // Function application binds tighter than the function arrow.
+            let my_prec = 2;
+            let func_str = format_agda_type_prec(func, my_prec);
+            // The argument is printed in an even tighter context.
+            let arg_str = format_agda_type_prec(arg, my_prec + 1);
+            let s = format!("{} {}", func_str, arg_str);
+            if my_prec < prec { format!("({})", s) } else { s }
+        }
+
+        AgdaType::RecordProj(rec, proj) => {
+            // Record projection (.) binds very tightly.
+            let my_prec = 3;
+            let rec_str = format_agda_type_prec(rec, my_prec);
+            // Projection field is usually atomic; use a higher precedence.
+            let proj_str = format_agda_type_prec(proj, 4);
+            let s = format!("{}.{}", rec_str, proj_str);
+            if my_prec < prec { format!("({})", s) } else { s }
         }
     }
+}
+
+/// The public function that prints an AgdaType.
+/// It starts the printing process with a base precedence of 0.
+pub fn format_agda_type(agda_type: &AgdaType) -> String {
+    format_agda_type_prec(agda_type, 0)
 }
 
 

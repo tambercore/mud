@@ -7,6 +7,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
+use crate::{τApp, τRecProj, τSimp};
 /*
     Agda File has
 
@@ -33,6 +34,8 @@ pub fn generate_function_header(arity: usize) -> AgdaType
 
 pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
 
+    use AgdaType::*;
+
     let arg_c = p.args.len();
     let iden = p.iden;
 
@@ -47,7 +50,7 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
         counter = counter + 1;
         match *(arg.clone()) {
             LambdaEntity::Var(v) => {
-                fields.push(RecordField(format!("e{}", to_unicode_subscript(counter)), AgdaType::Simple(v.name)))
+                fields.push(RecordField(format!("e{}", to_unicode_subscript(counter)), Simple(v.name)))
             }
             _ => {}
         }
@@ -60,12 +63,17 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
 
     /* Build the proof type as: iden e₁ e₂ ... eₙ */
     let proof_type = fields.iter().fold(
-        AgdaType::Simple(iden.clone()),
+        τSimp!(iden.clone()),
         |acc, field| {
-            AgdaType::Application(Box::new(acc), Box::new(AgdaType::Simple(field.0.clone())))
+            τApp!(acc,
+                τApp!(
+                    τRecProj!( Box::new(field.1.clone()) , τSimp!("e₁".to_string()) ),
+                    τSimp!(field.0.clone())
+                )
+            )
         }
     );
-    fields.push(RecordField("p".to_string(), proof_type));
+    fields.push(RecordField("p".to_string(), *proof_type));
 
 
 

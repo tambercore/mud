@@ -7,6 +7,34 @@ pub enum AgdaType {
     Simple(String),
     Function(Box<AgdaType>, Box<AgdaType>),
     Application(Box<AgdaType>, Box<AgdaType>),
+    RecordProj(Box<AgdaType>, Box<AgdaType>)
 }
 
 
+#[macro_export]
+macro_rules! τSimp {
+    ($s:expr) => {
+        Box::from(AgdaType::Simple($s))
+    };
+}
+
+#[macro_export]
+macro_rules! τFunc {
+    ($from:expr, $to:expr) => {
+        Box::from(AgdaType::Function($from, $to))
+    };
+}
+
+#[macro_export]
+macro_rules! τApp {
+    ($func:expr, $arg:expr) => {
+        Box::from(AgdaType::Application($func, $arg))
+    };
+}
+
+#[macro_export]
+macro_rules! τRecProj {
+    ($proj:expr, $arg:expr) => {
+        Box::from(AgdaType::RecordProj($proj, $arg))
+    };
+}
