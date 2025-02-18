@@ -1,4 +1,5 @@
-use crate::composer::structures::{AgdaFile, AgdaType, PostulateEntry};
+use crate::composer::postulate::{AgdaFile, PostulateEntry};
+use crate::composer::structures::{AgdaType};
 
 
 

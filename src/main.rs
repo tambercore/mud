@@ -17,7 +17,7 @@ use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
-use crate::composer::structures::initialise_agda_file;
+use crate::composer::postulate::initialise_agda_file;
 use crate::composer::agdaify::*;
 use crate::composer::lambda_to_types::compose;
 

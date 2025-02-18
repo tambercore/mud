@@ -1,4 +1,5 @@
-use crate::composer::structures::{initialise_agda_file, AgdaFile, AgdaType, PostulateEntry, PostulateInserter};
+use crate::composer::postulate::{initialise_agda_file, AgdaFile, PostulateEntry, PostulateInserter};
+use crate::composer::structures::{AgdaType};
 use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 
@@ -31,7 +32,10 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
     let arg_c = p.args.len();
     let iden = p.iden;
 
+    /* We need to propose that the predicate is some propositional function */
     f.insert_postulate(PostulateEntry(iden, generate_function_header(arg_c)));
+
+    /* Now, we need to insert the record for it */
 
 }
 
