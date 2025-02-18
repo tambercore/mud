@@ -34,6 +34,7 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
             // Record projection (.) binds very tightly.
             let my_prec = 3;
             let rec_str = format_agda_type_prec(rec, my_prec);
+
             // Projection field is usually atomic; use a higher precedence.
             let proj_str = format_agda_type_prec(proj, 4);
             let s = format!("{}.{}", rec_str, proj_str);
@@ -41,6 +42,8 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
         }
     }
 }
+
+
 
 /// The public function that prints an AgdaType.
 /// It starts the printing process with a base precedence of 0.

@@ -8,6 +8,7 @@ use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::{τApp, τRecProj, τSimp};
+use crate::lambda::types::LambdaEntity::App;
 /*
     Agda File has
 
@@ -42,8 +43,7 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
     /* We need to propose that the predicate is some propositional function */
     f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
 
-
-
+    /* Handle Entity Fields */
     let mut fields: Vec<RecordField> = vec![];
     let mut counter: usize = 0;
     for arg in p.args {
@@ -62,6 +62,7 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
 
 
     /* Build the proof type as: iden e₁ e₂ ... eₙ */
+    /* Uses Record Projection to get the inner Entity type */
     let proof_type = fields.iter().fold(
         τSimp!(iden.clone()),
         |acc, field| {
@@ -89,6 +90,35 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
 
 }
 
+
+
+pub fn compose_variable(v: Variable, f: &mut AgdaFile) {
+
+    use AgdaType::*;
+    let iden = v.name;
+
+    /* Generate Fields */
+    let mut fields: Vec<RecordField> = vec![ RecordField("e₁".to_string(), *τSimp!("Entity".to_string()))];
+    fields.push(RecordField("p".to_string(),
+        *τApp!( τSimp!(format!("is{}", iden)) , τSimp!("e₁".to_string()) )
+    ));
+
+    /* Now, we need to insert the record for it */
+    let rec = RecordDefinition {
+        record_name: iden.clone(),
+        constructor_name: format!("c_{}", iden.clone()),
+        fields: fields,
+    };
+
+    /* We need to also update the postulate to include the isType function */
+    f.insert_postulate(PostulateEntry(format!("is{}", iden), generate_function_header(1)));
+
+    let s = rec.agdaify();
+    println!("{}", s)
+}
+
+
+
 pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile) -> () {
 
     match *e {
@@ -98,7 +128,7 @@ pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile) -> () {
         LambdaEntity::Abs(_) => { panic!("Critical! System failed to compute output.") }
 
 
-        LambdaEntity::Var(_) => {}
+        LambdaEntity::Var(v) => { compose_variable(v, f) }
 
         LambdaEntity::Pred(p) => { compose_predicate(p, f); }
 
