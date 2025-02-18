@@ -29,24 +29,24 @@ fn main() {
 
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 
-    println!("vec_word_tag_tuples: {:?}", vec_of_word_tag_tuples);
+    // println!("vec_word_tag_tuples: {:?}", vec_of_word_tag_tuples);
 
     // parse the ccg tree
     let mut ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
-    println!("ccg: \n{}", ccg);
+    println!("Lambeq's CCG: \n{}", ccg);
 
     // Reset the typing context for each expression
     reset_typing_context();
 
     // CCG to lambda
     let lambda_expression = ccg_to_lambda(&mut ccg);
-    println!("lambda: \n{}", lambda_expression);
-    println!("context: \n{:?}", TYPING_CONTEXT.lock().unwrap());
+    println!("Result: \n{}", lambda_expression);
+    // println!("context: \n{:?}", TYPING_CONTEXT.lock().unwrap());
 
     let reduction = (*lambda_expression).beta_reduce();
-    println!("reduced expression: \n{}", reduction);
+    println!("\n\nReduces to: \n{}", reduction);
 
-    let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
-    println!("expanded expression: {}", expanded_expression)
+    // let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
+    // println!("expanded expression: {}", expanded_expression)
 }
 

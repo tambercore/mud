@@ -5,7 +5,7 @@ static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 /// Converts a number into its Unicode subscript representation.
 /// For example, 12 becomes "₁₂".
-fn to_unicode_subscript(n: usize) -> String {
+pub fn to_unicode_subscript(n: usize) -> String {
     n.to_string()
         .chars()
         .map(|c| match c {
