@@ -4,7 +4,6 @@ mod lambda;
 mod wordnet;
 mod lingo;
 mod monty;
-mod type_theory;
 mod composer;
 
 use std::collections::HashMap;
@@ -18,9 +17,15 @@ use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
-use crate::type_theory::temp::print_agda_examples;
+use crate::composer::structures::initialise_agda_file;
+use crate::composer::agdaify::*;
 
 fn main() {
+
+    let f = initialise_agda_file();
+    println!("{}", f.agdaify());
+
+    return;
 
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();

@@ -1,3 +1,4 @@
 
 pub mod lambda_to_types;
-mod agdaify;
+pub mod structures;
+pub mod agdaify;
