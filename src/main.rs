@@ -25,12 +25,8 @@ fn main() {
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
 
-    // TODO: Contractions break the tagger (don't does not get a tag etc)
+    let sentence = "every man likes every cake and a fruit";
 
-    // let sentence = "every man likes John";
-    let sentence = "every man and woman likes cake and cheese";
-    // let sentence = "John likes every cheese";
-    // retrieve words and their corresponding pos tags
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 
     println!("vec_word_tag_tuples: {:?}", vec_of_word_tag_tuples);
