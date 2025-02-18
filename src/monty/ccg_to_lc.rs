@@ -51,12 +51,11 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             ccg_to_lambda_recursive(*children[0].clone(), root)
         }
 
+        /* Handles Conjunctions as a Product Type */
         CCGRule::Conjunction => {
-            let (left, right) = unpack_children(current_node.children);
-            let right_expr = ccg_to_lambda_recursive(right, root);
-            let x = λVar!("x꜀".to_string());
-            let conj_body = λConj!(x.clone(), right_expr);
-            return λAbs!(x, conj_body);
+            let (_, right) = unpack_children(current_node.children);
+            let conj_body = λConj!(λVar!("x꜀".to_string()), ccg_to_lambda_recursive(right, root));
+            return λAbs!(λVar!("x꜀".to_string()), conj_body);
         }
 
         _ => { panic!("Aah!") }
