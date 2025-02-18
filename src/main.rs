@@ -13,7 +13,7 @@ use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::initialize_tagger;
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::ccg::sentence_parser::english_to_ccg;
-use crate::monty::lambda_generation::*;
+use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
@@ -25,7 +25,7 @@ fn main() {
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
 
-    let sentence = "every man likes every cake and a fruit";
+    let sentence = "john likes cake";
 
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 

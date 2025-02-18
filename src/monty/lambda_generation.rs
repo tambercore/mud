@@ -201,7 +201,12 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
             // both sides are quantified expressions
             // e.g. EVERY MAN, LIKES SOME CHEESE
-            if current_node.node_type == CCGType::Sentence && right.contains_quantification_node() && left.contains_quantification_node() && left.clone().node_type != CCGType::Sentence && right.clone().node_type != CCGType::Sentence {
+            if current_node.node_type == CCGType::Sentence &&
+                right.contains_quantification_node() &&
+                left.contains_quantification_node() &&
+                left.clone().node_type != CCGType::Sentence &&
+                right.clone().node_type != CCGType::Sentence {
+
                 return ccg_to_lambda_recursive(left.clone(), root);
             }
 
@@ -216,21 +221,22 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
             let (left, right) = unpack_children(current_node.children);
 
-            // right hand side is quantified expression. left hand side is expr
-            // e.g. JOHN LIKES, EVERY CHEESE
+            /*// Right hand side is quantified expression. left hand side is expr
+            // EXPR <QUANTIFIER> <BOUND> i.e. JOHN LIKES <EVERY> <CHEESE>
             if left.contains_quantification_node() && !right.contains_quantification_node() {
                 return ccg_to_lambda_recursive(left.clone(), root);
             }
 
             if right.contains_quantification_node() && !left.contains_quantification_node() {
                 return ccg_to_lambda_recursive(right.clone(), root);
-            }
+            }*/
 
             return λApp!(
                 ccg_to_lambda_recursive(left, root),
                 ccg_to_lambda_recursive(right, root)
             );
         }
+
 
         // Unary rules must have exactly one child
         CCGRule::Unary => {
@@ -245,9 +251,9 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             }
         }
 
-        // Conjunction rule
+
+        // Conjunction rule combines on the right according to CCGBank
         CCGRule::Conjunction => {
-            // Conjunction combines on the right according to CCGBank
             let (left, right) = unpack_children(current_node.children);
             let right_expr = ccg_to_lambda_recursive(right, root);
             let x = λVar!("x".to_string());

@@ -1,6 +1,9 @@
 use std::fmt;
 use serde::{Deserialize, Deserializer};
 use crate::ccg::type_parser::parse_category;
+
+
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum CCGType {
     ForwardsFunctor(Box<CCGType>, Box<CCGType>),
