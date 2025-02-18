@@ -10,6 +10,8 @@ use crate::ccg::rule::CCGRule;
 use crate::lambda::application::Application;
 use crate::monty::handle_lexical::lexical_to_lambda;
 
+
+
 pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
     ccg_to_lambda_recursive(root.clone(), root)
 }
@@ -19,44 +21,32 @@ pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
 pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<LambdaEntity> {
     use LambdaEntity::*;
 
-    // Handle quantifier nodes
-    if current_node.is_quantification_node() {
-        return ccg_to_quantifier(current_node.clone(), root);
-    }
-
     match current_node.rule {
 
-        /* Handle Applications */
-        ForwardApplication => {
-            let (left, right) = unpack_children(current_node.children);
+        /* Generates λ-Applications */
+        ForwardApplication | BackwardApplication => {
+
+            /* Transform to make ForwardApplication = BackwardApplication */
+            let (first, second) = unpack_children(current_node.children);
+            let (left, right) = if let BackwardApplication = current_node.rule { (second, first) } else { (first, second) };
+
+            /* Construct Application */
             λApp!(
                 ccg_to_lambda_recursive(left, root),
                 ccg_to_lambda_recursive(right, root)
             )
         }
 
-        BackwardApplication => {
-            let (right, left) = unpack_children(current_node.children);
-            λApp!(
-                ccg_to_lambda_recursive(left, root),
-                ccg_to_lambda_recursive(right, root)
-            )
-        }
-
+        /* Generates λ-Terms */
         CCGRule::Lexical => {
             lexical_to_lambda(current_node)
         }
 
+        /* Skips to Child */
         CCGRule::Unary => {
-            if let Some(children) = &current_node.children {
-                if children.len() == 1 {
-                    return ccg_to_lambda_recursive(*children[0].clone(), root);
-                } else {
-                    panic!("Expected one child (unary rule).");
-                }
-            } else {
-                panic!("Expected node to have children.");
-            }
+            let children = current_node.children.as_ref().expect("Expected node to have children.");
+            if children.len() != 1 { panic!("Expected one child (unary rule)."); }
+            ccg_to_lambda_recursive(*children[0].clone(), root)
         }
 
         _ => { panic!("Aah!") }

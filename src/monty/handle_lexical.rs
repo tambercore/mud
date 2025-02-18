@@ -33,18 +33,18 @@ pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
     if node.rule != CCGRule::Lexical { panic!("Function `lexical_to_lambda` called on Non-Lexical Node"); }
 
     /* Extract the word itself 🍥*/
-    let mut word = node.word.clone().expect("Lexical to Lambda expects CCGNode to contain a `word`");
+    let mut word = node.word.clone().expect("Lexical to Lambda expects CCGNode to contain a `word`").text;
 
     use CCGType::*;
     match node.clone().node_type {
 
         /* Noun/NounPhrase is simply a variable, this will be eventually bound */
-        Noun | NounPhrase => { return λVar!(word.text.to_string()) }
+        Noun | NounPhrase => { return λVar!(word.to_string()) }
 
         /* Functor Types should bind variable into predicates through an abstraction */
         ForwardsFunctor(l, r) |
             BackwardsFunctor(r, l) => {
-            gen_predicate(word.text, node.clone().node_type, 0)
+            gen_predicate(word, node.clone().node_type, 0)
         }
 
         _ => { panic!("Not yet implemented!") }
