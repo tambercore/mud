@@ -8,24 +8,24 @@ use crate::lambda::predicate::Predicate;
 use crate::{λAbs, λVar, λPred};
 use crate::monty::fresh_variable::{fresh_variable, to_unicode_subscript};
 
-pub fn tf (word: String, _typ: CCGType, depth: i64 ) -> Box<LambdaEntity> {
 
-    use CCGType::*;
+
+pub fn gen_predicate(word: String, _typ: CCGType, depth: i64 ) -> Box<LambdaEntity> {
     match _typ {
-        ForwardsFunctor(l, r) => { λAbs! ( λVar!(fresh_variable()), tf(word, *l, depth + 1) ) }
-        BackwardsFunctor(l, r) => { λAbs! ( λVar!(fresh_variable()), tf(word, *r, depth + 1) ) }
+        /* Functor Types (Inductive Case) */
+        CCGType::ForwardsFunctor(l, r) |
+        CCGType::BackwardsFunctor(r, l) => { λAbs! ( λVar!(fresh_variable()), gen_predicate(word, *l, depth + 1) ) }
 
+        /* Non Functor Type (Base Case) */
         _ => {
-            let args: Vec<Box<LambdaEntity>> = (1..=depth as usize)
-                .rev()
-                .map(|i| {
-                    λVar! (format!("x{}", to_unicode_subscript(i)))
-                })
-                .collect();
+            let args: Vec<Box<LambdaEntity>> = (1..=depth as usize).rev()
+                .map(|i| { λVar! (format!("x{}", to_unicode_subscript(i)))}).collect();
             λPred!(word, args)
         }
     }
 }
+
+
 
 pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
 
@@ -44,17 +44,9 @@ pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
         /* Functor Types should bind variable into predicates through an abstraction */
         ForwardsFunctor(l, r) |
             BackwardsFunctor(r, l) => {
-            return tf(word.text, node.clone().node_type, 0)
+            gen_predicate(word.text, node.clone().node_type, 0)
         }
 
-        Conjunction => {}
-        ConjunctionTag => {}
-        PrepositionalPhrase => {}
-        Punctuation => {}
-        Sentence => {}
-        Empty => {}
+        _ => { panic!("Not yet implemented!") }
     }
-    
-    λVar!("X".to_string())
 }
-
