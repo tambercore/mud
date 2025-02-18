@@ -19,13 +19,11 @@ use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
 use crate::composer::structures::initialise_agda_file;
 use crate::composer::agdaify::*;
+use crate::composer::lambda_to_types::compose;
 
 fn main() {
 
-    let f = initialise_agda_file();
-    println!("{}", f.agdaify());
-
-    return;
+    let mut f = initialise_agda_file();
 
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
@@ -51,5 +49,9 @@ fn main() {
     println!("\n\nReduces to: \n{}", reduction);
 
     let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
-    println!("\n\nExpands to: {}", expanded_expression)
+    println!("\n\nExpands to: {}", expanded_expression);
+
+    let _ = compose(expanded_expression, &mut f);
+
+    println!("{}", &f.clone().agdaify());
 }

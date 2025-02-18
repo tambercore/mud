@@ -1,4 +1,4 @@
-use crate::composer::structures::{AgdaFile, AgdaType};
+use crate::composer::structures::{AgdaFile, AgdaType, PostulateEntry};
 
 
 
@@ -22,7 +22,7 @@ impl AgdaFile {
         let mut code = String::new();
         code.push_str(&format!("module {} where\n\n", &self.filename));
         code.push_str("postulate\n");
-        for (name, agda_type) in &self.postulate {
+        for PostulateEntry(name, agda_type) in &self.postulate {
             let typ_str = format_agda_type(agda_type);
             // Each postulate becomes a line in the Agda output.
             code.push_str(&format!("  {} : {}\n", name, typ_str));
