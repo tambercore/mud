@@ -4,13 +4,18 @@ use crate::composer::structures::{AgdaType};
 
 
 /* Helper function to format AgdaType as an Agda type string. */
-fn format_agda_type(agda_type: &AgdaType) -> String {
+pub fn format_agda_type(agda_type: &AgdaType) -> String {
     match agda_type {
         AgdaType::Simple(s) => s.clone(),
         AgdaType::Function(from, to) => {
             let from_str = format_agda_type(from);
             let to_str = format_agda_type(to);
             format!("{} → {}", from_str, to_str)
+        }
+        AgdaType::Application(func, arg) => {
+            let from_str = format_agda_type(func);
+            let to_str = format_agda_type(arg);
+            format!("{} {}", from_str, to_str)
         }
     }
 }
