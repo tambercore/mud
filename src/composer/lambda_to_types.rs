@@ -1,5 +1,5 @@
 use crate::ccg::rule::CCGRule;
-use crate::composer::postulate::{initialise_agda_file, AgdaFile, AgdaStructure, PostulateEntry, PostulateInserter};
+use crate::composer::postulate::{initialise_agda_file, AgdaFile, AgdaStructure, DefinitionInserter, PostulateEntry, PostulateInserter};
 use crate::composer::record::{RecordDefinition, RecordField};
 use crate::composer::structures::{AgdaType};
 use crate::composer::structures::AgdaType::Simple;
@@ -8,19 +8,13 @@ use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::{τApp, τRecProj, τSimp};
+use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::LambdaEntity::App;
-/*
-    Agda File has
+use crate::composer::case_converter::*;
 
-    POSTULATE
 
-    then
 
-    SOME BODY
-*/
-
-pub fn generate_function_header(arity: usize) -> AgdaType
-{
+pub fn generate_function_header(arity: usize) -> AgdaType {
     if arity == 0 {
         AgdaType::Simple("Set".to_string())
     } else {
@@ -33,12 +27,13 @@ pub fn generate_function_header(arity: usize) -> AgdaType
 
 
 
-pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
+pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> String {
 
     use AgdaType::*;
 
     let arg_c = p.args.len();
-    let iden = p.iden;
+    let mut iden = format!("{}", p.iden);
+    let mut pred_iden = format!("{}", p.iden);
 
     /* We need to propose that the predicate is some propositional function */
     f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
@@ -47,24 +42,24 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
     let mut fields: Vec<RecordField> = vec![];
     let mut counter: usize = 0;
     for arg in p.args {
+
+        /* This will likely rely on records from here! */
+        let rec_name = compose(arg.clone(), f);
+
         counter = counter + 1;
         match *(arg.clone()) {
             LambdaEntity::Var(v) => {
-                fields.push(RecordField(format!("e{}", to_unicode_subscript(counter)), Simple(v.name)))
+                iden.push_str(format!("_{}", v.name).as_str());
+                fields.push(RecordField(format!("e{}", to_unicode_subscript(counter)), Simple(rec_name)))
             }
             _ => {}
         }
-
-        /* This will likely rely on records from here! */
-        compose(arg, f);
     }
-
-
 
     /* Build the proof type as: iden e₁ e₂ ... eₙ */
     /* Uses Record Projection to get the inner Entity type */
     let proof_type = fields.iter().fold(
-        τSimp!(iden.clone()),
+        τSimp!(pred_iden.clone()),
         |acc, field| {
             τApp!(acc,
                 τApp!(
@@ -79,45 +74,92 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> () {
 
 
     /* Now, we need to insert the record for it */
+    let record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
+    let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
+
     let rec = RecordDefinition {
-        record_name: format!("{}ᵣ", iden.clone()),
-        constructor_name: format!("c_{}", iden.clone()),
+        record_name: record_name.clone(),
+        constructor_name: constructor_name,
         fields: fields,
     };
 
-    f.definitions.push(AgdaStructure::RecordDef(rec));
-
+    f.insert_definition(AgdaStructure::RecordDef(rec));
+    record_name
 }
 
 
 
-pub fn compose_variable(v: Variable, f: &mut AgdaFile) {
+pub fn compose_variable(v: Variable, f: &mut AgdaFile) -> String {
 
     use AgdaType::*;
     let iden = v.name;
 
     /* Generate Fields */
+    let mut predicate_iden = convert_case(format!("is_{}", iden).as_str(), CaseStyle::CamelCase);
     let mut fields: Vec<RecordField> = vec![ RecordField("e₁".to_string(), *τSimp!("Entity".to_string()))];
     fields.push(RecordField("p".to_string(),
-        *τApp!( τSimp!(format!("is{}", iden)) , τSimp!("e₁".to_string()) )
+        *τApp!( τSimp!( predicate_iden.clone() ) , τSimp!("e₁".to_string()) )
     ));
 
     /* Now, we need to insert the record for it */
+    let record_name = format!("{}ᵣ", convert_case(iden.clone().as_str(), CaseStyle::PascalCase));
+    let constructor_name = format!("{}꜀", convert_case(iden.clone().as_str(), CaseStyle::PascalCase));
+
     let rec = RecordDefinition {
-        record_name: iden.clone(),
-        constructor_name: format!("c_{}", iden.clone()),
+        record_name: record_name.clone(),
+        constructor_name: constructor_name,
         fields: fields,
     };
 
     /* We need to also update the postulate to include the isType function */
-    f.insert_postulate(PostulateEntry(format!("is{}", iden), generate_function_header(1)));
+    f.insert_postulate(PostulateEntry(predicate_iden, generate_function_header(1)));
 
-    f.definitions.push(AgdaStructure::RecordDef(rec));
+    f.insert_definition(AgdaStructure::RecordDef(rec));
+    return record_name;
 }
 
 
 
-pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile) -> () {
+pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> String {
+
+    /* Extract projections */
+    let proj1 = c.lhs;
+    let proj2 = c.rhs;
+
+    let proj1_iden = compose(proj1, f);
+    let proj2_iden = compose(proj2, f);
+
+    use AgdaType::*;
+
+    /* These sometimes have record identifiers in them ᵣ, remove! */
+    let iden: String = format!("{}×{}", proj1_iden.clone(), proj2_iden.clone())
+        .chars()
+        .filter(|&c| c != 'ᵣ')
+        .collect();
+
+    /* Generate Fields */
+    let mut fields: Vec<RecordField> = vec![
+        RecordField("e₁".to_string(), *τSimp!(proj1_iden.clone())),
+        RecordField("e₂".to_string(), *τSimp!(proj2_iden.clone()))
+    ];
+
+    /* Now, we need to insert the record for it */
+    let record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
+    let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
+
+    let rec = RecordDefinition {
+        record_name: record_name.clone(),
+        constructor_name: constructor_name,
+        fields: fields,
+    };
+
+    f.insert_definition(AgdaStructure::RecordDef(rec));
+    record_name
+}
+
+
+
+pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile) -> String {
 
     match *e {
 
@@ -125,18 +167,14 @@ pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile) -> () {
 
         LambdaEntity::Abs(_) => { panic!("Critical! System failed to compute output.") }
 
-
         LambdaEntity::Var(v) => { compose_variable(v, f) }
 
-        LambdaEntity::Pred(p) => { compose_predicate(p, f); }
+        LambdaEntity::Pred(p) => { compose_predicate(p, f) }
 
-        LambdaEntity::Conj(_) => {}
+        LambdaEntity::Conj(c) => { compose_product(c, f) }
 
-        LambdaEntity::DepFun(_) => {}
-
-        LambdaEntity::DepSum(_) => {}
+        _ => { panic!("Compose failed.") }
 
     }
 
-    return;
 }

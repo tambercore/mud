@@ -4,3 +4,4 @@ pub mod structures;
 pub mod agdaify;
 pub mod postulate;
 mod record;
+pub mod case_converter;

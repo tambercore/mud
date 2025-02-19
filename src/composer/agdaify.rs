@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 use crate::composer::postulate::{AgdaFile, AgdaStructure, PostulateEntry};
 use crate::composer::structures::{AgdaType};
 
@@ -57,13 +60,14 @@ pub fn format_agda_type(agda_type: &AgdaType) -> String {
 impl AgdaFile {
     pub fn agdaify(&self) -> String {
         let mut code = String::new();
-        code.push_str(&format!("module {} where\n\n", &self.filename));
+        code.push_str(&format!("module {} where\n\n\n", &self.filename));
         code.push_str("postulate\n");
         for PostulateEntry(name, agda_type) in &self.postulate {
             let typ_str = format_agda_type(agda_type);
             // Each postulate becomes a line in the Agda output.
             code.push_str(&format!("  {} : {}\n", name, typ_str));
         }
+        code.push_str("\n");
         
         for def in &self.definitions {
             match def {
@@ -71,5 +75,23 @@ impl AgdaFile {
             }
         }
         code
+    }
+
+    pub fn write_to_file(&mut self, filename: &str) -> std::io::Result<()> {
+        // Update the internal filename attribute
+        self.filename = filename.to_string();
+
+        // Generate the Agda file contents
+        let agda_code = self.agdaify();
+
+        // Store the formatted filename in a variable to extend its lifetime
+        let filename_with_extension = format!("{}.agda", filename);
+        let path = Path::new(&filename_with_extension);
+
+        // Create and write to the file
+        let mut file = File::create(path)?;
+        file.write_all(agda_code.as_bytes())?;
+
+        Ok(())
     }
 }
