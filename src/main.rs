@@ -54,4 +54,6 @@ fn main() {
     let _ = compose(expanded_expression, &mut f);
 
     println!("{}", &f.clone().agdaify());
+
+    f.write_to_file("output_file");
 }

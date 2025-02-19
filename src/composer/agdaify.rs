@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 use crate::composer::postulate::{AgdaFile, AgdaStructure, PostulateEntry};
 use crate::composer::structures::{AgdaType};
 
@@ -72,5 +75,23 @@ impl AgdaFile {
             }
         }
         code
+    }
+
+    pub fn write_to_file(&mut self, filename: &str) -> std::io::Result<()> {
+        // Update the internal filename attribute
+        self.filename = filename.to_string();
+
+        // Generate the Agda file contents
+        let agda_code = self.agdaify();
+
+        // Store the formatted filename in a variable to extend its lifetime
+        let filename_with_extension = format!("{}.agda", filename);
+        let path = Path::new(&filename_with_extension);
+
+        // Create and write to the file
+        let mut file = File::create(path)?;
+        file.write_all(agda_code.as_bytes())?;
+
+        Ok(())
     }
 }
