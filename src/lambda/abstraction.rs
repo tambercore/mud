@@ -47,7 +47,7 @@ impl PartialEq<LambdaEntity> for Abstraction {
 /// Implementation of Pretty Print for Abstractions
 impl fmt::Display for Abstraction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "(λ{}. {})", self.bound_var, self.body)
+        write!(f, "(λ{} → {})", self.bound_var, self.body)
     }
 }
 
