@@ -47,6 +47,22 @@ pub trait PostulateInserter {
 /* Implement the trait for AgdaFile */
 impl PostulateInserter for AgdaFile {
     fn insert_postulate(&mut self, entry: PostulateEntry) {
-        self.postulate.push(entry);
+        if !self.postulate.contains(&entry) {
+            self.postulate.push(entry);
+        }
+    }
+}
+
+
+
+pub trait DefinitionInserter {
+    fn insert_definition(&mut self, entry: AgdaStructure);
+}
+
+impl DefinitionInserter for AgdaFile {
+    fn insert_definition(&mut self, entry: AgdaStructure) {
+        if !self.definitions.contains(&entry) {
+            self.definitions.push(entry);
+        }
     }
 }
