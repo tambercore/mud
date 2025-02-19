@@ -148,13 +148,13 @@ pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> String {
     let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
     let rec = RecordDefinition {
-        record_name: record_name,
+        record_name: record_name.clone(),
         constructor_name: constructor_name,
         fields: fields,
     };
 
     f.insert_definition(AgdaStructure::RecordDef(rec));
-    return iden;
+    record_name
 }
 
 
