@@ -3,9 +3,11 @@ use crate::ccg::node::CCGNode;
 use crate::ccg::rule::CCGRule;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::abstraction::Abstraction;
+use crate::lambda::application::Application;
 use crate::lambda::variable::Variable;
 use crate::lambda::predicate::Predicate;
-use crate::{λAbs, λVar, λPred};
+use crate::lambda::casef::CaseHandler;
+use crate::{λAbs, λVar, λPred, λCaseF, λApp};
 use crate::lingo::quantifiers::EXISTENTIAL_QUANTIFIERS;
 use crate::monty::fresh_variable::{fresh_variable, reset_counter, to_unicode_subscript};
 
@@ -45,6 +47,14 @@ pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
         /* Functor Types should bind variable into predicates through an abstraction */
         ForwardsFunctor(l, r) |
             BackwardsFunctor(r, l) => {
+
+            /* Handle `is` */
+            if (&node.clone().word.unwrap().text == "is") {
+                return λCaseF!(String::from("Jim"),
+                    λAbs!(λVar!(String::from("x₁")), λAbs!(λVar!(String::from("x₂")), λApp!(λVar!(String::from("x₁")), λVar!(String::from("x₂"))))),
+                    λAbs!(λVar!(String::from("x₁")), λAbs!(λVar!(String::from("x₂")), λPred!(String::from("is"), vec![λVar!(String::from("x₁")), λVar!(String::from("x₂"))])))
+                )
+            }
 
             /* Handle existential quantifiers i.e. 'a' 'some' as identity functions */
             if EXISTENTIAL_QUANTIFIERS.contains(&node.clone().word.unwrap().text) {

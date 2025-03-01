@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
 use crate::brill::wordclass::Wordclass;
+use crate::lambda::casef::CaseHandler;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::dependent_function::{DependentFunction};
 use crate::lambda::dependent_sum::DependentSum;
@@ -30,8 +31,8 @@ pub enum LambdaEntity {
     Pred(Predicate),       // Predicate, e.g. P(x)
     Conj(Conjunction),     // Conjunction, e.g. x ^ y
     DepFun(DependentFunction), // Dependent Function, e.g. Π(x) (expr)
-    DepSum(DependentSum) // Dependent Sum, e.g. Σ(x) (expr)
-
+    DepSum(DependentSum),  // Dependent Sum, e.g. Σ(x) (expr)
+    CaseH(CaseHandler)
 }
 
 
@@ -47,7 +48,8 @@ impl fmt::Display for LambdaEntity {
             LambdaEntity::Pred(internal) => write!(f, "{}", internal),
             LambdaEntity::Conj(internal) => write!(f, "{}", internal),
             LambdaEntity::DepFun(internal) => write!(f, "{}", internal),
-            LambdaEntity::DepSum(internal) => write!(f, "{}", internal)
+            LambdaEntity::DepSum(internal) => write!(f, "{}", internal),
+            LambdaEntity::CaseH(internal) => write!(f, "{}", internal)
         }
     }
 }
@@ -64,6 +66,7 @@ impl Substitutable for LambdaEntity {
             LambdaEntity::Conj(var) => { return var.substitute(source, target) }
             LambdaEntity::DepSum(var) => { return var.substitute(source, target) }
             LambdaEntity::DepFun(var) => { return var.substitute(source, target) }
+            LambdaEntity::CaseH(var) => { return var.substitute(source, target) }
         }
     }
 }

@@ -18,6 +18,7 @@ pub trait Reducible {
 impl Reducible for LambdaEntity {
     fn beta_reduce(&self) -> LambdaEntity {
         match self {
+
             // Handle Application: (lhs @ rhs)
             LambdaEntity::App(application) => {
                 // Attempt to reduce the function part (lhs) first
@@ -35,6 +36,21 @@ impl Reducible for LambdaEntity {
                         // Continue reducing the substituted body
                         substituted_body.beta_reduce()
                     }
+
+                    /* Case Handling Reduction */
+                    LambdaEntity::CaseH(case) => {
+
+                        /* If RHS is Abs then case.1 else case.2 */
+                        match *(application.clone().rhs) {
+                            LambdaEntity::Abs(rhs_abs) => {
+                                return (*λApp!(case.casef, application.clone().rhs)).beta_reduce()
+                            }
+                            _ => {
+                                return (*λApp!(case.casev, application.clone().rhs)).beta_reduce()
+                            }
+                        }
+                    }
+
                     LambdaEntity::Conj(conjunction) => {
                         // NEW: Distribute 'rhs' over both sides of Conj(...).
                         let reduced_arg = application.rhs.beta_reduce();

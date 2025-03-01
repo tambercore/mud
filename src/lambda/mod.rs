@@ -8,3 +8,4 @@ pub mod reducible;
 pub mod conjunction;
 pub mod dependent_function;
 pub(crate) mod dependent_sum;
+pub(crate) mod casef;
