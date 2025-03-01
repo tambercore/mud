@@ -8,8 +8,6 @@ use std::fmt::Formatter;
 use crate::brill::wordclass::Wordclass;
 use crate::lambda::casef::CaseHandler;
 use crate::lambda::conjunction::Conjunction;
-use crate::lambda::dependent_function::{DependentFunction};
-use crate::lambda::dependent_sum::DependentSum;
 use crate::lambda::predicate::Predicate;
 use crate::λConj;
 
@@ -30,8 +28,6 @@ pub enum LambdaEntity {
     Var(Variable),         // Variable, e.g., x
     Pred(Predicate),       // Predicate, e.g. P(x)
     Conj(Conjunction),     // Conjunction, e.g. x ^ y
-    DepFun(DependentFunction), // Dependent Function, e.g. Π(x) (expr)
-    DepSum(DependentSum),  // Dependent Sum, e.g. Σ(x) (expr)
     CaseH(CaseHandler)
 }
 
@@ -47,8 +43,6 @@ impl fmt::Display for LambdaEntity {
             LambdaEntity::Var(internal) => write!(f, "{}", internal),
             LambdaEntity::Pred(internal) => write!(f, "{}", internal),
             LambdaEntity::Conj(internal) => write!(f, "{}", internal),
-            LambdaEntity::DepFun(internal) => write!(f, "{}", internal),
-            LambdaEntity::DepSum(internal) => write!(f, "{}", internal),
             LambdaEntity::CaseH(internal) => write!(f, "{}", internal)
         }
     }
@@ -64,8 +58,6 @@ impl Substitutable for LambdaEntity {
             LambdaEntity::Var(var) => { return var.substitute(source, target) }
             LambdaEntity::Pred(var) => { return var.substitute(source, target) }
             LambdaEntity::Conj(var) => { return var.substitute(source, target) }
-            LambdaEntity::DepSum(var) => { return var.substitute(source, target) }
-            LambdaEntity::DepFun(var) => { return var.substitute(source, target) }
             LambdaEntity::CaseH(var) => { return var.substitute(source, target) }
         }
     }
@@ -78,8 +70,6 @@ impl Expandable for LambdaEntity {
             match self {
                 LambdaEntity::Pred(ref predicate) => predicate.expand(),
                 LambdaEntity::Conj(ref conjunction) => conjunction.expand(),
-                LambdaEntity::DepFun(ref function) => function.expand(),
-                LambdaEntity::DepSum(ref function) => function.expand(),
                 _ => Box::from(self.clone()),
             }
         }

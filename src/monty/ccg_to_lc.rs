@@ -6,7 +6,6 @@ use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::abstraction::Abstraction;
-use crate::monty::lambda_generation::ccg_to_quantifier;
 use crate::{λAbs, λApp, λConj, λVar};
 use crate::ccg::rule::CCGRule;
 use crate::lambda::application::Application;

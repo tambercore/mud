@@ -2,8 +2,6 @@ use std::collections::HashMap;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::predicate::Predicate;
 use crate::lambda::variable::Variable;
-use crate::lambda::dependent_function::DependentFunction;
-
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::{λAbs, λApp, λPred, λConj, λVar, λDepFun};
 use crate::brill::brill_tagger::tag_sentence;
@@ -16,7 +14,7 @@ use crate::brill::wordclass::Wordclass;
 use crate::ccg::sentence_parser::english_to_ccg;
 use crate::lambda::reducible::Reducible;
 use crate::lambda::types::LambdaEntity::Conj;
-use crate::monty::lambda_generation::ccg_to_lambda;
+use crate::monty::ccg_to_lc::ccg_to_lambda;
 
 #[test]
 fn test_expression_generation() {

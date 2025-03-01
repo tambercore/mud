@@ -1,7 +1,5 @@
 use crate::ccg::rule::CCGRule;
 use crate::lambda::casef::CaseHandler;
-use crate::lambda::dependent_function::DependentFunction;
-use crate::lambda::dependent_sum::DependentSum;
 use crate::lambda::types::LambdaEntity;
 
 #[macro_export]

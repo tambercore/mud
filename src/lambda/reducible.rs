@@ -1,8 +1,6 @@
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
 use crate::lambda::predicate::Predicate;
-use crate::lambda::dependent_sum::DependentSum;
-use crate::lambda::dependent_function::DependentFunction;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::*;
 use crate::{λAbs, λApp, λPred, λConj, λDepFun, λDepSum};
@@ -74,17 +72,6 @@ impl Reducible for LambdaEntity {
                             rhs: Box::new(rhs_applied),
                         })
                     }
-                    LambdaEntity::DepFun(function) => {
-                        // Continue reducing the substituted body
-                        let body = λApp!(function.expr, application.clone().rhs).beta_reduce();
-                        *λDepFun!(function.bound_var, Box::from(body))
-
-                    }
-                    LambdaEntity::DepSum(function) => {
-                        // Continue reducing the substituted body
-                        let body = λApp!(function.expr, application.clone().rhs).beta_reduce();
-                        *λDepSum!(function.bound_var, Box::from(body))
-                    }
                     other => {
                         // If not an Abs or Conj, reduce the rhs and rebuild App
                         let reduced_rhs = application.rhs.beta_reduce();
@@ -122,14 +109,6 @@ impl Reducible for LambdaEntity {
 
             LambdaEntity::Conj(conjunction) => {
                 *λConj!(Box::from(conjunction.lhs.beta_reduce()), Box::from(conjunction.rhs.beta_reduce()))
-            }
-
-            LambdaEntity::DepSum(dep) => {
-                *λDepSum!(Box::from(dep.bound_var.beta_reduce()), Box::from(dep.expr.beta_reduce()))
-            }
-
-            LambdaEntity::DepFun(dep) => {
-                *λDepFun!(Box::from(dep.bound_var.beta_reduce()), Box::from(dep.expr.beta_reduce()))
             }
 
             // Handle Non Computational Cases (i.e. vars and predicates)
