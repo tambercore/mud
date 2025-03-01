@@ -7,7 +7,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{λVar, τApp, τRecProj, τSimp};
+use crate::{λPred, λVar, τApp, τRecProj, τSimp};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
@@ -31,13 +31,26 @@ pub fn generate_function_header(arity: usize) -> AgdaType {
 
 pub fn compose_is(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
 
+    /*
+
+     match lhs:
+        Fine under the interpretation assumptions.
+        Proper Noun     - - - >     Dependent function type
+        Fine under the interpretation assumptions.
+        Common Noun     - - - >     Dependent function type
+
+        Broken.
+        Verb            - - - >     Dependent function type
+
+     */
+
     /* Arg1 here is the subject, so this could be something like `alien socrates` */
     let arg1 = p.args.get(0).unwrap();
 
     /* Arg2 here is the property, so this could be something like `myth` , i.e. alien socrates is a myth */
-    let arg2 = p.args.get(1).unwrap();
+    let mut arg2 = p.args.get(1).unwrap();
 
-    match **arg2 {
+    match *arg2.clone() {
         Var(var) => {
             let mut props_new = props.clone();
             props_new.push(var);
@@ -46,10 +59,15 @@ pub fn compose_is(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> Strin
 
         LambdaEntity::Pred(right_p) => {
             let mut new_props = props.clone();
-            panic!("todo");
+            new_props.push(Variable{name: right_p.iden});
 
-            /* repoint arg2 to arg.1 in right_p and recur */
+            let refined_arg_two = right_p.args.get(0).unwrap();
 
+            let _args = vec![Box::from(*(arg1.clone())), Box::from(*(refined_arg_two.clone()))];
+            compose_is(
+                Predicate{iden: String::from("is"), args: _args},
+                f, new_props
+            )
         }
 
         _ => { panic!("Compose Is Failed.") }

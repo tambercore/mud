@@ -30,7 +30,7 @@ fn main() {
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-    let sentence = "a green cheese is a weird myth";
+    let sentence = "seeing is believing";
 
     let possible_tags = get_sentence_tags(sentence, &mut wc_mapping);
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -62,3 +62,14 @@ fn main() {
 
     f.write_to_file("output_file");
 }
+
+/*
+a green cheese is a weird myth
+
+to have green cheese is to have a weird myth
+
+Pi (e : GreenCheese) -> isWeirdMyth e
+
+a cheese is a food
+
+*/

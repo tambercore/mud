@@ -39,22 +39,8 @@ macro_rules! λConj {
 
 
 #[macro_export]
-macro_rules! λDepFun {
-    ($bound_var:expr, $expr:expr) => {
-        Box::from(LambdaEntity::DepFun(DependentFunction{bound_var: $bound_var, expr: $expr}))
-    };
-}
-
-#[macro_export]
-macro_rules! λDepSum {
-    ($bound_var:expr, $expr:expr) => {
-        Box::from(LambdaEntity::DepSum(DependentSum{bound_var: $bound_var, expr: $expr}))
-    };
-}
-
-#[macro_export]
 macro_rules! λCaseF {
-    ($iden:expr, $fcase:expr, $vcase:expr) => {
-        Box::from(LambdaEntity::CaseH(CaseHandler{iden: $iden, casef: $fcase, casev: $vcase}))
+    ($fcase:expr, $vcase:expr) => {
+        Box::from(LambdaEntity::CaseH(CaseHandler{casef: $fcase, casev: $vcase}))
     };
 }

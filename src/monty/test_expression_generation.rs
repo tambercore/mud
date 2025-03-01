@@ -3,7 +3,7 @@ use crate::lambda::conjunction::Conjunction;
 use crate::lambda::predicate::Predicate;
 use crate::lambda::variable::Variable;
 use crate::lambda::types::{Expandable, LambdaEntity};
-use crate::{λAbs, λApp, λPred, λConj, λVar, λDepFun};
+use crate::{λAbs, λApp, λPred, λConj, λVar};
 use crate::brill::brill_tagger::tag_sentence;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::contextual_rulespec::ContextualRulespec;

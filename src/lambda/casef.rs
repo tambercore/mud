@@ -9,7 +9,6 @@ use crate::lambda::reducible::Reducible;
 /// Structure to define Case Handlers i.e. for `is`
 #[derive(Clone, Debug, PartialEq)]
 pub struct CaseHandler {
-    pub iden: String,
     pub casef: Box<LambdaEntity>,
     pub casev: Box<LambdaEntity>
 }
@@ -19,7 +18,7 @@ pub struct CaseHandler {
 impl PartialEq<LambdaEntity> for CaseHandler {
     fn eq(&self, other: &LambdaEntity) -> bool {
         if let LambdaEntity::CaseH(case) = other {
-            self.iden == case.iden && self.casef == case.casef && self.casev == case.casev
+            self.casef == case.casef && self.casev == case.casev
         } else {
             false
         }
@@ -42,7 +41,7 @@ impl Substitutable for CaseHandler {
         let casev_s = self.casev.substitute(source, target);
 
 
-        λCaseF!(self.iden.clone(), casef_s, casev_s)
+        λCaseF!(casef_s, casev_s)
     }
 }
 
@@ -51,6 +50,6 @@ impl Substitutable for CaseHandler {
 /// Implementation of Pretty Prints for CaseHandlers
 impl fmt::Display for CaseHandler {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "λᶜ {} → f[{}] or v[{}]", self.iden, self.casef, self.casev)
+        write!(f, "λᶜ f[{}] or v[{}]", self.casef, self.casev)
     }
 }
