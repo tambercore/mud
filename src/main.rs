@@ -29,7 +29,7 @@ fn main() {
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-    let sentence = "cheese is yellow";
+    let sentence = "socrates is a man";
 
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 
@@ -51,7 +51,7 @@ fn main() {
     let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
     println!("\n\nExpands to: {}", expanded_expression);
 
-    let _ = compose(expanded_expression, &mut f);
+    let _ = compose(expanded_expression, &mut f, vec![]);
 
     //println!("{}", &f.clone().agdaify());
 
