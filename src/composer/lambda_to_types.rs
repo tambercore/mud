@@ -7,9 +7,11 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{τApp, τRecProj, τSimp};
+use crate::{λVar, τApp, τRecProj, τSimp};
+use crate::brill::utils::TAG_MAPPING;
+use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
-use crate::lambda::types::LambdaEntity::App;
+use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 
 
@@ -27,28 +29,36 @@ pub fn generate_function_header(arity: usize) -> AgdaType {
 
 
 
-pub fn compose_is(p: Predicate, f: &mut AgdaFile) -> String {
+pub fn compose_is(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
 
+    /* Arg1 here is the subject, so this could be something like `alien socrates` */
     let arg1 = p.args.get(0).unwrap();
+
+    /* Arg2 here is the property, so this could be something like `myth` , i.e. alien socrates is a myth */
     let arg2 = p.args.get(1).unwrap();
 
-    match (*(arg1.clone()), *(arg2.clone())) {
-        (LambdaEntity::Var(a1), LambdaEntity::Var(a2)) => {
-            return compose_variable(
-                a1,
-                f,
-                vec![a2]
-            )
-        },
-        (_, _) => {
-            panic!("b")
+    match **arg2 {
+        Var(var) => {
+            let mut props_new = props.clone();
+            props_new.push(var);
+            compose(Box::from(*(arg1.clone())), f, props_new)
         }
-    }
 
+        LambdaEntity::Pred(right_p) => {
+            let mut new_props = props.clone();
+            panic!("todo");
+
+            /* repoint arg2 to arg.1 in right_p and recur */
+
+        }
+
+        _ => { panic!("Compose Is Failed.") }
+    }
 }
 
 
-pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> String {
+
+pub fn compose_predicate(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
 
     use AgdaType::*;
 
@@ -56,7 +66,22 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> String {
     let mut iden = format!("{}", p.iden);
     let mut pred_iden = format!("{}", p.iden);
 
-    if (iden == "is") { return compose_is(p, f) }
+    /* Is this predicate an adjective? */
+    /* Add a 1-arity check here too, likely? */
+    for (word, tags, tag) in TAG_MAPPING.get().unwrap() {
+        if *iden == *word && [Wordclass::NN, Wordclass::JJ].contains(tag) {
+            /* This predicate is an adjective! */
+
+            let mut props_copy = props.clone();
+            props_copy.push(Variable{name: iden});
+            return compose(
+                Box::from(*p.args.get(0).unwrap().clone()), f,
+                props_copy
+            )
+        }
+    }
+
+    if (iden == "is") { return compose_is(p, f, vec![]) }
 
     /* We need to propose that the predicate is some propositional function */
     f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
@@ -67,7 +92,7 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile) -> String {
     for arg in p.args {
 
         /* This will likely rely on records from here! */
-        let rec_name = compose(arg.clone(), f, vec![]);
+        let rec_name = compose(arg.clone(), f, props.clone());
 
         counter = counter + 1;
         match *(arg.clone()) {
@@ -201,9 +226,9 @@ pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile, props: Vec<Variable>) -> 
 
         LambdaEntity::Abs(_) => { panic!("Critical! System failed to compute output.") }
 
-        LambdaEntity::Var(v) => { compose_variable(v, f, vec![]) }
+        LambdaEntity::Var(v) => { compose_variable(v, f, props) }
 
-        LambdaEntity::Pred(p) => { compose_predicate(p, f) }
+        LambdaEntity::Pred(p) => { compose_predicate(p, f, props) }
 
         LambdaEntity::Conj(c) => { compose_product(c, f) }
 
