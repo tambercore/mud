@@ -29,7 +29,7 @@ fn main() {
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-    let sentence = "toby likes computers";
+    let sentence = "socrates is a man";
 
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
 
@@ -53,7 +53,7 @@ fn main() {
 
     let _ = compose(expanded_expression, &mut f);
 
-    println!("{}", &f.clone().agdaify());
+    //println!("{}", &f.clone().agdaify());
 
     f.write_to_file("output_file");
 }

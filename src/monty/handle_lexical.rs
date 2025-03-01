@@ -6,6 +6,7 @@ use crate::lambda::abstraction::Abstraction;
 use crate::lambda::variable::Variable;
 use crate::lambda::predicate::Predicate;
 use crate::{λAbs, λVar, λPred};
+use crate::lingo::quantifiers::EXISTENTIAL_QUANTIFIERS;
 use crate::monty::fresh_variable::{fresh_variable, reset_counter, to_unicode_subscript};
 
 
@@ -45,8 +46,15 @@ pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
         ForwardsFunctor(l, r) |
             BackwardsFunctor(r, l) => {
 
+            /* Handle existential quantifiers i.e. 'a' 'some' as identity functions */
+            if EXISTENTIAL_QUANTIFIERS.contains(&node.clone().word.unwrap().text) {
+                return λAbs! ( λVar!((format!("i{}", to_unicode_subscript(0)))),
+                               λVar!((format!("i{}", to_unicode_subscript(0)))));
+            }
+
+            /* Handle normal predicates, as normally */
             reset_counter();
-            gen_predicate(word, node.clone().node_type, 0)
+            return gen_predicate(word, node.clone().node_type, 0)
         }
 
         _ => { panic!("Not yet implemented!") }
