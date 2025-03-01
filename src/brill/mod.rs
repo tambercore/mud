@@ -10,3 +10,4 @@ pub mod lexical_rulespec;
 pub mod rulespec_id;
 pub mod wordclass;
 pub mod init_tagger;
+pub mod utils;

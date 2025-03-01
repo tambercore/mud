@@ -8,10 +8,11 @@ mod composer;
 
 use std::collections::HashMap;
 use std::ptr::read;
-use crate::brill::brill_tagger::tag_sentence;
+use crate::brill::brill_tagger::{get_sentence_tags, tag_sentence};
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::initialize_tagger;
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
+use crate::brill::utils::{create_tag_mapping, TAG_MAPPING};
 use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
@@ -31,7 +32,11 @@ fn main() {
 
     let sentence = "a black socrates is happy";
 
+    let possible_tags = get_sentence_tags(sentence, &mut wc_mapping);
     let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
+    create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
+    println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
+
 
     // Parse into the ccg tree
     let mut ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
