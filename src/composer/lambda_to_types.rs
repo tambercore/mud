@@ -9,7 +9,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{λPred, λVar, τApp, τDepFunc, τRecProj, τSimp};
+use crate::{λPred, λVar, τApp, τDepFunc, τProduct, τRecProj, τSimp};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
@@ -94,11 +94,38 @@ pub fn compose_predicate_with_uquant(p: Predicate, f: &mut AgdaFile, props: Vec<
 
 pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
 
+    /* Handle the unwrapping the onion of is */
+    if p.iden == "is" && p.args.len() > 1 {
+        /* Pop args into props */
+        let mut final_idx = p.args.len() - 1;
+        let mut lastarg = (p.args.clone())[final_idx].clone();
+        match *lastarg.clone() {
+            Var(v) => {
+                let mut new_props = props.clone();
+                new_props.push(v);
+                let _ = p.args.pop();
+                return _compose_predicate_with_uquant(p.clone(), f, new_props)
+            }
+            LambdaEntity::Pred(mut inner_p) => {
+                let inner_arg = inner_p.args.pop().unwrap();
+                let mut new_props = props.clone();
+                new_props.push(Variable{ name: inner_p.iden, id: None });
+                p.args[final_idx] = inner_arg;
+                return _compose_predicate_with_uquant(p.clone(), f, new_props)
+            }
+            _ => { panic!("There is an `is` predicate that contains something that isn't pred/var.")}
+        }
+    } else if p.iden == "is" && p.args.len() == 1 {
+        println!("Current Predicate: {}\nCurrent Props {:?}\n", p, props);
+    }
+
+
+    /* Initialise for dependent stuff */
     let mut uquants: Vec<(Variable, Box<LambdaEntity>)> = vec![];
     let mut equants: Vec<(Variable, Box<LambdaEntity>)> = vec![];
 
     /* Factor out UQuantifiers into uquants & EQuantifiers into equants */
-    for i in 0..p.args.len() {
+    for i in 0..p.clone().args.len() {
         let mut arg = p.args.get(i).unwrap();
         match contains_uquant((arg.clone()).into()) {
             true => {
@@ -142,7 +169,7 @@ pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props:
     for (field_iden, arg) in equants {
 
         /* This will likely rely on records from here! */
-        let rec_name = compose(arg.clone(), f, props.clone());
+        let rec_name = compose(arg.clone(), f, vec![]);
         fields.push(RecordField(field_iden.to_string(), Simple(rec_name.clone())));
         symbol_table.insert(field_iden.name, rec_name);
     }
@@ -150,7 +177,7 @@ pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props:
     /* Build the proof type as: iden e₁ e₂ ... eₙ */
     /* Uses Record Projection to get the inner Entity type */
     let mut var_idens = vec![];
-    for current_arg in p.args {
+    for current_arg in p.clone().args {
         match *current_arg.clone() {
             Var(v) => { var_idens.push(v.name) }
             _ => { panic!("Predicate still contains non-bound argument.") }
@@ -159,22 +186,66 @@ pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props:
 
     /* Compose UQuants */
     for (current, typ) in uquants.clone() {
-        let rec_name = compose(typ, f, props.clone());
+        let rec_name = compose(typ, f, vec![]);
         symbol_table.insert(current.name, rec_name);
     }
 
-    let mut inner = var_idens.iter().fold(
-        τSimp!(iden.clone()),
-        |acc, name| {
-            τApp!(acc,
-                τApp!(
-                    τRecProj!( τSimp!(symbol_table.get(name).unwrap().clone()) , τSimp!("e₁".to_string()) ),
-                    τSimp!(name.clone())
+    let mut inner = τSimp!("Temporary".parse().unwrap());
+    if p.iden != "is" {
+         inner = var_idens.iter().fold(
+            τSimp!(iden.clone()),
+            |acc, name| {
+                τApp!(acc,
+                    τApp!(
+                        τRecProj!( τSimp!(symbol_table.get(name).unwrap().clone()) , τSimp!("e₁".to_string()) ),
+                        τSimp!(name.clone())
+                    )
                 )
-            )
+            }
+
+        );
+    } else {
+        /* If it's an is, then this inside will be well... different! */
+        if uquants.is_empty() {
+            match *(p.args.get(0).unwrap().clone()) {
+                Var(v) => { return compose_variable(v, f, props) }
+                _ => { panic!("Invalid!") }
+            }
         }
 
-    );
+        /* This is now if we're saying `every` something is something! */
+        println!("217\n\nCurrent Predicate: {}\nCurrent Props {:?}\n", p, props);
+
+        let mut props_copy = props.clone();
+        let mut returned_proofs: Vec<Box<AgdaType>> = vec![];
+        while !props_copy.is_empty() {
+            let current_prop = props_copy.pop().unwrap();
+            let mut c_predicate = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
+            let (source_iden, typ) = uquants.get(0).unwrap();
+
+            returned_proofs.push(τApp!(τSimp!(c_predicate.clone()),
+                τApp!(
+                        τRecProj!( τSimp!(symbol_table.get(&source_iden.name).unwrap().clone()) , τSimp!("e₁".to_string()) ),
+                        τSimp!(source_iden.clone().name)
+                    )
+            ));
+
+            f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
+        }
+
+        if returned_proofs.len() == 0 { panic!("Something has gone wrong!") }
+        if returned_proofs.len() == 1 { inner = returned_proofs.pop().unwrap() }
+        else if returned_proofs.len() > 1 {
+            /* Construct the return type as a product of the returned proofs */
+            inner = returned_proofs.into_iter().rev().fold(None, |acc, proof| {
+                match acc {
+                    None => Some(proof),
+                    Some(prod) => Some(τProduct!(proof, prod))
+                }
+            }).unwrap();
+        }
+
+    }
 
     /* For every uquant */
     while uquants.len() > 0 {
@@ -339,21 +410,6 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -
 
 pub fn compose_is(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
 
-    /*
-
-     match lhs:
-        Fine under the interpretation assumptions.
-        Proper Noun     - - - >     Dependent function type
-        Fine under the interpretation assumptions.
-        Common Noun     - - - >     Dependent function type
-
-        Broken.
-        Verb            - - - >     Dependent function type
-        seeing = believing is broken
-
-
-
-     */
 
     /* Arg1 here is the subject, so this could be something like `alien socrates` */
     let arg1 = p.args.get(0).unwrap();

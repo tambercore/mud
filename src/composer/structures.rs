@@ -8,7 +8,8 @@ pub enum AgdaType {
     Function(Box<AgdaType>, Box<AgdaType>),
     DepFunc(String, Box<AgdaType>, Box<AgdaType>),
     Application(Box<AgdaType>, Box<AgdaType>),
-    RecordProj(Box<AgdaType>, Box<AgdaType>)
+    RecordProj(Box<AgdaType>, Box<AgdaType>),
+    Product(Box<AgdaType>, Box<AgdaType>)
 }
 
 
@@ -44,5 +45,12 @@ macro_rules! τRecProj {
 macro_rules! τDepFunc {
     ($iden:expr, $_type:expr, $rest:expr) => {
         Box::from(AgdaType::DepFunc($iden, $_type, $rest))
+    };
+}
+
+#[macro_export]
+macro_rules! τProduct {
+    ($item1:expr, $item2:expr) => {
+        Box::from(AgdaType::Product($item1, $item2))
     };
 }
