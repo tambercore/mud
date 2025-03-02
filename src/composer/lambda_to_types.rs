@@ -147,9 +147,6 @@ pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props:
         symbol_table.insert(field_iden.name, rec_name);
     }
 
-    /* <-- WE ARE HERE IN THE CLUSTERFUCK --> */
-
-
     /* Build the proof type as: iden e₁ e₂ ... eₙ */
     /* Uses Record Projection to get the inner Entity type */
     let mut var_idens = vec![];
@@ -165,7 +162,6 @@ pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props:
         let rec_name = compose(typ, f, props.clone());
         symbol_table.insert(current.name, rec_name);
     }
-
 
     let mut inner = var_idens.iter().fold(
         τSimp!(iden.clone()),
