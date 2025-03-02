@@ -43,7 +43,6 @@ pub fn generate_function_header(arity: usize) -> AgdaType {
 }
 
 
-
 pub fn contains_uquant(l: Box<LambdaEntity>) -> bool {
     match *l {
         LambdaEntity::Pred(p) => {
@@ -60,39 +59,7 @@ pub fn contains_uquant(l: Box<LambdaEntity>) -> bool {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn compose_predicate_with_uquant(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
-    _compose_predicate_with_uquant(p, f, props)
-}
-
-pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
+pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
 
     /* Handle the unwrapping the onion of is */
     if p.iden == "is" && p.args.len() > 1 {
@@ -104,14 +71,14 @@ pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props:
                 let mut new_props = props.clone();
                 new_props.push(v);
                 let _ = p.args.pop();
-                return _compose_predicate_with_uquant(p.clone(), f, new_props)
+                return compose_predicate(p.clone(), f, new_props)
             }
             LambdaEntity::Pred(mut inner_p) => {
                 let inner_arg = inner_p.args.pop().unwrap();
                 let mut new_props = props.clone();
                 new_props.push(Variable{ name: inner_p.iden, id: None });
                 p.args[final_idx] = inner_arg;
-                return _compose_predicate_with_uquant(p.clone(), f, new_props)
+                return compose_predicate(p.clone(), f, new_props)
             }
             _ => { panic!("There is an `is` predicate that contains something that isn't pred/var.")}
         }
@@ -214,8 +181,6 @@ pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props:
         }
 
         /* This is now if we're saying `every` something is something! */
-        println!("217\n\nCurrent Predicate: {}\nCurrent Props {:?}\n", p, props);
-
         let mut props_copy = props.clone();
         let mut returned_proofs: Vec<Box<AgdaType>> = vec![];
         while !props_copy.is_empty() {
@@ -272,176 +237,6 @@ pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props:
     f.insert_definition(AgdaStructure::RecordDef(rec));
     record_name
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn compose_predicate(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
-
-    use AgdaType::*;
-
-    let arg_c = p.args.len();
-    let mut iden = format!("{}", p.iden);
-    let mut pred_iden = format!("{}", p.iden);
-
-    /* Check if there is a universal quantifier on either side - if there is, we should build separately */
-    if contains_uquant(LambdaEntity::Pred(p.clone()).into()) {
-        return compose_predicate_with_uquant(p, f, props)
-    }
-
-    /* Is this predicate an adjective? */
-    /* Add a 1-arity check here too, likely? */
-    for (word, tags, tag) in TAG_MAPPING.get().unwrap() {
-        if *iden == *word && [Wordclass::NN, Wordclass::JJ].contains(tag) {
-
-            /* This predicate is an adjective! */
-            let mut props_copy = props.clone();
-            props_copy.push(Variable{name: iden, id: None});
-            return compose(
-                Box::from(*p.args.get(0).unwrap().clone()), f,
-                props_copy
-            )
-        }
-    }
-
-    if (iden == "is") { return compose_is(p, f, vec![]) }
-
-    /* We need to propose that the predicate is some propositional function */
-    f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
-
-    /* Handle Entity Fields */
-    let mut fields: Vec<RecordField> = vec![];
-    let mut counter: usize = 0;
-    for arg in p.args {
-
-        /* This will likely rely on records from here! */
-        let rec_name = compose(arg.clone(), f, props.clone());
-
-        counter = counter + 1;
-        iden.push_str(format!("_{}", rec_name.replace("ᵣ", "")).as_str());
-        fields.push(RecordField(format!("e{}", to_unicode_subscript(counter)), Simple(rec_name)))
-    }
-
-    /* Build the proof type as: iden e₁ e₂ ... eₙ */
-    /* Uses Record Projection to get the inner Entity type */
-    let proof_type = fields.iter().fold(
-        τSimp!(pred_iden.clone()),
-        |acc, field| {
-            τApp!(acc,
-                τApp!(
-                    τRecProj!( Box::new(field.1.clone()) , τSimp!("e₁".to_string()) ),
-                    τSimp!(field.0.clone())
-                )
-            )
-        }
-    );
-    fields.push(RecordField("p".to_string(), *proof_type));
-
-
-
-    /* Now, we need to insert the record for it */
-    let record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
-    let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
-
-    let rec = RecordDefinition {
-        record_name: record_name.clone(),
-        constructor_name: constructor_name,
-        fields: fields,
-    };
-
-    f.insert_definition(AgdaStructure::RecordDef(rec));
-    record_name
-}
-
-
-
-pub fn compose_is(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
-
-
-    /* Arg1 here is the subject, so this could be something like `alien socrates` */
-    let arg1 = p.args.get(0).unwrap();
-
-    /* Arg2 here is the property, so this could be something like `myth` , i.e. alien socrates is a myth */
-    let mut arg2 = p.args.get(1).unwrap();
-
-    match *arg2.clone() {
-        Var(var) => {
-            let mut props_new = props.clone();
-            props_new.push(var);
-            compose(Box::from(*(arg1.clone())), f, props_new)
-        }
-
-        LambdaEntity::Pred(right_p) => {
-            let mut new_props = props.clone();
-            new_props.push(Variable{name: right_p.iden, id: None});
-
-            let refined_arg_two = right_p.args.get(0).unwrap();
-
-            let _args = vec![Box::from(*(arg1.clone())), Box::from(*(refined_arg_two.clone()))];
-            compose_is(
-                Predicate{iden: String::from("is"), args: _args},
-                f, new_props
-            )
-        }
-
-        _ => { panic!("Compose Is Failed.") }
-    }
-}
-
-
 
 
 pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> String {
