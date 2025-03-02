@@ -41,6 +41,9 @@ pub fn compose_is(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> Strin
 
         Broken.
         Verb            - - - >     Dependent function type
+        seeing = believing is broken
+
+
 
      */
 
@@ -88,8 +91,8 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -
     /* Add a 1-arity check here too, likely? */
     for (word, tags, tag) in TAG_MAPPING.get().unwrap() {
         if *iden == *word && [Wordclass::NN, Wordclass::JJ].contains(tag) {
-            /* This predicate is an adjective! */
 
+            /* This predicate is an adjective! */
             let mut props_copy = props.clone();
             props_copy.push(Variable{name: iden});
             return compose(
@@ -113,13 +116,8 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -
         let rec_name = compose(arg.clone(), f, props.clone());
 
         counter = counter + 1;
-        match *(arg.clone()) {
-            LambdaEntity::Var(v) => {
-                iden.push_str(format!("_{}", v.name).as_str());
-                fields.push(RecordField(format!("e{}", to_unicode_subscript(counter)), Simple(rec_name)))
-            }
-            _ => {}
-        }
+        iden.push_str(format!("_{}", rec_name.replace("ᵣ", "")).as_str());
+        fields.push(RecordField(format!("e{}", to_unicode_subscript(counter)), Simple(rec_name)))
     }
 
     /* Build the proof type as: iden e₁ e₂ ... eₙ */
@@ -169,7 +167,7 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
 
     /* Generate each property as a proof */
     let mut counter: usize = 1;
-    for p in props {
+    for p in (props.clone()) {
         counter = counter + 1;
         let mut c_predicate = convert_case(format!("is_{}", p.name).as_str(), CaseStyle::CamelCase);
         fields.push(RecordField(format!("p{}", to_unicode_subscript(counter)),
@@ -179,8 +177,9 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
     }
 
     /* Now, we need to insert the record for it */
-    let record_name = format!("{}ᵣ", convert_case(iden.clone().as_str(), CaseStyle::PascalCase));
-    let constructor_name = format!("{}꜀", convert_case(iden.clone().as_str(), CaseStyle::PascalCase));
+    let props_iden = format!("{}{}", props.clone().iter().fold(String::new(), |acc, p| format!("{}_", p.name)), iden);
+    let record_name = format!("{}ᵣ", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
+    let constructor_name = format!("{}꜀", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
 
     let rec = RecordDefinition {
         record_name: record_name.clone(),
