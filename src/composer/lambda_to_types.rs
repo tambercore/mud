@@ -177,7 +177,10 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
     }
 
     /* Now, we need to insert the record for it */
-    let props_iden = format!("{}{}", props.clone().iter().fold(String::new(), |acc, p| format!("{}_", p.name)), iden);
+    let props_iden = format!("{}{}",
+                             props.iter().fold(String::new(), |mut acc, p| { acc.push_str(&p.name); acc.push('_'); acc }),
+                             iden);
+
     let record_name = format!("{}ᵣ", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
     let constructor_name = format!("{}꜀", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
 
