@@ -43,6 +43,11 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
             let s = format!("{}.{}", rec_str, proj_str);
             if my_prec < prec { format!("({})", s) } else { s }
         }
+
+        AgdaType::DepFunc(var, typ, rest) => {
+            let rest_str = format_agda_type_prec(rest, prec);
+            format!("({} : {}) → {}", var, format_agda_type_prec(typ, prec), rest_str)
+        }
     }
 }
 

@@ -91,27 +91,37 @@ fn modify_predicate_args<F>(predicate: &Predicate, modify: F) -> Box<LambdaEntit
 /// Implements the `Expandable` trait for `Predicate`, enabling recursive expansion logic.
 impl Expandable for Predicate {
     fn expand(&self) -> Box<LambdaEntity> {
-        for (i, arg) in self.args.iter().enumerate() {
-            if let LambdaEntity::Conj(conjunction) = &**arg {
+        // Create a mutable copy of the current predicate.
+        let mut modified_predicate = self.clone();
 
-                // After splitting, expand again to handle any subsequent conjs
-                let splitted = λConj!(
-                    modify_predicate_args(self, |a| {
-                        if *a == **arg {Box::new(*conjunction.lhs.clone())}
-                        else { Box::from(a.clone())}
-                    }),
-                    modify_predicate_args(self, |a| {
-                        if *a == **arg { Box::new(*conjunction.rhs.clone()) }
-                        else { Box::from(a.clone()) }
-                    })
-                );
-
-                // Recur through newly created variable.
+        // Modify in-place
+        for i in 0..modified_predicate.args.len() {
+            if let LambdaEntity::Pred(inner_pred) = &*modified_predicate.args[i] {
+                let expanded_pred = inner_pred.expand();
+                modified_predicate.args[i] = expanded_pred;
+            }
+            if let LambdaEntity::Conj(conjunction) = &*modified_predicate.args[i] {
+                // For conjunction, create two new predicates with lhs and rhs respectively.
+                let lhs_pred = modify_predicate_args(&modified_predicate, |a| {
+                    if *a == *modified_predicate.args[i] {
+                        Box::new(*conjunction.lhs.clone())
+                    } else {
+                        Box::from(a.clone())
+                    }
+                });
+                let rhs_pred = modify_predicate_args(&modified_predicate, |a| {
+                    if *a == *modified_predicate.args[i] {
+                        Box::new(*conjunction.rhs.clone())
+                    } else {
+                        Box::from(a.clone())
+                    }
+                });
+                let splitted = λConj!(lhs_pred, rhs_pred);
+                // Recur on the split predicate.
                 return splitted.expand();
             }
         }
-
-        // If no conjunctions found in arguments, just return self as a predicate
-        Box::new(LambdaEntity::Pred(self.clone()))
+        // Return the modified predicate.
+        Box::new(LambdaEntity::Pred(modified_predicate))
     }
 }

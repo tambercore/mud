@@ -5,7 +5,7 @@ use crate::lambda::types::LambdaEntity;
 #[macro_export]
 macro_rules! λVar {
     ($name_expr:expr) => {
-        Box::from(LambdaEntity::Var(Variable{name: $name_expr}))
+        Box::from(LambdaEntity::Var(Variable{name: $name_expr, id: None}))
     };
 }
 

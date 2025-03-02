@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::ptr::eq;
 use crate::ccg::rule::CCGRule;
 use crate::composer::postulate::{initialise_agda_file, AgdaFile, AgdaStructure, DefinitionInserter, PostulateEntry, PostulateInserter};
 use crate::composer::record::{RecordDefinition, RecordField};
@@ -7,7 +9,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{λPred, λVar, τApp, τRecProj, τSimp};
+use crate::{λPred, λVar, τApp, τDepFunc, τRecProj, τSimp};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
@@ -15,6 +17,19 @@ use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 
 
+/*
+Quantifiers thinking through
+
+every x                                 Every pig snorts ( given a pig, get a proof it snorts )
+
+every x     - verb ->   y               Every man likes cheese ( for every man, there is a cheese that he likes )
+
+y           - verb ->   every x         John likes every cheese ( for every cheese, john likes it )
+
+every x     - verb ->   every y         Every man likes every woman ( for every man e1, for every woman e2, e1 likes e2 )
+
+
+ */
 
 pub fn generate_function_header(arity: usize) -> AgdaType {
     if arity == 0 {
@@ -29,53 +44,221 @@ pub fn generate_function_header(arity: usize) -> AgdaType {
 
 
 
-pub fn compose_is(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
-
-    /*
-
-     match lhs:
-        Fine under the interpretation assumptions.
-        Proper Noun     - - - >     Dependent function type
-        Fine under the interpretation assumptions.
-        Common Noun     - - - >     Dependent function type
-
-        Broken.
-        Verb            - - - >     Dependent function type
-        seeing = believing is broken
-
-
-
-     */
-
-    /* Arg1 here is the subject, so this could be something like `alien socrates` */
-    let arg1 = p.args.get(0).unwrap();
-
-    /* Arg2 here is the property, so this could be something like `myth` , i.e. alien socrates is a myth */
-    let mut arg2 = p.args.get(1).unwrap();
-
-    match *arg2.clone() {
-        Var(var) => {
-            let mut props_new = props.clone();
-            props_new.push(var);
-            compose(Box::from(*(arg1.clone())), f, props_new)
+pub fn contains_uquant(l: Box<LambdaEntity>) -> bool {
+    match *l {
+        LambdaEntity::Pred(p) => {
+            if p.iden == "every" { true }
+            else {
+                for a in p.args {
+                    if contains_uquant(a) { return true } else { continue }
+                }
+                return false
+            }
         }
+        _ => {false}
+    }
+}
 
-        LambdaEntity::Pred(right_p) => {
-            let mut new_props = props.clone();
-            new_props.push(Variable{name: right_p.iden});
 
-            let refined_arg_two = right_p.args.get(0).unwrap();
 
-            let _args = vec![Box::from(*(arg1.clone())), Box::from(*(refined_arg_two.clone()))];
-            compose_is(
-                Predicate{iden: String::from("is"), args: _args},
-                f, new_props
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn compose_predicate_with_uquant(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
+    _compose_predicate_with_uquant(p, f, props)
+}
+
+pub fn _compose_predicate_with_uquant(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
+
+    let mut uquants: Vec<(Variable, Box<LambdaEntity>)> = vec![];
+    let mut equants: Vec<(Variable, Box<LambdaEntity>)> = vec![];
+
+    /* Factor out UQuantifiers into uquants & EQuantifiers into equants */
+    for i in 0..p.args.len() {
+        let mut arg = p.args.get(i).unwrap();
+        match contains_uquant((arg.clone()).into()) {
+            true => {
+                /* It's a universal quantifier node! Move into uquants and replace with `a` */
+                /* This is usually in the form every(P(x)) -> P(x)                          */
+                let mut internal = match *arg.clone() {
+                    LambdaEntity::Pred(p) => p.args.get(0).unwrap().clone(),
+                    _ => { panic!("Universal Quantification can't unwrap the every.") }
+                };
+
+                uquants.push((
+                    Variable{ name: format!("a{}", to_unicode_subscript(uquants.len() + 1)), id: None },
+                    internal.clone()));
+
+                p.args[i] = λVar!(format!("a{}", to_unicode_subscript(uquants.len() + 0)));
+            }
+            false => {
+                /* It's a existential quantifier node! Move into equants and replace with `e` */
+                equants.push((
+                    Variable{ name: format!("e{}", to_unicode_subscript(equants.len() + 1)), id: None },
+                    Box::from(*(arg.clone()))));
+
+                p.args[i] = λVar!(format!("e{}", to_unicode_subscript(equants.len() + 0)));
+            }
+        }
+    }
+
+    /* At this point, the arguments to P should contain only references to objects in uquants and equants */
+    println!("Current Predicate: {}\nQuants: {:?}\nEQuants: {:?}\n\n", p, uquants, equants);
+
+    let mut symbol_table: HashMap<String, String> = HashMap::new();
+
+    /* We need to propose that the predicate itself is some propositional function over entity */
+    /* i.e. e to e to Set                                                                      */
+    let arg_c = p.args.len();
+    let mut iden = format!("{}", p.iden);
+    f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
+
+    /* Handle Entity Fields */
+    let mut fields: Vec<RecordField> = vec![];
+    for (field_iden, arg) in equants {
+
+        /* This will likely rely on records from here! */
+        let rec_name = compose(arg.clone(), f, props.clone());
+        fields.push(RecordField(field_iden.to_string(), Simple(rec_name.clone())));
+        symbol_table.insert(field_iden.name, rec_name);
+    }
+
+    /* <-- WE ARE HERE IN THE CLUSTERFUCK --> */
+
+
+    /* Build the proof type as: iden e₁ e₂ ... eₙ */
+    /* Uses Record Projection to get the inner Entity type */
+    let mut var_idens = vec![];
+    for current_arg in p.args {
+        match *current_arg.clone() {
+            Var(v) => { var_idens.push(v.name) }
+            _ => { panic!("Predicate still contains non-bound argument.") }
+        }
+    }
+
+    /* Compose UQuants */
+    for (current, typ) in uquants.clone() {
+        let rec_name = compose(typ, f, props.clone());
+        symbol_table.insert(current.name, rec_name);
+    }
+
+
+    let mut inner = var_idens.iter().fold(
+        τSimp!(iden.clone()),
+        |acc, name| {
+            τApp!(acc,
+                τApp!(
+                    τRecProj!( τSimp!(symbol_table.get(name).unwrap().clone()) , τSimp!("e₁".to_string()) ),
+                    τSimp!(name.clone())
+                )
             )
         }
 
-        _ => { panic!("Compose Is Failed.") }
+    );
+
+    /* For every uquant */
+    while uquants.len() > 0 {
+        let (current, typ) = uquants.pop().unwrap();
+        let rec_name =  symbol_table.get(&current.name.clone()).unwrap();
+
+        inner = τDepFunc!(current.name, τSimp!(rec_name.clone()), inner.clone());
     }
+
+    fields.push(RecordField("p".to_string(), *inner));
+
+
+
+    /* Now, we need to insert the record for it */
+    let record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
+    let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
+
+    let rec = RecordDefinition {
+        record_name: record_name.clone(),
+        constructor_name: constructor_name,
+        fields: fields,
+    };
+
+    f.insert_definition(AgdaStructure::RecordDef(rec));
+    record_name
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -87,6 +270,11 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -
     let mut iden = format!("{}", p.iden);
     let mut pred_iden = format!("{}", p.iden);
 
+    /* Check if there is a universal quantifier on either side - if there is, we should build separately */
+    if contains_uquant(LambdaEntity::Pred(p.clone()).into()) {
+        return compose_predicate_with_uquant(p, f, props)
+    }
+
     /* Is this predicate an adjective? */
     /* Add a 1-arity check here too, likely? */
     for (word, tags, tag) in TAG_MAPPING.get().unwrap() {
@@ -94,7 +282,7 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -
 
             /* This predicate is an adjective! */
             let mut props_copy = props.clone();
-            props_copy.push(Variable{name: iden});
+            props_copy.push(Variable{name: iden, id: None});
             return compose(
                 Box::from(*p.args.get(0).unwrap().clone()), f,
                 props_copy
@@ -150,6 +338,57 @@ pub fn compose_predicate(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -
     f.insert_definition(AgdaStructure::RecordDef(rec));
     record_name
 }
+
+
+
+pub fn compose_is(p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
+
+    /*
+
+     match lhs:
+        Fine under the interpretation assumptions.
+        Proper Noun     - - - >     Dependent function type
+        Fine under the interpretation assumptions.
+        Common Noun     - - - >     Dependent function type
+
+        Broken.
+        Verb            - - - >     Dependent function type
+        seeing = believing is broken
+
+
+
+     */
+
+    /* Arg1 here is the subject, so this could be something like `alien socrates` */
+    let arg1 = p.args.get(0).unwrap();
+
+    /* Arg2 here is the property, so this could be something like `myth` , i.e. alien socrates is a myth */
+    let mut arg2 = p.args.get(1).unwrap();
+
+    match *arg2.clone() {
+        Var(var) => {
+            let mut props_new = props.clone();
+            props_new.push(var);
+            compose(Box::from(*(arg1.clone())), f, props_new)
+        }
+
+        LambdaEntity::Pred(right_p) => {
+            let mut new_props = props.clone();
+            new_props.push(Variable{name: right_p.iden, id: None});
+
+            let refined_arg_two = right_p.args.get(0).unwrap();
+
+            let _args = vec![Box::from(*(arg1.clone())), Box::from(*(refined_arg_two.clone()))];
+            compose_is(
+                Predicate{iden: String::from("is"), args: _args},
+                f, new_props
+            )
+        }
+
+        _ => { panic!("Compose Is Failed.") }
+    }
+}
+
 
 
 
