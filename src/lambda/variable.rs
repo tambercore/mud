@@ -3,11 +3,13 @@ use crate::lambda::types::{LambdaEntity, Substitutable};
 use crate::λVar;
 use std::fmt;
 use std::fmt::Formatter;
+use uuid::Uuid;
 
 /// Structure to define λ-Variables (x)
 #[derive(Clone, Debug, PartialEq)]
 pub struct Variable {
     pub name: String,
+    pub id: Option<Uuid>,
 }
 
 

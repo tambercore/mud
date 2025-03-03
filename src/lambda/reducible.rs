@@ -1,11 +1,9 @@
 use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
 use crate::lambda::predicate::Predicate;
-use crate::lambda::dependent_sum::DependentSum;
-use crate::lambda::dependent_function::DependentFunction;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::*;
-use crate::{λAbs, λApp, λPred, λConj, λDepFun, λDepSum};
+use crate::{λAbs, λApp, λPred, λConj};
 
 
 /// Trait defining a function to reduce the lambda entity using a normal-order reduction strategy
@@ -18,6 +16,7 @@ pub trait Reducible {
 impl Reducible for LambdaEntity {
     fn beta_reduce(&self) -> LambdaEntity {
         match self {
+
             // Handle Application: (lhs @ rhs)
             LambdaEntity::App(application) => {
                 // Attempt to reduce the function part (lhs) first
@@ -35,6 +34,21 @@ impl Reducible for LambdaEntity {
                         // Continue reducing the substituted body
                         substituted_body.beta_reduce()
                     }
+
+                    /* Case Handling Reduction */
+                    LambdaEntity::CaseH(case) => {
+
+                        /* If RHS is Abs then case.1 else case.2 */
+                        match *(application.clone().rhs) {
+                            LambdaEntity::Abs(rhs_abs) => {
+                                return (*λApp!(case.casef, application.clone().rhs)).beta_reduce()
+                            }
+                            _ => {
+                                return (*λApp!(case.casev, application.clone().rhs)).beta_reduce()
+                            }
+                        }
+                    }
+
                     LambdaEntity::Conj(conjunction) => {
                         // NEW: Distribute 'rhs' over both sides of Conj(...).
                         let reduced_arg = application.rhs.beta_reduce();
@@ -57,17 +71,6 @@ impl Reducible for LambdaEntity {
                             lhs: Box::new(lhs_applied),
                             rhs: Box::new(rhs_applied),
                         })
-                    }
-                    LambdaEntity::DepFun(function) => {
-                        // Continue reducing the substituted body
-                        let body = λApp!(function.expr, application.clone().rhs).beta_reduce();
-                        *λDepFun!(function.bound_var, Box::from(body))
-
-                    }
-                    LambdaEntity::DepSum(function) => {
-                        // Continue reducing the substituted body
-                        let body = λApp!(function.expr, application.clone().rhs).beta_reduce();
-                        *λDepSum!(function.bound_var, Box::from(body))
                     }
                     other => {
                         // If not an Abs or Conj, reduce the rhs and rebuild App
@@ -106,14 +109,6 @@ impl Reducible for LambdaEntity {
 
             LambdaEntity::Conj(conjunction) => {
                 *λConj!(Box::from(conjunction.lhs.beta_reduce()), Box::from(conjunction.rhs.beta_reduce()))
-            }
-
-            LambdaEntity::DepSum(dep) => {
-                *λDepSum!(Box::from(dep.bound_var.beta_reduce()), Box::from(dep.expr.beta_reduce()))
-            }
-
-            LambdaEntity::DepFun(dep) => {
-                *λDepFun!(Box::from(dep.bound_var.beta_reduce()), Box::from(dep.expr.beta_reduce()))
             }
 
             // Handle Non Computational Cases (i.e. vars and predicates)

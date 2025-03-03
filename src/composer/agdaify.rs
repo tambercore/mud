@@ -43,6 +43,15 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
             let s = format!("{}.{}", rec_str, proj_str);
             if my_prec < prec { format!("({})", s) } else { s }
         }
+
+        AgdaType::DepFunc(var, typ, rest) => {
+            let rest_str = format_agda_type_prec(rest, prec);
+            format!("({} : {}) → {}", var, format_agda_type_prec(typ, prec), rest_str)
+        }
+
+        AgdaType::Product(item1, item2) => {
+            format!("{} × {}", format_agda_type_prec(item1, prec), format_agda_type_prec(item2, prec))
+        }
     }
 }
 
@@ -60,8 +69,10 @@ pub fn format_agda_type(agda_type: &AgdaType) -> String {
 impl AgdaFile {
     pub fn agdaify(&self) -> String {
         let mut code = String::new();
-        code.push_str(&format!("module {} where\n\n\n", &self.filename));
+        code.push_str(&format!("module {} where\n\n", &self.filename));
+        code.push_str( &format!("open import Data.Product\n\n"));
         code.push_str("postulate\n");
+
         for PostulateEntry(name, agda_type) in &self.postulate {
             let typ_str = format_agda_type(agda_type);
             // Each postulate becomes a line in the Agda output.

@@ -8,6 +8,10 @@ use super::contractions::find_contractions;
 use super::lex_rulespec_id::LexicalRulespec;
 use super::lexical_rulespec::lexical_rule_apply;
 
+pub fn get_sentence_tags(sentence: &str, wc_mapping: &mut WordclassMap) -> Vec<(String, Vec<Wordclass>)> {
+    let tokenised_sentence = tokenize_sentence(sentence);
+    get_possible_tags(tokenised_sentence, wc_mapping)
+}
 
 /// Function to tag a `sentence` using lexical and contextual rules.
 pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, contextual_ruleset: &HashMap<Wordclass, Vec<ContextualRulespec>>, wc_mapping: &mut WordclassMap) -> Vec<(String, Wordclass)> {
@@ -15,8 +19,6 @@ pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, cont
     // Tokenise sentence, and map each word to its possible tags.
     let tokenised_sentence = tokenize_sentence(sentence);
     let words_to_tags: Vec<(String, Vec<Wordclass>)> = get_possible_tags(tokenised_sentence, wc_mapping);
-
-    println!("{:?}", words_to_tags);
 
     //println!("possible tags: {:?}", words_to_tags);
     let mut sentence_to_tag: Vec<(String, Wordclass)> = retrieve_sentence_to_tag(words_to_tags.clone());
@@ -35,11 +37,10 @@ pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, cont
         }
     });
 
-    println!("{:?}", sentence_to_tag);
-
-
     return sentence_to_tag;
 }
+
+
 
 
 /// Apply lexical rules to a sentence `sentence_to_tag`
