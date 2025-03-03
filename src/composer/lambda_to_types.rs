@@ -158,11 +158,9 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
     }
 
     /* Append record fields to the name and constructor name of the record. */
-
     record_name.extend(var_idens.iter().map(|v| {
         format!("_{}", symbol_table.get(v).unwrap().clone())
     }));
-
     constructor_name.extend(var_idens.iter().map(|v| {
         format!("_{}", symbol_table.get(v).unwrap().clone())
     }));
@@ -194,10 +192,22 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
         /* This is now if we're saying `every` something is something! */
         let mut props_copy = props.clone();
-        println!("PROPS HERE: {:?}", props_copy);
+
+        println!("Creating record for {}. \n uquants {:?}. \n equants {:?}. \n props {:?}.\n fields: {:?}.", iden, uquants, equants.clone(), props, fields);
+
+
+        /* Append record fields to the name and constructor name of the record. */
+        record_name.extend(props_copy.iter().map(|v| {
+            format!("_{}", v.name)
+        }));
+        constructor_name.extend(props_copy.iter().map(|v| {
+            format!("_{}", v.name)
+        }));
+
         let mut returned_proofs: Vec<Box<AgdaType>> = vec![];
         while !props_copy.is_empty() {
             let current_prop = props_copy.pop().unwrap();
+
             let mut c_predicate = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
             let (source_iden, typ) = uquants.get(0).unwrap();
 
@@ -239,7 +249,6 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
     /* Now, we need to insert the record for it */
 
-    println!("Creating record for {}. \n uquants {:?}. \n equants {:?}. \n props {:?}.\n fields: {:?}.", iden, uquants, equants.clone(), props, fields);
 
     /* Format record and constructor names correctly. */
 
