@@ -126,11 +126,6 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
     }
     let mut symbol_table: HashMap<String, String> = HashMap::new();
 
-    /* We need to propose that the predicate itself is some propositional function over entity */
-    /* i.e. e to e to Set                                                                      */
-    let arg_c = p.args.len();
-    f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
-
     /* Handle Entity Fields */
     let mut fields: Vec<RecordField> = vec![];
     for (field_iden, arg) in equants.clone() {
@@ -168,6 +163,11 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
     let mut inner = τSimp!("Temporary".parse().unwrap());
     if p.iden != "is" {
+        /* We need to propose that the predicate itself is some propositional function over entity */
+        /* i.e. e to e to Set                                                                      */
+        let arg_c = p.args.len();
+        f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
+
          inner = var_idens.iter().fold(
             τSimp!(iden.clone()),
             |acc, name| {
@@ -192,9 +192,6 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
         /* This is now if we're saying `every` something is something! */
         let mut props_copy = props.clone();
-
-        println!("Creating record for {}. \n uquants {:?}. \n equants {:?}. \n props {:?}.\n fields: {:?}.", iden, uquants, equants.clone(), props, fields);
-
 
         /* Append record fields to the name and constructor name of the record. */
         record_name.extend(props_copy.iter().map(|v| {
