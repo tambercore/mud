@@ -344,7 +344,6 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
 
     /* We need to also update the postulate to include the isType function */
     f.insert_postulate(PostulateEntry(predicate_iden, generate_function_header(1)));
-
     f.insert_definition(AgdaStructure::RecordDef(rec));
 
     let projection = τApp!(τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
