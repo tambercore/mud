@@ -30,7 +30,7 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
             // The argument is printed in an even tighter context.
             let arg_str = format_agda_type_prec(arg, my_prec + 1);
             let s = format!("{} {}", func_str, arg_str);
-            if my_prec < prec { format!("({})", s) } else { s }
+            if my_prec < prec { format!("({})", s) } else { format!("({})", s) }
         }
 
         AgdaType::RecordProj(rec, proj) => {
