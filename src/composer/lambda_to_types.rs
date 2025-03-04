@@ -79,7 +79,7 @@ fn replace_innermost_simple(expr: AgdaType, new_value: AgdaType) -> AgdaType {
 }
 
 
-pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> (String, Option<AgdaType>) {
+pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
 
     /* Handle the unwrapping the onion of is */
     if p.iden == "is" && p.args.len() > 1 {
@@ -144,7 +144,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
             }
         }
     }
-    let mut symbol_table: HashMap<String, (String, Option<AgdaType>)> = HashMap::new();
+    let mut symbol_table: HashMap<String, (String, AgdaType)> = HashMap::new();
 
     /* Handle Entity Fields */
     let mut fields: Vec<RecordField> = vec![];
@@ -191,7 +191,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
          inner = var_idens.iter().fold(
             τSimp!(iden.clone()),
             |acc, name| {
-                let proj = symbol_table.get(name).unwrap().clone().1.expect("Expected record to contain a projection");
+                let proj = symbol_table.get(name).unwrap().clone().1;
                 let app_proj = replace_innermost_simple(proj, *τSimp!(name.clone()));
                 τApp!(acc,
                         Box::from(app_proj)
@@ -203,8 +203,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
         /* If it's an is, then this inside will be well... different! */
         if uquants.is_empty() {
             match *(p.args.get(0).unwrap().clone()) {
-                Var(v) => {
-                    return compose_variable(v, f, props) }
+                Var(v) => { return compose_variable(v, f, props) }
                 _ => { panic!("Invalid!") }
             }
         }
@@ -229,7 +228,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
 
             returned_proofs.push(τApp!(τSimp!(c_predicate.clone()),
-                        Box::from(symbol_table.get(&source_iden.name).unwrap().clone().1.expect("Expected record to contain a projection"))
+                        Box::from(symbol_table.get(&source_iden.name).unwrap().clone().1)
             ));
 
             f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
@@ -294,18 +293,22 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
     let projection =
     if fields.len() == 2 {
-        let outer_projection = symbol_table.get("e₁").unwrap().clone().1.expect("Expected record to contain a projection");
+        let outer_projection = symbol_table.get("e₁").unwrap().clone().1;
         let application = *τApp!( τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
-        Some(replace_innermost_simple(outer_projection, application))
+        replace_innermost_simple(outer_projection, application)
     } else {
-        None
+        *τSimp!("Not Used".to_string())
     };
+
+    // let projection = get_projection(fields, &symbol_table, &*record_name);
+
+    println!("PROJECTION OF {} : {:?}", record_name, projection.clone());
 
     (record_name, projection)
 }
 
 
-pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> (String, Option<AgdaType>) {
+pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
 
     use AgdaType::*;
     let iden = v.name;
@@ -344,14 +347,43 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
 
     /* We need to also update the postulate to include the isType function */
     f.insert_postulate(PostulateEntry(predicate_iden, generate_function_header(1)));
+
     f.insert_definition(AgdaStructure::RecordDef(rec));
 
     let projection = τApp!(τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
-    (record_name, Some(*projection))
+    (record_name, *projection)
+}
+
+fn get_projection(fields: Vec<RecordField>, symbol_table: &HashMap<String, (String, AgdaType)>, record_name: &str) -> AgdaType {
+    if fields.len() == 2 {
+        let mut outer_projection = symbol_table.get("e₁").unwrap().clone().1;
+
+        // Traverse the application chain to find the innermost rhs
+        while let AgdaType::Application(lhs, rhs) = outer_projection {
+            outer_projection = *rhs;
+        }
+
+        // At this point, `outer_projection` is the innermost rhs
+        // Now, create a new application with the desired modification
+        if let AgdaType::Application(lhs, _) = outer_projection {
+            return *τApp!(
+                lhs,
+                τApp!(
+                    τRecProj!(τSimp!(record_name.to_string()), τSimp!("e₁".to_string())),
+                    τSimp!("e₁".to_string())
+                )
+            );
+        } else {
+            panic!("Projection is of incorrect form")
+        }
+    }
+
+    // Base case: return a simple type indicating unused projection
+    *τSimp!("Not Used".to_string())
 }
 
 
-pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, Option<AgdaType>) {
+pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, AgdaType) {
 
     /* Extract projections */
     let proj1 = c.lhs;
@@ -385,12 +417,12 @@ pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, Option<Agda
     };
 
     f.insert_definition(AgdaStructure::RecordDef(rec));
-    (record_name, None)
+    (record_name, *τSimp!("Temporary".to_string()))
 }
 
 
 
-pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile, props: Vec<Variable>) -> (String, Option<AgdaType>) {
+pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
 
     match *e {
 
