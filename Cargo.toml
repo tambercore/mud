@@ -14,3 +14,4 @@ nom = "7"
 bytes = "1.9.0"
 ascii_tree="*"
 uuid = { version = "1.12.1", features = ["v4"] }
+clap = "4.5.31"

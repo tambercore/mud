@@ -23,21 +23,15 @@ use crate::composer::postulate::initialise_agda_file;
 use crate::composer::agdaify::*;
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments;
-use crate::command_line::get_arguments::{handle_arguments, Config};
+use crate::command_line::get_arguments::{Config};
 
-fn main() -> Result<(), i32> {
+fn main() {
 
     /* For now, sentences may be hard-coded in the program. Using `-i` will overwrite this. */
     let sentence ="john is happy";
     let config = Config::from_args(sentence);
-
-    /* Handle CLI arguments gracefully.
-       If an argument requires the file to terminate, terminate in `main`. */
-    if let Err(_) = handle_arguments(&config) {
-        return Ok(())
-    }
-
     let sentence = config.sentence;
+
 
     let mut f = initialise_agda_file();
 
@@ -73,9 +67,7 @@ fn main() -> Result<(), i32> {
 
     //println!("{}", &f.clone().agdaify());
 
-    f.write_to_file("output_file");
-
-    Ok(())
+    f.write_to_file(config.output_file);
 }
 
 /*

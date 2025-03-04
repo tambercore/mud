@@ -1,53 +1,53 @@
-use std::env;
-use std::process::exit;
+use clap::{Arg, Command};
 
-/* Configuration struct to hold command line arguments */
 pub struct Config {
     pub sentence: String,
-    pub help: bool,
-    pub version: bool,
+    pub output_file: String,
 }
 
 impl Config {
+    pub fn from_args(default_sentence: &str) -> Self {
+        let matches = Command::new("mudskip")
+            .about("A tool for processing sentences and outputting to Agda files.")
+            .arg(Arg::new("sentence")
+                .short('i')
+                .long("input")
+                .value_name("TEXT")
+                .help("Specify input sentence")
+                .num_args(1))
+            .arg(Arg::new("output")
+                .short('o')
+                .long("output")
+                .value_name("FILE")
+                .help("Specify output file location (must have .agda extension)")
+                .default_value("output_file.agda")
+                .num_args(1))
+            .arg(Arg::new("version")
+                .short('v')
+                .long("version")
+                .help("Show version and exit")
+                .action(clap::ArgAction::SetTrue))
+            .get_matches();
 
-    /* Parse CLI and return a Config Instance */
-    pub fn from_args(sentence: &str) -> Self {
-
-        // `Sentence` is initialized in `main`. This is overwritten by the `-i` argument.
-        let mut sentence = String::from(sentence);
-        let mut help = false;
-        let mut version = false;
-
-        let args: Vec<String> = env::args().collect();
-        let mut iter = args.iter().peekable();
-        iter.next(); // Skip executable name
-
-        while let Some(arg) = iter.next() {
-            match arg.as_str() {
-                "-i" => {
-                    if let Some(value) = iter.next() {
-                        sentence = value.clone();
-                    }
-                }
-                "-h" => help = true,
-                "-v" => version = true,
-                _ => continue,
-            }
+        /* Handle `-v` or `--version` */
+        if matches.get_flag("version") {
+            println!("Mudskip, version 1.0.0");
+            std::process::exit(0);
         }
 
-        Self { sentence, help, version }
-    }
-}
+        /* If "sentence" is not provided, use the default_sentence */
+        let sentence = matches
+            .get_one::<String>("sentence")
+            .map(String::to_string)
+            .unwrap_or_else(|| default_sentence.to_string());
 
-/* Handle parsed arguments and display corresponding outputs */
-pub fn handle_arguments(config: &Config) -> Result<(), i32> {
-    if config.help {
-        println!("Usage: mudskip [OPTIONS]\n\nOptions:\n  -i <sentence>  Specify input sentence\n  -h             Show this help message\n  -v             Show version");
-        return Err(0);
+        let output_file = matches.get_one::<String>("output").unwrap().to_string();
+
+        if !output_file.ends_with(".agda") {
+            eprintln!("Error: Output file must have a .agda extension.");
+            std::process::exit(1);
+        }
+
+        Self { sentence, output_file }
     }
-    if config.version {
-        println!("Mudskip, version 1.0.0");
-        return Err(0);
-    }
-    Ok(())
 }
