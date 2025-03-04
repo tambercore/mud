@@ -5,6 +5,7 @@ mod wordnet;
 mod lingo;
 mod monty;
 mod composer;
+mod command_line;
 
 use std::collections::HashMap;
 use std::ptr::read;
@@ -21,8 +22,22 @@ use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
 use crate::composer::postulate::initialise_agda_file;
 use crate::composer::agdaify::*;
 use crate::composer::lambda_to_types::compose;
+use crate::command_line::get_arguments;
+use crate::command_line::get_arguments::{handle_arguments, Config};
 
-fn main() {
+fn main() -> Result<(), i32> {
+
+    /* For now, sentences may be hard-coded in the program. Using `-i` will overwrite this. */
+    let sentence ="john is happy";
+    let config = Config::from_args(sentence);
+
+    /* Handle CLI arguments gracefully.
+       If an argument requires the file to terminate, terminate in `main`. */
+    if let Err(_) = handle_arguments(&config) {
+        return Ok(())
+    }
+
+    let sentence = config.sentence;
 
     let mut f = initialise_agda_file();
 
@@ -30,16 +45,14 @@ fn main() {
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-    let sentence = "john is a man";
-
-    let possible_tags = get_sentence_tags(sentence, &mut wc_mapping);
-    let vec_of_word_tag_tuples = tag_sentence(sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
+    let possible_tags = get_sentence_tags(&sentence, &mut wc_mapping);
+    let vec_of_word_tag_tuples = tag_sentence(&sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
     create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
     println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
 
 
     // Parse into the ccg tree
-    let mut ccg = english_to_ccg(sentence, vec_of_word_tag_tuples.clone());
+    let mut ccg = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
     println!("Lambeq's CCG: \n{}", ccg);
 
     // Reset the typing context for each expression
@@ -61,6 +74,8 @@ fn main() {
     //println!("{}", &f.clone().agdaify());
 
     f.write_to_file("output_file");
+
+    Ok(())
 }
 
 /*
