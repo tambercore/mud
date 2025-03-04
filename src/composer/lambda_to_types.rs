@@ -226,9 +226,10 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
             let mut c_predicate = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
             let (source_iden, typ) = uquants.get(0).unwrap();
 
+            let outer_projection = symbol_table.get(&source_iden.name).unwrap().clone().1;
 
             returned_proofs.push(τApp!(τSimp!(c_predicate.clone()),
-                        Box::from(symbol_table.get(&source_iden.name).unwrap().clone().1)
+                        Box::from(replace_innermost_simple(outer_projection, AgdaType::Simple(source_iden.clone().name)))
             ));
 
             f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
