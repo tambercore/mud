@@ -4,7 +4,7 @@ use crate::ccg::rule::CCGRule;
 use crate::composer::postulate::{initialise_agda_file, AgdaFile, AgdaStructure, DefinitionInserter, PostulateEntry, PostulateInserter};
 use crate::composer::record::{RecordDefinition, RecordField};
 use crate::composer::structures::{AgdaType};
-use crate::composer::structures::AgdaType::Simple;
+use crate::composer::structures::AgdaType::{Application, Simple};
 use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
@@ -58,8 +58,28 @@ pub fn contains_uquant(l: Box<LambdaEntity>) -> bool {
     }
 }
 
+fn replace_innermost_simple(expr: AgdaType, new_value: AgdaType) -> AgdaType {
+    match expr {
 
-pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> String {
+        // If the current expression is an App, recursively replace in the nested expression
+        Application(lhs, rhs) => {
+            let new_rhs = replace_innermost_simple(*rhs.clone(), new_value.clone());
+            // let new_lhs = replace_innermost_simple(*lhs, new_value.clone());
+
+            // Continue with recursive replacement on the right side of the app chain
+            if let Application(_, _) = *rhs {
+                Application(lhs.clone(), Box::new(new_rhs))
+            } else {
+                Application(lhs.clone(), Box::new(new_rhs))
+            }
+        }
+        // If the current expression is a Simple, replace it with the new_value
+        _ => new_value,
+    }
+}
+
+
+pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
 
     /* Handle the unwrapping the onion of is */
     if p.iden == "is" && p.args.len() > 1 {
@@ -85,6 +105,11 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
     } else if p.iden == "is" && p.args.len() == 1 {
         println!("Current Predicate: {}\nCurrent Props {:?}\n", p, props);
     }
+
+    let mut iden = format!("{}", p.iden);
+
+    let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
+    let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
 
     /* Initialise for dependent stuff */
@@ -119,26 +144,16 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
             }
         }
     }
-
-    /* At this point, the arguments to P should contain only references to objects in uquants and equants */
-    println!("Current Predicate: {}\nQuants: {:?}\nEQuants: {:?}\n\n", p, uquants, equants);
-
-    let mut symbol_table: HashMap<String, String> = HashMap::new();
-
-    /* We need to propose that the predicate itself is some propositional function over entity */
-    /* i.e. e to e to Set                                                                      */
-    let arg_c = p.args.len();
-    let mut iden = format!("{}", p.iden);
-    f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
+    let mut symbol_table: HashMap<String, (String, AgdaType)> = HashMap::new();
 
     /* Handle Entity Fields */
     let mut fields: Vec<RecordField> = vec![];
-    for (field_iden, arg) in equants {
+    for (field_iden, arg) in equants.clone() {
 
         /* This will likely rely on records from here! */
-        let rec_name = compose(arg.clone(), f, vec![]);
+        let (rec_name, rec_proj) = compose(arg.clone(), f, vec![]);
         fields.push(RecordField(field_iden.to_string(), Simple(rec_name.clone())));
-        symbol_table.insert(field_iden.name, rec_name);
+        symbol_table.insert(field_iden.name, (rec_name, rec_proj));
     }
 
     /* Build the proof type as: iden e₁ e₂ ... eₙ */
@@ -157,21 +172,34 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
         symbol_table.insert(current.name, rec_name);
     }
 
+    /* Append record fields to the name and constructor name of the record. */
+    record_name.extend(var_idens.iter().map(|v| {
+        format!("_{}", symbol_table.get(v).unwrap().0.clone())
+    }));
+    constructor_name.extend(var_idens.iter().map(|v| {
+        format!("_{}", symbol_table.get(v).unwrap().0.clone())
+    }));
+
+
     let mut inner = τSimp!("Temporary".parse().unwrap());
     if p.iden != "is" {
+        /* We need to propose that the predicate itself is some propositional function over entity */
+        /* i.e. e to e to Set                                                                      */
+        let arg_c = p.args.len();
+        f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(arg_c)));
+
          inner = var_idens.iter().fold(
             τSimp!(iden.clone()),
             |acc, name| {
+                let proj = symbol_table.get(name).unwrap().clone().1;
+                let app_proj = replace_innermost_simple(proj, *τSimp!(name.clone()));
                 τApp!(acc,
-                    τApp!(
-                        τRecProj!( τSimp!(symbol_table.get(name).unwrap().clone()) , τSimp!("e₁".to_string()) ),
-                        τSimp!(name.clone())
-                    )
+                        Box::from(app_proj)
                 )
             }
-
         );
-    } else {
+    }
+    else {
         /* If it's an is, then this inside will be well... different! */
         if uquants.is_empty() {
             match *(p.args.get(0).unwrap().clone()) {
@@ -182,17 +210,25 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
         /* This is now if we're saying `every` something is something! */
         let mut props_copy = props.clone();
+
+        /* Append record fields to the name and constructor name of the record. */
+        record_name.extend(props_copy.iter().map(|v| {
+            format!("_{}", v.name)
+        }));
+        constructor_name.extend(props_copy.iter().map(|v| {
+            format!("_{}", v.name)
+        }));
+
         let mut returned_proofs: Vec<Box<AgdaType>> = vec![];
         while !props_copy.is_empty() {
             let current_prop = props_copy.pop().unwrap();
+
             let mut c_predicate = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
             let (source_iden, typ) = uquants.get(0).unwrap();
 
+
             returned_proofs.push(τApp!(τSimp!(c_predicate.clone()),
-                τApp!(
-                        τRecProj!( τSimp!(symbol_table.get(&source_iden.name).unwrap().clone()) , τSimp!("e₁".to_string()) ),
-                        τSimp!(source_iden.clone().name)
-                    )
+                        Box::from(symbol_table.get(&source_iden.name).unwrap().clone().1)
             ));
 
             f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
@@ -215,7 +251,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
     /* For every uquant */
     while uquants.len() > 0 {
         let (current, typ) = uquants.pop().unwrap();
-        let rec_name =  symbol_table.get(&current.name.clone()).unwrap();
+        let rec_name =  symbol_table.get(&current.name.clone()).unwrap().0.clone();
 
         inner = τDepFunc!(current.name, τSimp!(rec_name.clone()), inner.clone());
     }
@@ -225,21 +261,54 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
 
     /* Now, we need to insert the record for it */
-    let record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
-    let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
+
+
+    /* Format record and constructor names correctly. */
+
+    record_name = format!(
+        "{}ᵣ",
+        convert_case(&*record_name.replace('ᵣ', ""), CaseStyle::PascalCase)
+    );
+    constructor_name = format!(
+        "{}꜀",
+        convert_case(&*constructor_name.replace('꜀', "").replace('ᵣ', ""), CaseStyle::PascalCase)
+    );
 
     let rec = RecordDefinition {
         record_name: record_name.clone(),
         constructor_name: constructor_name,
-        fields: fields,
+        fields: fields.clone(),
     };
 
     f.insert_definition(AgdaStructure::RecordDef(rec));
-    record_name
+
+    // Get the projection of e1
+
+    /* IF there is only one entity, the projection matters
+        e.g. YellowCheese will be used
+
+        but if there is multiple entities, the projection will not be used.
+        e.g. LikesSocratesCheese
+        */
+
+    let projection =
+    if fields.len() == 2 {
+        let outer_projection = symbol_table.get("e₁").unwrap().clone().1;
+        let application = *τApp!( τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
+        replace_innermost_simple(outer_projection, application)
+    } else {
+        *τSimp!("Not Used".to_string())
+    };
+
+    // let projection = get_projection(fields, &symbol_table, &*record_name);
+
+    println!("PROJECTION OF {} : {:?}", record_name, projection.clone());
+
+    (record_name, projection)
 }
 
 
-pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> String {
+pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
 
     use AgdaType::*;
     let iden = v.name;
@@ -278,14 +347,42 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
 
     /* We need to also update the postulate to include the isType function */
     f.insert_postulate(PostulateEntry(predicate_iden, generate_function_header(1)));
-
     f.insert_definition(AgdaStructure::RecordDef(rec));
-    return record_name;
+
+    let projection = τApp!(τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
+    (record_name, *projection)
+}
+
+fn get_projection(fields: Vec<RecordField>, symbol_table: &HashMap<String, (String, AgdaType)>, record_name: &str) -> AgdaType {
+    if fields.len() == 2 {
+        let mut outer_projection = symbol_table.get("e₁").unwrap().clone().1;
+
+        // Traverse the application chain to find the innermost rhs
+        while let AgdaType::Application(lhs, rhs) = outer_projection {
+            outer_projection = *rhs;
+        }
+
+        // At this point, `outer_projection` is the innermost rhs
+        // Now, create a new application with the desired modification
+        if let AgdaType::Application(lhs, _) = outer_projection {
+            return *τApp!(
+                lhs,
+                τApp!(
+                    τRecProj!(τSimp!(record_name.to_string()), τSimp!("e₁".to_string())),
+                    τSimp!("e₁".to_string())
+                )
+            );
+        } else {
+            panic!("Projection is of incorrect form")
+        }
+    }
+
+    // Base case: return a simple type indicating unused projection
+    *τSimp!("Not Used".to_string())
 }
 
 
-
-pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> String {
+pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, AgdaType) {
 
     /* Extract projections */
     let proj1 = c.lhs;
@@ -297,15 +394,15 @@ pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> String {
     use AgdaType::*;
 
     /* These sometimes have record identifiers in them ᵣ, remove! */
-    let iden: String = format!("{}×{}", proj1_iden.clone(), proj2_iden.clone())
+    let iden: String = format!("{}×{}", proj1_iden.clone().0, proj2_iden.clone().0)
         .chars()
         .filter(|&c| c != 'ᵣ')
         .collect();
 
     /* Generate Fields */
     let mut fields: Vec<RecordField> = vec![
-        RecordField("e₁".to_string(), *τSimp!(proj1_iden.clone())),
-        RecordField("e₂".to_string(), *τSimp!(proj2_iden.clone()))
+        RecordField("e₁".to_string(), *τSimp!(proj1_iden.clone().0)),
+        RecordField("e₂".to_string(), *τSimp!(proj2_iden.clone().0))
     ];
 
     /* Now, we need to insert the record for it */
@@ -319,12 +416,12 @@ pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> String {
     };
 
     f.insert_definition(AgdaStructure::RecordDef(rec));
-    record_name
+    (record_name, *τSimp!("Temporary".to_string()))
 }
 
 
 
-pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile, props: Vec<Variable>) -> String {
+pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
 
     match *e {
 
