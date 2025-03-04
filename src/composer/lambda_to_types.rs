@@ -203,7 +203,11 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
         /* If it's an is, then this inside will be well... different! */
         if uquants.is_empty() {
             match *(p.args.get(0).unwrap().clone()) {
-                Var(v) => { return compose_variable(v, f, props) }
+
+                Var(v) => {
+                    let v_name = symbol_table.get(v.name.as_str()).unwrap().clone().0.replace('ᵣ', "");
+                    return compose_variable(Variable{ name: v_name, id: None }, f, props)
+                }
                 _ => { panic!("Invalid!") }
             }
         }
@@ -301,8 +305,6 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
         *τSimp!("Not Used".to_string())
     };
 
-    // let projection = get_projection(fields, &symbol_table, &*record_name);
-
     println!("PROJECTION OF {} : {:?}", record_name, projection.clone());
 
     (record_name, projection)
@@ -353,35 +355,6 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
     let projection = τApp!(τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
     (record_name, *projection)
 }
-
-fn get_projection(fields: Vec<RecordField>, symbol_table: &HashMap<String, (String, AgdaType)>, record_name: &str) -> AgdaType {
-    if fields.len() == 2 {
-        let mut outer_projection = symbol_table.get("e₁").unwrap().clone().1;
-
-        // Traverse the application chain to find the innermost rhs
-        while let AgdaType::Application(lhs, rhs) = outer_projection {
-            outer_projection = *rhs;
-        }
-
-        // At this point, `outer_projection` is the innermost rhs
-        // Now, create a new application with the desired modification
-        if let AgdaType::Application(lhs, _) = outer_projection {
-            return *τApp!(
-                lhs,
-                τApp!(
-                    τRecProj!(τSimp!(record_name.to_string()), τSimp!("e₁".to_string())),
-                    τSimp!("e₁".to_string())
-                )
-            );
-        } else {
-            panic!("Projection is of incorrect form")
-        }
-    }
-
-    // Base case: return a simple type indicating unused projection
-    *τSimp!("Not Used".to_string())
-}
-
 
 pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, AgdaType) {
 
