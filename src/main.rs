@@ -6,6 +6,7 @@ mod lingo;
 mod monty;
 mod composer;
 mod command_line;
+mod server;
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
@@ -24,6 +25,7 @@ use crate::composer::postulate::{initialise_agda_file, AgdaFile};
 use crate::composer::agdaify::*;
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
+use crate::server::server::create_endpoint;
 
 fn english_to_agda(sentence: String) -> AgdaFile {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
@@ -56,15 +58,6 @@ fn english_to_agda(sentence: String) -> AgdaFile {
 }
 
 
-#[derive(Debug, Deserialize)]
-struct SentenceInput {
-    sentence: String,
-}
-
-#[derive(Debug, Serialize)]
-struct AgdaResponse {
-    agda: String,
-}
 
 
 #[tokio::main]
@@ -74,16 +67,7 @@ async fn main() {
 
     /* If config.server, create an endpoint and wait for client requests. */
     if config.server {
-        let route = warp::path("agda")
-            .and(warp::post())
-            .and(warp::body::json::<SentenceInput>())
-            .map(|input: SentenceInput| {
-                let agda_file = english_to_agda(input.sentence).agdaify();
-                warp::reply::json(&AgdaResponse { agda: agda_file })
-            });
-
-        println!("Server running on port 12345...");
-        warp::serve(route).run(([127, 0, 0, 1], 12345)).await;
+        create_endpoint().await;
     }
 
     /* Run locally and save agda as a file. */
