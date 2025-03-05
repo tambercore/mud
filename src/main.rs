@@ -8,7 +8,8 @@ mod composer;
 mod command_line;
 
 use std::collections::HashMap;
-use std::ptr::read;
+use serde::{Deserialize, Serialize};
+use warp::Filter;
 use crate::brill::brill_tagger::{get_sentence_tags, tag_sentence};
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::initialize_tagger;
@@ -19,22 +20,12 @@ use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
 use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
-use crate::composer::postulate::initialise_agda_file;
+use crate::composer::postulate::{initialise_agda_file, AgdaFile};
 use crate::composer::agdaify::*;
 use crate::composer::lambda_to_types::compose;
-use crate::command_line::get_arguments;
 use crate::command_line::get_arguments::{Config};
 
-fn main() {
-
-    /* For now, sentences may be hard-coded in the program. Using `-i` will overwrite this. */
-    let sentence ="john is happy";
-    let config = Config::from_args(sentence);
-    let sentence = config.sentence;
-
-
-    let mut f = initialise_agda_file();
-
+fn english_to_agda(sentence: String) -> AgdaFile {
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
@@ -44,39 +35,60 @@ fn main() {
     create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
     println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
 
-
-    // Parse into the ccg tree
     let mut ccg = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
     println!("Lambeq's CCG: \n{}", ccg);
 
-    // Reset the typing context for each expression
     reset_typing_context();
 
-    // CCG to lambda
     let lambda_expression = ccg_to_lambda(&mut ccg);
     println!("Result: \n{}", lambda_expression);
 
-    // Reduce, then expand.
     let reduction = (*lambda_expression).beta_reduce();
     println!("\n\nReduces to: \n{}", reduction);
 
     let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
     println!("\n\nExpands to: {}", expanded_expression);
 
+    let mut f = initialise_agda_file();
     let _ = compose(expanded_expression, &mut f, vec![]);
 
-    //println!("{}", &f.clone().agdaify());
-
-    f.write_to_file(config.output_file);
+    f
 }
 
-/*
-a green cheese is a weird myth
 
-to have green cheese is to have a weird myth
+#[derive(Debug, Deserialize)]
+struct SentenceInput {
+    sentence: String,
+}
 
-Pi (e : GreenCheese) -> isWeirdMyth e
+#[derive(Debug, Serialize)]
+struct AgdaResponse {
+    agda: String,
+}
 
-a cheese is a food
 
-*/
+#[tokio::main]
+async fn main() {
+    let config = Config::from_args("john is happy");
+    let sentence = config.sentence;
+
+    /* If config.server, create an endpoint and wait for client requests. */
+    if config.server {
+        let route = warp::path("agda")
+            .and(warp::post())
+            .and(warp::body::json::<SentenceInput>())
+            .map(|input: SentenceInput| {
+                let agda_file = english_to_agda(input.sentence).agdaify();
+                warp::reply::json(&AgdaResponse { agda: agda_file })
+            });
+
+        println!("Server running on port 12345...");
+        warp::serve(route).run(([127, 0, 0, 1], 12345)).await;
+    }
+
+    /* Run locally and save agda as a file. */
+    else {
+        let mut agda_file = english_to_agda(sentence);
+        agda_file.write_to_file(config.output_file);
+    }
+}

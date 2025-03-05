@@ -15,3 +15,5 @@ bytes = "1.9.0"
 ascii_tree="*"
 uuid = { version = "1.12.1", features = ["v4"] }
 clap = "4.5.31"
+tokio = { version = "1.43.0", features = ["full"] }
+warp="*"
