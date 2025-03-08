@@ -69,7 +69,7 @@ pub fn format_agda_type(agda_type: &AgdaType) -> String {
 impl AgdaFile {
     pub fn agdaify(&self) -> String {
         let mut code = String::new();
-        code.push_str(&format!("module {} where\n\n", &self.filepath));
+        code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".agda", "")));
         code.push_str( &format!("open import Data.Product\n\n"));
         code.push_str("postulate\n");
 
@@ -83,6 +83,7 @@ impl AgdaFile {
         for def in &self.definitions {
             match def {
                 AgdaStructure::RecordDef(rec) => { code.push_str( &format!("\n{}\n", rec.agdaify())) }
+                AgdaStructure::FunctionDef(func) => { code.push_str(&format!("\n{}\n", func.agdaify())) }
             }
         }
         code
@@ -96,7 +97,6 @@ impl AgdaFile {
         let agda_code = self.agdaify();
 
         // Store the formatted filename in a variable to extend its lifetime
-        // let filename_with_extension = format!("{}.agda", filename);
         let path = Path::new(&filepath);
 
         // Create and write to the file

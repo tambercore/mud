@@ -1,5 +1,6 @@
 
 /* Structure for Postulate Entry */
+use crate::composer::function_def::FunctionDefinition;
 use crate::composer::record::RecordDefinition;
 use crate::composer::structures::AgdaType;
 
@@ -9,6 +10,7 @@ pub struct PostulateEntry(pub String, pub AgdaType);
 #[derive(Clone, Debug, PartialEq)]
 pub enum AgdaStructure {
     RecordDef(RecordDefinition),
+    FunctionDef(FunctionDefinition)
 }
 
 

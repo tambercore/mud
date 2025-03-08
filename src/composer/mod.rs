@@ -5,3 +5,6 @@ pub mod agdaify;
 pub mod postulate;
 mod record;
 pub mod case_converter;
+pub mod knowledge_base;
+pub mod conclusions;
+pub mod function_def;
