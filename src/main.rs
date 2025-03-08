@@ -25,9 +25,11 @@ use crate::composer::postulate::{initialise_agda_file, AgdaFile};
 use crate::composer::agdaify::*;
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
+use crate::composer::knowledge_base::{compose_kb, KnowledgeBase};
+use crate::composer::structures::AgdaType;
 // use crate::server::server::create_endpoint;
 
-//noinspection RsMainFunctionNotFound
+
 fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile {
 
     /* Initializing the Brill Tagger with its lexical and contextual rulesets. */
@@ -39,6 +41,7 @@ fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile
     let mut f = initialise_agda_file();
 
     /* This is per sentence! */
+    let mut encoded_knowledge: KnowledgeBase = vec![];
     for sentence in knowledge {
         let possible_tags = get_sentence_tags(&sentence, &mut wc_mapping);
         let vec_of_word_tag_tuples = tag_sentence(&sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
@@ -57,8 +60,10 @@ fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile
         let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
         println!("\n\nExpands to: {}", expanded_expression);
 
-        compose(expanded_expression, &mut f, vec![]);
+        let encoded_sentence = compose(expanded_expression, &mut f, vec![]);
+        encoded_knowledge.push(encoded_sentence);
     }
+    compose_kb(encoded_knowledge, &mut f);
 
     f
 }
@@ -79,8 +84,8 @@ async fn main() {
 
     /* Run locally and save agda as a file. */
     else {
-        let knowledge = vec![String::from("Every man is mortal"), String::from("Socrates is a man")];
-        let conclusions = vec![String::from("Socrates is mortal")];
+        let knowledge = vec![String::from("a john is a man"), String::from("every man is an animal")];
+        let conclusions = vec![String::from("a john is an animal")];
 
         let mut agda_file = english_to_agda(knowledge, conclusions);
         agda_file.write_to_file(config.output_file);

@@ -302,7 +302,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
         let application = *τApp!( τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
         replace_innermost_simple(outer_projection, application)
     } else {
-        *τSimp!("Not Used".to_string())
+        *τSimp!(record_name.to_string())
     };
 
     println!("PROJECTION OF {} : {:?}", record_name, projection.clone());
@@ -340,7 +340,7 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
                              iden);
 
     let record_name = format!("{}ᵣ", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
-    let constructor_name = format!("{}꜀", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
+    let constructor_name = format!("{}s", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
 
     let rec = RecordDefinition {
         record_name: record_name.clone(),
