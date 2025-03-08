@@ -25,34 +25,40 @@ use crate::composer::postulate::{initialise_agda_file, AgdaFile};
 use crate::composer::agdaify::*;
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
-use crate::server::server::create_endpoint;
+// use crate::server::server::create_endpoint;
 
-fn english_to_agda(sentence: String) -> AgdaFile {
+//noinspection RsMainFunctionNotFound
+fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile {
+
+    /* Initializing the Brill Tagger with its lexical and contextual rulesets. */
     let lexical_ruleset = parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap();
     let contextual_ruleset = parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap();
     let mut wc_mapping = initialize_tagger("data/lexicon.txt").unwrap();
 
-    let possible_tags = get_sentence_tags(&sentence, &mut wc_mapping);
-    let vec_of_word_tag_tuples = tag_sentence(&sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
-    create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
-    println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
-
-    let mut ccg = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
-    println!("Lambeq's CCG: \n{}", ccg);
-
-    reset_typing_context();
-
-    let lambda_expression = ccg_to_lambda(&mut ccg);
-    println!("Result: \n{}", lambda_expression);
-
-    let reduction = (*lambda_expression).beta_reduce();
-    println!("\n\nReduces to: \n{}", reduction);
-
-    let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
-    println!("\n\nExpands to: {}", expanded_expression);
-
+    /* Initialise the Agda File (get it ready) */
     let mut f = initialise_agda_file();
-    let _ = compose(expanded_expression, &mut f, vec![]);
+
+    /* This is per sentence! */
+    for sentence in knowledge {
+        let possible_tags = get_sentence_tags(&sentence, &mut wc_mapping);
+        let vec_of_word_tag_tuples = tag_sentence(&sentence, &lexical_ruleset, &contextual_ruleset, &mut wc_mapping);
+        create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
+        println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
+
+        let mut ccg = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
+        println!("Lambeq's CCG: \n{}", ccg);
+
+        let lambda_expression = ccg_to_lambda(&mut ccg);
+        println!("Result: \n{}", lambda_expression);
+
+        let reduction = (*lambda_expression).beta_reduce();
+        println!("\n\nReduces to: \n{}", reduction);
+
+        let expanded_expression: Box<LambdaEntity> = (Box::from(reduction.expand()));
+        println!("\n\nExpands to: {}", expanded_expression);
+
+        compose(expanded_expression, &mut f, vec![]);
+    }
 
     f
 }
@@ -67,12 +73,16 @@ async fn main() {
 
     /* If config.server, create an endpoint and wait for client requests. */
     if config.server {
-        create_endpoint().await;
+        // create_endpoint().await;
+
     }
 
     /* Run locally and save agda as a file. */
     else {
-        let mut agda_file = english_to_agda(sentence);
+        let knowledge = vec![String::from("Every man is mortal"), String::from("Socrates is a man")];
+        let conclusions = vec![String::from("Socrates is mortal")];
+
+        let mut agda_file = english_to_agda(knowledge, conclusions);
         agda_file.write_to_file(config.output_file);
     }
 }

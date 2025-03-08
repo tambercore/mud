@@ -14,6 +14,7 @@ struct AgdaResponse {
     agda: String,
 }
 
+/*
 pub async fn create_endpoint() {
     /* Enable CORS */
     let cors = warp::cors()
@@ -33,3 +34,4 @@ pub async fn create_endpoint() {
     println!("Server running on port 12345...");
     warp::serve(route).run(([127, 0, 0, 1], 12345)).await;
 }
+*/
