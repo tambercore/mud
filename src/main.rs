@@ -7,6 +7,7 @@ mod monty;
 mod composer;
 mod command_line;
 mod server;
+mod resolver;
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
@@ -34,6 +35,8 @@ use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
 use crate::composer::conclusions::compose_conclusions;
+use crate::resolver::fill_holes::fill_holes;
+// use crate::resolver::fill_holes::fill_holes;
 
 // Assuming these types exist in your code:
 struct LexicalRuleset { /* ... */ }
@@ -117,10 +120,11 @@ async fn main() {
 
     /* Run locally and save agda as a file. */
     else {
-        let knowledge = vec![String::from("a john is a man"), String::from("every man is an animal")];
-        let conclusions = vec![String::from("every cheese is smelly"), String::from("alien socrates is real")];
+        let knowledge = vec![String::from("socrates is a man"), String::from("every man is mortal")];
+        let conclusions = vec![String::from("socrates is mortal"), String::from("amber is happy"), String::from("a man is socrates")];
 
         let mut agda_file = english_to_agda(knowledge, conclusions);
-        agda_file.write_to_file(config.output_file);
+        agda_file.write_to_file(config.output_file.clone());
+        fill_holes(config.output_file.clone());
     }
 }
