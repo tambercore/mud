@@ -340,7 +340,7 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
                              iden);
 
     let record_name = format!("{}ᵣ", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
-    let constructor_name = format!("{}s", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
+    let constructor_name = format!("{}꜀", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
 
     let rec = RecordDefinition {
         record_name: record_name.clone(),
