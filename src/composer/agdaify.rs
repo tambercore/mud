@@ -83,6 +83,7 @@ impl AgdaFile {
         for def in &self.definitions {
             match def {
                 AgdaStructure::RecordDef(rec) => { code.push_str( &format!("\n{}\n", rec.agdaify())) }
+                AgdaStructure::FunctionDef(func) => { code.push_str(&format!("\n{}\n", func.agdaify())) }
             }
         }
         code
