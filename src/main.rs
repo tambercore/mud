@@ -81,7 +81,7 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> (String, AgdaType) {
     encoded_sentence
 }
 
-fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile {
+fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>, filepath: String) -> String {
 
     /* Initialise the Agda File (get it ready) */
     let mut f = initialise_agda_file();
@@ -102,10 +102,11 @@ fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile
     }
     compose_conclusions(encoded_conclusions, &mut f);
 
-    f
+    f.write_to_file(filepath.clone());
+    let updated_content = fill_holes(filepath.clone());
+
+    updated_content
 }
-
-
 
 
 #[tokio::main]
@@ -116,13 +117,11 @@ async fn main() {
 
     /* If config.server, create an endpoint and wait for client requests. */
     if config.server {
-        create_endpoint().await;
+        create_endpoint(config.output_file).await;
     }
 
     /* Run locally and save agda as a file. */
     else {
-        let mut agda_file = english_to_agda(knowledge, conclusions);
-        agda_file.write_to_file(config.output_file.clone());
-        fill_holes(config.output_file.clone());
+        english_to_agda(knowledge, conclusions, config.output_file);
     }
 }

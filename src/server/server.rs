@@ -16,7 +16,7 @@ struct AgdaResponse {
 }
 
 
-pub async fn create_endpoint() {
+pub async fn create_endpoint(filepath: String) {
     /* Enable CORS */
     let cors = warp::cors()
         .allow_any_origin()
@@ -26,9 +26,10 @@ pub async fn create_endpoint() {
     let route = warp::path("agda")
         .and(warp::post())
         .and(warp::body::json::<SentenceInput>())
-        .map(|input: SentenceInput| {
-            let agda_file = english_to_agda(input.knowledge, input.conclusions).agdaify();
-            warp::reply::json(&AgdaResponse { agda: agda_file })
+        .map(move |input: SentenceInput| {
+            let filepath = filepath.clone();
+            let response = english_to_agda(input.knowledge, input.conclusions, filepath);
+            warp::reply::json(&AgdaResponse { agda: response })
         })
         .with(cors);  // Apply CORS to the route
 
