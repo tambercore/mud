@@ -6,5 +6,5 @@ pub mod postulate;
 mod record;
 pub mod case_converter;
 pub mod knowledge_base;
-mod conclusions;
-mod function_def;
+pub mod conclusions;
+pub mod function_def;

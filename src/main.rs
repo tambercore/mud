@@ -33,6 +33,7 @@ use std::sync::Mutex;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
+use crate::composer::conclusions::compose_conclusions;
 
 // Assuming these types exist in your code:
 struct LexicalRuleset { /* ... */ }
