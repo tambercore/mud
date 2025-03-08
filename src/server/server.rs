@@ -6,7 +6,8 @@ use warp::cors;
 
 #[derive(Debug, Deserialize)]
 struct SentenceInput {
-    sentence: String,
+    knowledge: Vec<String>,
+    conclusions: Vec<String>
 }
 
 #[derive(Debug, Serialize)]
@@ -14,7 +15,7 @@ struct AgdaResponse {
     agda: String,
 }
 
-/*
+
 pub async fn create_endpoint() {
     /* Enable CORS */
     let cors = warp::cors()
@@ -26,7 +27,7 @@ pub async fn create_endpoint() {
         .and(warp::post())
         .and(warp::body::json::<SentenceInput>())
         .map(|input: SentenceInput| {
-            let agda_file = english_to_agda(input.sentence).agdaify();
+            let agda_file = english_to_agda(input.knowledge, input.conclusions).agdaify();
             warp::reply::json(&AgdaResponse { agda: agda_file })
         })
         .with(cors);  // Apply CORS to the route
@@ -34,4 +35,4 @@ pub async fn create_endpoint() {
     println!("Server running on port 12345...");
     warp::serve(route).run(([127, 0, 0, 1], 12345)).await;
 }
-*/
+
