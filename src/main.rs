@@ -63,7 +63,7 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> (String, AgdaType) {
     let possible_tags = get_sentence_tags(&sentence, &mut wc_mapping);
     let vec_of_word_tag_tuples = tag_sentence(&sentence, lexical_ruleset, contextual_ruleset, &mut wc_mapping);
     create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
-    println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
+    println!("tag mapping: {:?}", TAG_MAPPING);
 
     let mut ccg = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
     println!("Lambeq's CCG: \n{}", ccg);
