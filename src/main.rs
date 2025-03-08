@@ -121,7 +121,7 @@ async fn main() {
     /* Run locally and save agda as a file. */
     else {
         let knowledge = vec![String::from("socrates is a man"), String::from("every man is mortal")];
-        let conclusions = vec![String::from("socrates is mortal")];
+        let conclusions = vec![String::from("socrates is mortal"), String::from("amber is happy"), String::from("a man is socrates")];
 
         let mut agda_file = english_to_agda(knowledge, conclusions);
         agda_file.write_to_file(config.output_file.clone());
