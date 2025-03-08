@@ -15,7 +15,7 @@ pub enum AgdaStructure {
 /* Structure for the Entire Agda File */
 #[derive(Clone, Debug, PartialEq)]
 pub struct AgdaFile {
-    pub filename: String,
+    pub filepath: String,
     pub postulate: Vec<PostulateEntry>,
     pub definitions: Vec<AgdaStructure>,
 }
@@ -24,7 +24,7 @@ pub struct AgdaFile {
 
 pub fn initialise_agda_file() -> AgdaFile {
     let mut f = AgdaFile{
-        filename: "test".to_string(),
+        filepath: "test".to_string(),
         postulate: vec!(),
         definitions: vec!(),
     };
