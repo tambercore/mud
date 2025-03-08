@@ -1,7 +1,8 @@
 use clap::{Arg, Command};
 
 pub struct Config {
-    pub sentence: String,
+    pub knowledge: Vec<String>,
+    pub conclusions: Vec<String>,
     pub output_file: String,
     pub server: bool,
 }
@@ -14,7 +15,7 @@ impl Config {
                 .short('i')
                 .long("input")
                 .value_name("TEXT")
-                .help("Specify input sentence")
+                .help("Specify premises and conclusions, of form 'p1 & ... & pn -> c1 & ... & cn.' ")
                 .num_args(1))
             .arg(Arg::new("server")
                 .short('s')
@@ -42,10 +43,15 @@ impl Config {
         }
 
         /* If "sentence" is not provided, use the default_sentence */
-        let sentence = matches
+        let input = matches
             .get_one::<String>("sentence")
             .map(String::to_string)
             .unwrap_or_else(|| default_sentence.to_string());
+
+        let (knowledge, conclusions) = parse_input(input).unwrap_or_else(|err| {
+            eprintln!("Error parsing input: {}", err);
+            std::process::exit(1);
+        });
 
         /* Check if server flag is set */
         let server = matches.get_flag("server");
@@ -57,6 +63,19 @@ impl Config {
             std::process::exit(1);
         }
 
-        Self { sentence, output_file, server }
+        Self { knowledge, conclusions, output_file, server }
+    }
+}
+
+/* Parse input of form ... & ... & ... -> ... & ..., into lists of premises and conclusions. */
+pub fn parse_input(input: String) -> Result<(Vec<String>, Vec<String>), String> {
+    let parts: Vec<&str> = input.split("->").collect();
+    match parts.len() {
+        1 => Ok((parts[0].split('&').map(|s| s.trim().to_string()).collect(), vec![])),
+        2 => Ok((
+            parts[0].split('&').map(|s| s.trim().to_string()).collect(),
+            parts[1].split('&').map(|s| s.trim().to_string()).collect(),
+        )),
+        _ => Err("Invalid input format. Expected 'A & B -> C & D' or similar.".to_string()),
     }
 }

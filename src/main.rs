@@ -36,6 +36,7 @@ use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
 use crate::composer::conclusions::compose_conclusions;
 use crate::resolver::fill_holes::fill_holes;
+use crate::server::server::create_endpoint;
 // use crate::resolver::fill_holes::fill_holes;
 
 // Assuming these types exist in your code:
@@ -110,19 +111,16 @@ fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile
 #[tokio::main]
 async fn main() {
     let config = Config::from_args("john is happy");
-    let sentence = config.sentence;
+    let knowledge = config.knowledge;
+    let conclusions = config.conclusions;
 
     /* If config.server, create an endpoint and wait for client requests. */
     if config.server {
-        // create_endpoint().await;
-
+        create_endpoint().await;
     }
 
     /* Run locally and save agda as a file. */
     else {
-        let knowledge = vec![String::from("socrates is a man"), String::from("every man is mortal")];
-        let conclusions = vec![String::from("socrates is mortal"), String::from("amber is happy"), String::from("a man is socrates")];
-
         let mut agda_file = english_to_agda(knowledge, conclusions);
         agda_file.write_to_file(config.output_file.clone());
         fill_holes(config.output_file.clone());
