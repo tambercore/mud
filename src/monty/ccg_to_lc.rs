@@ -38,9 +38,34 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
             )
         }
 
+        CCGRule::BackwardCrossedComposition => {
+            let (first_child, second_child) = unpack_children(current_node.children);
+
+            // Because it's backward, you may need to swap:
+            //   - or not, depending on how your parse is stored!
+            // The key is: "the function that expects y" gets applied to
+            // "the function that returns y from z."
+
+            let left_expr = ccg_to_lambda_recursive(first_child, root);
+            let right_expr = ccg_to_lambda_recursive(second_child, root);
+
+            // Build λz. left_expr ( right_expr z )
+            λAbs!(λVar!("z".parse().unwrap()),
+                λApp!(
+                    left_expr,
+                    λApp!(
+                        right_expr,
+                        λVar!("z".parse().unwrap())
+                    )
+                )
+            )
+        }
+
         /* Generates λ-Terms */
         CCGRule::Lexical => {
-            lexical_to_lambda(current_node)
+            let expr = lexical_to_lambda(current_node.clone());
+            println!("{} generated {}", current_node.word.unwrap().text, expr);
+            expr
         }
 
         /* Skips to Child */

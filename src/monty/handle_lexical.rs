@@ -48,12 +48,16 @@ pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
         ForwardsFunctor(l, r) |
             BackwardsFunctor(r, l) => {
 
-            /* Handle `is` */
+            /* Handle `is`
             if (&node.clone().word.unwrap().text == "is") {
                 return λCaseF!(
                     λAbs!(λVar!(String::from("x₁")), λAbs!(λVar!(String::from("x₂")), λApp!(λVar!(String::from("x₁")), λVar!(String::from("x₂"))))),
                     λAbs!(λVar!(String::from("x₁")), λAbs!(λVar!(String::from("x₂")), λPred!(String::from("is"), vec![λVar!(String::from("x₂")), λVar!(String::from("x₁"))])))
                 )
+            } */
+
+            if (&node.clone().word.unwrap().text == "not") {
+                return λAbs!(λVar!(String::from("n₁")), λPred!(String::from("not"), vec![λVar!(String::from("n₁"))]));
             }
 
             /* Handle existential quantifiers i.e. 'a' 'some' as identity functions */
