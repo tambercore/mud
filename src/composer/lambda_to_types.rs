@@ -81,7 +81,7 @@ fn replace_innermost_simple(expr: AgdaType, new_value: AgdaType) -> AgdaType {
 
 pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
 
-    let mut is_negated: bool = false;
+    let mut is_negated: i32 = 0;
 
     /* Handle the unwrapping the onion of is */
     if p.iden == "is" && p.args.len() > 1 {
@@ -231,7 +231,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
             let current_prop = props_copy.pop().unwrap();
 
             if current_prop.name == "not" {
-                is_negated = true;
+                is_negated = is_negated + 1;
                 continue;
             }
 
@@ -258,8 +258,9 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
                 }
             }).unwrap();
         }
-        if is_negated {
+        while (is_negated > 0) {
             inner = τFunc!(inner, τSimp!("⊥".to_string()));
+            is_negated = is_negated - 1;
             println!("IS NEGATED = {is_negated}");
             println!("INNER = {:?}", inner);
         }
@@ -322,78 +323,107 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
     use AgdaType::*;
     let iden = v.name;
 
-    // -- 1. Partition props into normal properties vs. negated properties
-    //    e.g. if props = ["blue", "not", "happy"], normal = ["blue"], negated = ["happy"]
-    //    so that we can build isHappy e -> ⊥ for “happy”
-    let mut normal_props = Vec::new();
-    let mut negated_props = Vec::new();
-
-    // A simple loop: whenever you see "not", mark the NEXT prop as negated, and skip "not" itself
+    // We'll parse `props` by grouping consecutive "not" tokens, then grouping
+    // consecutive property words (everything else). For each group, we build
+    // a single chunk with (neg_count, [words...]).
+    let mut property_chunks = Vec::new();
     let mut i = 0;
     while i < props.len() {
-        if props[i].name == "not" {
-            // skip the 'not' token, next property is negated
-            if i+1 < props.len() {
-                negated_props.push(props[i+1].clone());
-                i += 2;
-            } else {
-                // There's a trailing "not" with no property after it—handle however you'd like.
-                i += 1;
-            }
-        } else {
-            // normal property
-            normal_props.push(props[i].clone());
+        // Count consecutive 'not's
+        let mut neg_count = 0;
+        while i < props.len() && props[i].name == "not" {
+            neg_count += 1;
             i += 1;
+        }
+
+        // Gather consecutive property words
+        let mut prop_words = Vec::new();
+        while i < props.len() && props[i].name != "not" {
+            prop_words.push(props[i].name.clone());
+            i += 1;
+        }
+
+        // If we got at least one property word, store this chunk
+        if !prop_words.is_empty() {
+            property_chunks.push((neg_count, prop_words));
         }
     }
 
-    // -- 2. The first two fields (e₁, p₁) remain unchanged
+    // First record fields: e₁ : Entity, p₁ : is<ID> e₁
     let mut predicate_iden = convert_case(format!("is_{}", iden).as_str(), CaseStyle::CamelCase);
     let mut fields: Vec<RecordField> = vec![
         RecordField("e₁".to_string(), *τSimp!("Entity".to_string())),
-        RecordField("p₁".to_string(),
-                    *τApp!( τSimp!( predicate_iden.clone() ) , τSimp!("e₁".to_string()) )
+        RecordField(
+            "p₁".to_string(),
+            *τApp!(
+                τSimp!( predicate_iden.clone() ),
+                τSimp!("e₁".to_string())
+            )
         )
     ];
 
-    // Insert record fields for normal properties
-    let mut counter: usize = 1;
-    for p in normal_props {
+    // For each property chunk, build a single type and then apply a single arrow to ⊥ if negated.
+    let mut counter = 1;
+    for (neg_count, words) in property_chunks {
+        // Reverse the property words (right-to-left chaining):
+        let mut rev = words.clone();
+        rev.reverse();
+
+        // If there's multiple words, we'll end in an arrow to ⊥ (e.g. isChungus e₁ → isBig e₁ → ⊥).
+        // If there's only 1 word, we simply produce isFoo e₁ (no arrow) unless negation is added.
+        let property_count = rev.len();
+
+        // We'll accumulate from right to left.
+        // If property_count > 1, final is ⊥. Otherwise, we won't add ⊥ unless negation requires it.
+        let mut accumulated: Box<AgdaType> = Box::new(
+            if property_count > 1 {
+                *τSimp!("⊥".to_string())
+            } else {
+                // Single property word => no arrow to ⊥ here
+                *τSimp!("Set".to_string())
+            }
+        );
+
+        for w in rev.iter() {
+            // Insert postulate for isW
+            let c_predicate = convert_case(format!("is_{}", w).as_str(), CaseStyle::CamelCase);
+            f.insert_postulate(PostulateEntry(c_predicate.clone(), generate_function_header(1)));
+
+            // isW e₁ → accumulated
+            let applied = τApp!(
+                τSimp!(c_predicate.clone()),
+                τSimp!("e₁".to_string())
+            );
+            accumulated = Box::new(*τFunc!(Box::new(*applied), accumulated));
+        }
+
+        // If property_count == 1, we basically ended up with isFoo e₁ → Set,
+        // so let's remove that trailing → Set. We want just isFoo e₁ (for no negation).
+        // We'll do that by substituting with the inner type. If you prefer isFoo e₁ → ⊥
+        // for single properties, just remove this logic.
+        if property_count == 1 {
+            // The last function arrow: isFoo e₁ → Set
+            // We'll keep only the domain part: isFoo e₁
+            if let AgdaType::Function(domain, _range) = *accumulated {
+                accumulated = domain;
+            }
+        }
+
+        // If neg_count > 0, wrap once in → ⊥ (not multiple times).
+        let mut final_type = *accumulated;
+        if neg_count > 0 {
+            final_type = *τFunc!(Box::new(final_type), τSimp!("⊥".to_string()));
+        }
+
+        // Insert a record field for this chunk
         counter += 1;
-        let c_predicate = convert_case(format!("is_{}", p.name).as_str(), CaseStyle::CamelCase);
-
-        // e.g. p₂ : isBlue e₁
-        fields.push(RecordField(
-            format!("p{}", to_unicode_subscript(counter)),
-            *τApp!( τSimp!( c_predicate.clone() ), τSimp!("e₁".to_string()) )
-        ));
-
-        f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
+        fields.push(RecordField(format!("p{}", to_unicode_subscript(counter)), final_type));
     }
 
-    // Insert record fields for negated properties
-    // i.e. pᵢ : isX e₁ → ⊥
-    for p in negated_props {
-        counter += 1;
-        let c_predicate = convert_case(format!("is_{}", p.name).as_str(), CaseStyle::CamelCase);
-
-        // pᵢ : (isHappy e₁) → ⊥
-        fields.push(RecordField(
-            format!("p{}", to_unicode_subscript(counter)),
-            *τFunc!(
-                τApp!( τSimp!( c_predicate.clone() ), τSimp!("e₁".to_string()) ),
-                τSimp!("⊥".to_string())
-            )
-        ));
-
-        f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
-    }
-
-    // Build the record name from the original variable + any extra props
+    // Build the record name from the variable + props
     let props_iden = format!(
         "{}{}",
-        props
-            .iter()
+        props.iter()
             .map(|p| p.name.to_string())
             .collect::<Vec<_>>()
             .join("_"),
@@ -408,19 +438,22 @@ pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> 
         fields,
     };
 
-    // Make sure to insert the postulate for isX
+    // Insert postulate for is<ID> (e.g. isJohn)
     f.insert_postulate(PostulateEntry(predicate_iden, generate_function_header(1)));
-    // Insert the new record definition
+    // Insert record definition
     f.insert_definition(AgdaStructure::RecordDef(rec));
 
-    // The projection
-    let projection =
-        τApp!(
-            τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ),
+    // Projection
+    let projection = τApp!(
+        τRecProj!(
+            τSimp!(record_name.clone()),
             τSimp!("e₁".to_string())
-        );
+        ),
+        τSimp!("e₁".to_string())
+    );
     (record_name, *projection)
 }
+
 
 pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, AgdaType) {
 
@@ -458,7 +491,6 @@ pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, AgdaType) {
     f.insert_definition(AgdaStructure::RecordDef(rec));
     (record_name, *τSimp!("Temporary".to_string()))
 }
-
 
 
 pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
