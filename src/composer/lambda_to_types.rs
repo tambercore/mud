@@ -9,7 +9,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{λPred, λVar, τApp, τDepFunc, τProduct, τRecProj, τSimp};
+use crate::{λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τRecProj, τSimp};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
@@ -80,6 +80,8 @@ fn replace_innermost_simple(expr: AgdaType, new_value: AgdaType) -> AgdaType {
 
 
 pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
+
+    let mut is_negated: bool = false;
 
     /* Handle the unwrapping the onion of is */
     if p.iden == "is" && p.args.len() > 1 {
@@ -200,6 +202,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
         );
     }
     else {
+
         /* If it's an is, then this inside will be well... different! */
         if uquants.is_empty() {
             match *(p.args.get(0).unwrap().clone()) {
@@ -226,6 +229,10 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
         let mut returned_proofs: Vec<Box<AgdaType>> = vec![];
         while !props_copy.is_empty() {
             let current_prop = props_copy.pop().unwrap();
+            if current_prop.name == "not" {
+                is_negated = true;
+                continue;
+            }
 
             let mut c_predicate = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
             let (source_iden, typ) = uquants.get(0).unwrap();
@@ -250,22 +257,21 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
                 }
             }).unwrap();
         }
-
+        if is_negated {
+            inner = τFunc!(inner, τSimp!("⊥".to_string()));
+            println!("IS NEGATED = {is_negated}");
+            println!("INNER = {:?}", inner);
+        }
     }
 
     /* For every uquant */
     while uquants.len() > 0 {
         let (current, typ) = uquants.pop().unwrap();
         let rec_name =  symbol_table.get(&current.name.clone()).unwrap().0.clone();
-
         inner = τDepFunc!(current.name, τSimp!(rec_name.clone()), inner.clone());
     }
 
     fields.push(RecordField("p".to_string(), *inner));
-
-
-
-    /* Now, we need to insert the record for it */
 
 
     /* Format record and constructor names correctly. */
