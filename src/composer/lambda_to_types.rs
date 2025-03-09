@@ -229,6 +229,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
         let mut returned_proofs: Vec<Box<AgdaType>> = vec![];
         while !props_copy.is_empty() {
             let current_prop = props_copy.pop().unwrap();
+
             if current_prop.name == "not" {
                 is_negated = true;
                 continue;
@@ -318,47 +319,106 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
 
 pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
-
     use AgdaType::*;
     let iden = v.name;
 
-    /* Generate Fields */
-    let mut predicate_iden = convert_case(format!("is_{}", iden).as_str(), CaseStyle::CamelCase);
-    let mut fields: Vec<RecordField> = vec![ RecordField("e₁".to_string(), *τSimp!("Entity".to_string()))];
-    fields.push(RecordField("p₁".to_string(),
-        *τApp!( τSimp!( predicate_iden.clone() ) , τSimp!("e₁".to_string()) )
-    ));
+    // -- 1. Partition props into normal properties vs. negated properties
+    //    e.g. if props = ["blue", "not", "happy"], normal = ["blue"], negated = ["happy"]
+    //    so that we can build isHappy e -> ⊥ for “happy”
+    let mut normal_props = Vec::new();
+    let mut negated_props = Vec::new();
 
-    /* Generate each property as a proof */
+    // A simple loop: whenever you see "not", mark the NEXT prop as negated, and skip "not" itself
+    let mut i = 0;
+    while i < props.len() {
+        if props[i].name == "not" {
+            // skip the 'not' token, next property is negated
+            if i+1 < props.len() {
+                negated_props.push(props[i+1].clone());
+                i += 2;
+            } else {
+                // There's a trailing "not" with no property after it—handle however you'd like.
+                i += 1;
+            }
+        } else {
+            // normal property
+            normal_props.push(props[i].clone());
+            i += 1;
+        }
+    }
+
+    // -- 2. The first two fields (e₁, p₁) remain unchanged
+    let mut predicate_iden = convert_case(format!("is_{}", iden).as_str(), CaseStyle::CamelCase);
+    let mut fields: Vec<RecordField> = vec![
+        RecordField("e₁".to_string(), *τSimp!("Entity".to_string())),
+        RecordField("p₁".to_string(),
+                    *τApp!( τSimp!( predicate_iden.clone() ) , τSimp!("e₁".to_string()) )
+        )
+    ];
+
+    // Insert record fields for normal properties
     let mut counter: usize = 1;
-    for p in (props.clone()) {
-        counter = counter + 1;
-        let mut c_predicate = convert_case(format!("is_{}", p.name).as_str(), CaseStyle::CamelCase);
-        fields.push(RecordField(format!("p{}", to_unicode_subscript(counter)),
-            *τApp!( τSimp!( c_predicate.clone() ) , τSimp!("e₁".to_string()) )
+    for p in normal_props {
+        counter += 1;
+        let c_predicate = convert_case(format!("is_{}", p.name).as_str(), CaseStyle::CamelCase);
+
+        // e.g. p₂ : isBlue e₁
+        fields.push(RecordField(
+            format!("p{}", to_unicode_subscript(counter)),
+            *τApp!( τSimp!( c_predicate.clone() ), τSimp!("e₁".to_string()) )
         ));
+
         f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
     }
 
-    /* Now, we need to insert the record for it */
-    let props_iden = format!("{}{}",
-                             props.iter().fold(String::new(), |mut acc, p| { acc.push_str(&p.name); acc.push('_'); acc }),
-                             iden);
+    // Insert record fields for negated properties
+    // i.e. pᵢ : isX e₁ → ⊥
+    for p in negated_props {
+        counter += 1;
+        let c_predicate = convert_case(format!("is_{}", p.name).as_str(), CaseStyle::CamelCase);
 
-    let record_name = format!("{}ᵣ", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
-    let constructor_name = format!("{}꜀", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
+        // pᵢ : (isHappy e₁) → ⊥
+        fields.push(RecordField(
+            format!("p{}", to_unicode_subscript(counter)),
+            *τFunc!(
+                τApp!( τSimp!( c_predicate.clone() ), τSimp!("e₁".to_string()) ),
+                τSimp!("⊥".to_string())
+            )
+        ));
+
+        f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
+    }
+
+    // Build the record name from the original variable + any extra props
+    let props_iden = format!(
+        "{}{}",
+        props
+            .iter()
+            .map(|p| p.name.to_string())
+            .collect::<Vec<_>>()
+            .join("_"),
+        iden
+    );
+    let record_name = format!("{}ᵣ", convert_case(props_iden.as_str(), CaseStyle::PascalCase));
+    let constructor_name = format!("{}꜀", convert_case(props_iden.as_str(), CaseStyle::PascalCase));
 
     let rec = RecordDefinition {
         record_name: record_name.clone(),
-        constructor_name: constructor_name,
-        fields: fields,
+        constructor_name,
+        fields,
     };
 
-    /* We need to also update the postulate to include the isType function */
+    // Make sure to insert the postulate for isX
     f.insert_postulate(PostulateEntry(predicate_iden, generate_function_header(1)));
+    // Insert the new record definition
     f.insert_definition(AgdaStructure::RecordDef(rec));
 
-    let projection = τApp!(τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
+    // The projection
+    let projection =
+        τApp!(
+            τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ),
+            τSimp!("e₁".to_string())
+        );
     (record_name, *projection)
 }
 
