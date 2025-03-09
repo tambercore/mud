@@ -1,5 +1,4 @@
 use crate::ccg::rule::CCGRule;
-use crate::lambda::casef::CaseHandler;
 use crate::lambda::types::LambdaEntity;
 
 #[macro_export]
@@ -34,13 +33,5 @@ macro_rules! λPred {
 macro_rules! λConj {
     ($lhs:expr, $rhs:expr) => {
         Box::from(LambdaEntity::Conj(Conjunction{lhs: $lhs, rhs: $rhs}))
-    };
-}
-
-
-#[macro_export]
-macro_rules! λCaseF {
-    ($fcase:expr, $vcase:expr) => {
-        Box::from(LambdaEntity::CaseH(CaseHandler{casef: $fcase, casev: $vcase}))
     };
 }

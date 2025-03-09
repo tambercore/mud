@@ -6,5 +6,4 @@ pub mod variable;
 pub mod predicate;
 pub mod reducible;
 pub mod conjunction;
-pub(crate) mod casef;
 pub mod etalike;
