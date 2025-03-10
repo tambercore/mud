@@ -9,3 +9,4 @@ pub mod knowledge_base;
 pub mod conclusions;
 pub mod function_def;
 mod compose_predicate;
+mod compose_variable;

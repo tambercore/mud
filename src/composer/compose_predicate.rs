@@ -15,7 +15,8 @@ use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
-use crate::composer::lambda_to_types::{compose, compose_variable, generate_function_header, replace_innermost_simple};
+use crate::composer::compose_variable::compose_variable;
+use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
 
 pub fn contains_uquant(l: Box<LambdaEntity>) -> bool {
     match *l {
@@ -214,7 +215,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
              * a proof of this property for the given entity.
              */
             let mut rhs_property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
-            f.insert_postulate(PostulateEntry(rhs_property, generate_function_header(1)));
+            f.insert_postulate(PostulateEntry(rhs_property.clone(), generate_function_header(1)));
 
 
             /* This constructs the `property` returned in the dependent function. If the current property `current_prop`

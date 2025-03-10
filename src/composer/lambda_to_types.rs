@@ -16,6 +16,7 @@ use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 use crate::composer::compose_predicate::compose_predicate;
+use crate::composer::compose_variable::compose_variable;
 
 pub fn generate_function_header(arity: usize) -> AgdaType {
     if arity == 0 {
@@ -53,50 +54,6 @@ pub fn replace_innermost_simple(expr: AgdaType, new_value: AgdaType) -> AgdaType
 
 
 
-pub fn compose_variable(v: Variable, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
-
-    use AgdaType::*;
-    let iden = v.name;
-
-    /* Generate Fields */
-    let mut predicate_iden = convert_case(format!("is_{}", iden).as_str(), CaseStyle::CamelCase);
-    let mut fields: Vec<RecordField> = vec![ RecordField("e₁".to_string(), *τSimp!("Entity".to_string()))];
-    fields.push(RecordField("p₁".to_string(),
-                            *τApp!( τSimp!( predicate_iden.clone() ) , τSimp!("e₁".to_string()) )
-    ));
-
-    /* Generate each property as a proof */
-    let mut counter: usize = 1;
-    for p in (props.clone()) {
-        counter = counter + 1;
-        let mut c_predicate = convert_case(format!("is_{}", p.name).as_str(), CaseStyle::CamelCase);
-        fields.push(RecordField(format!("p{}", to_unicode_subscript(counter)),
-                                *τApp!( τSimp!( c_predicate.clone() ) , τSimp!("e₁".to_string()) )
-        ));
-        f.insert_postulate(PostulateEntry(c_predicate, generate_function_header(1)));
-    }
-
-    /* Now, we need to insert the record for it */
-    let props_iden = format!("{}{}",
-                             props.iter().fold(String::new(), |mut acc, p| { acc.push_str(&p.name); acc.push('_'); acc }),
-                             iden);
-
-    let record_name = format!("{}ᵣ", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
-    let constructor_name = format!("{}꜀", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
-
-    let rec = RecordDefinition {
-        record_name: record_name.clone(),
-        constructor_name: constructor_name,
-        fields: fields,
-    };
-
-    /* We need to also update the postulate to include the isType function */
-    f.insert_postulate(PostulateEntry(predicate_iden, generate_function_header(1)));
-    f.insert_definition(AgdaStructure::RecordDef(rec));
-
-    let projection = τApp!(τRecProj!( τSimp!(record_name.clone()) , τSimp!("e₁".to_string()) ), τSimp!("e₁".to_string()));
-    (record_name, *projection)
-}
 
 
 
