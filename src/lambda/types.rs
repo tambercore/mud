@@ -6,7 +6,6 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
 use crate::brill::wordclass::Wordclass;
-use crate::lambda::casef::CaseHandler;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::predicate::Predicate;
 use crate::λConj;
@@ -28,7 +27,6 @@ pub enum LambdaEntity {
     Var(Variable),         // Variable, e.g., x
     Pred(Predicate),       // Predicate, e.g. P(x)
     Conj(Conjunction),     // Conjunction, e.g. x ^ y
-    CaseH(CaseHandler)
 }
 
 
@@ -43,7 +41,6 @@ impl fmt::Display for LambdaEntity {
             LambdaEntity::Var(internal) => write!(f, "{}", internal),
             LambdaEntity::Pred(internal) => write!(f, "{}", internal),
             LambdaEntity::Conj(internal) => write!(f, "{}", internal),
-            LambdaEntity::CaseH(internal) => write!(f, "{}", internal)
         }
     }
 }
@@ -58,7 +55,6 @@ impl Substitutable for LambdaEntity {
             LambdaEntity::Var(var) => { return var.substitute(source, target) }
             LambdaEntity::Pred(var) => { return var.substitute(source, target) }
             LambdaEntity::Conj(var) => { return var.substitute(source, target) }
-            LambdaEntity::CaseH(var) => { return var.substitute(source, target) }
         }
     }
 }

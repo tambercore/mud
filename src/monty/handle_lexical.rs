@@ -6,8 +6,7 @@ use crate::lambda::abstraction::Abstraction;
 use crate::lambda::application::Application;
 use crate::lambda::variable::Variable;
 use crate::lambda::predicate::Predicate;
-use crate::lambda::casef::CaseHandler;
-use crate::{λAbs, λVar, λPred, λCaseF, λApp};
+use crate::{λAbs, λVar, λPred, λApp};
 use crate::lingo::quantifiers::EXISTENTIAL_QUANTIFIERS;
 use crate::monty::fresh_variable::{fresh_variable, reset_counter, to_unicode_subscript};
 

@@ -35,6 +35,7 @@ use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
 use crate::composer::conclusions::compose_conclusions;
+use crate::lambda::etalike::Eliminator;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::create_endpoint;
 // use crate::resolver::fill_holes::fill_holes;
@@ -74,7 +75,10 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> (String, AgdaType) {
     let reduction = (*lambda_expression).beta_reduce();
     println!("\n\nReduces to: \n{}", reduction);
 
-    let expanded_expression: Box<LambdaEntity> = Box::from(reduction.expand());
+    let eta_reduction = (reduction).eliminate_leftovers();
+    println!("\n\nEta Reduces to: \n{}", eta_reduction);
+
+    let expanded_expression: Box<LambdaEntity> = Box::from(eta_reduction.expand());
     println!("\n\nExpands to: {}", expanded_expression);
 
     let encoded_sentence = compose(expanded_expression, f, vec![]);
@@ -110,7 +114,7 @@ fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("every man is not happy");
+    let config = Config::from_args("every john is not jack");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
