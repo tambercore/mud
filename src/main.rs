@@ -35,6 +35,7 @@ use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
 use crate::composer::conclusions::compose_conclusions;
+use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::create_endpoint;
@@ -77,6 +78,12 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> (String, AgdaType) {
 
     let eta_reduction = (reduction).eliminate_leftovers();
     println!("\n\nEta Reduces to: \n{}", eta_reduction);
+
+    let semantic_tree = lambda_to_semantic(Box::from(eta_reduction.clone()));
+    match semantic_tree {
+        Ok(tree) => { println!("Semantic Tree:\n{}", tree); }
+        Err(_) => {}
+    }
 
     let expanded_expression: Box<LambdaEntity> = Box::from(eta_reduction.expand());
     println!("\n\nExpands to: {}", expanded_expression);
