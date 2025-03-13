@@ -1,67 +1,73 @@
 use std::fmt;
 use serde::Deserialize;
 
+
+
+/// Structure to represent rules in the CCG, matching `lambeq`'s CCGRule Structure.
+/// For more information, see: https://docs.quantinuum.com/lambeq/root-api.html#lambeq.CCGRule.
     #[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize)]
     pub enum CCGRule {
         #[serde(rename = "BA")]
-        BackwardApplication,                    // "BA"
+        BackwardApplication,
 
         #[serde(rename = "BC")]
-        BackwardComposition,                    // "BC"
+        BackwardComposition,
 
         #[serde(rename = "BX")]
-        BackwardCrossedComposition,             // "BX"
+        BackwardCrossedComposition,
 
         #[serde(rename = "BTR")]
-        BackwardTypeRaising,                    // "BTR"
+        BackwardTypeRaising,
 
         #[serde(rename = "CONJ")]
-        Conjunction,                            // "CONJ"
+        Conjunction,
 
         #[serde(rename = "FA")]
-        ForwardApplication,                     // "FA"
+        ForwardApplication,
 
         #[serde(rename = "FC")]
-        ForwardComposition,                     // "FC"
+        ForwardComposition,
 
         #[serde(rename = "FX")]
-        ForwardCrossedComposition,              // "FX"
+        ForwardCrossedComposition,
 
         #[serde(rename = "FTR")]
-        ForwardTypeRaising,                     // "FTR"
+        ForwardTypeRaising,
 
         #[serde(rename = "GBC")]
-        GeneralizedBackwardComposition,         // "GBC"
+        GeneralizedBackwardComposition,
 
         #[serde(rename = "GBX")]
-        GeneralizedBackwardCrossedComposition,  // "GBX"
+        GeneralizedBackwardCrossedComposition,
 
         #[serde(rename = "GFC")]
-        GeneralizedForwardComposition,          // "GFC"
+        GeneralizedForwardComposition,
 
         #[serde(rename = "GFX")]
-        GeneralizedForwardCrossedComposition,   // "GFX"
+        GeneralizedForwardCrossedComposition,
 
         #[serde(rename = "L")]
-        Lexical,                                // "L"
+        Lexical,
 
         #[serde(rename = "LP")]
-        RemovePunctuationLeft,                  // "LP"
+        RemovePunctuationLeft,
 
         #[serde(rename = "RP")]
-        RemovePunctuationRight,                 // "RP"
+        RemovePunctuationRight,
 
         #[serde(rename = "U")]
-        Unary,                                  // "U"
+        Unary,
 
         #[serde(rename = "UNK")]
-        Unknown,                                // "UNK"
+        Unknown,
     }
 
 
-impl CCGRule {
-    pub fn as_str(&self) -> &'static str {
-        match self {
+
+/// Implementation of pretty print for `CCGRule`.
+impl fmt::Display for CCGRule {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let rule_str = match self {
             CCGRule::BackwardApplication => "BA",
             CCGRule::BackwardComposition => "BC",
             CCGRule::BackwardCrossedComposition => "BX",
@@ -80,14 +86,9 @@ impl CCGRule {
             CCGRule::RemovePunctuationRight => "RP",
             CCGRule::Unary => "U",
             CCGRule::Unknown => "UNK",
-        }
+        };
+        write!(f, "{}", rule_str)
     }
 }
 
-
-impl fmt::Display for CCGRule {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.as_str())
-    }
-}
 
