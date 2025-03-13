@@ -4,18 +4,10 @@ use crate::english_to_agda;
 use warp::reply::Reply;
 use warp::cors;
 
-#[derive(Debug, Deserialize)]
-struct SentenceInput {
-    knowledge: Vec<String>,
-    conclusions: Vec<String>
-}
-
-#[derive(Debug, Serialize)]
-struct AgdaResponse {
-    agda: String,
-}
 
 
+/// Function to create an endpoint that accepts POST requests with a JSON body and returns a JSON response.
+/// It enables CORS, processes the input, converts it using `english_to_agda`, and responds with the Agda file.
 pub async fn create_endpoint() {
     /* Enable CORS */
     let cors = warp::cors()
@@ -36,3 +28,21 @@ pub async fn create_endpoint() {
     warp::serve(route).run(([127, 0, 0, 1], 12345)).await;
 }
 
+
+
+/// Structure to define the input data received in the request.
+/// This structure expects a vector of knowledge strings and a vector of conclusions.
+#[derive(Debug, Deserialize)]
+struct SentenceInput {
+    knowledge: Vec<String>,
+    conclusions: Vec<String>
+}
+
+
+
+/// Structure to define the response that will be returned to the client.
+/// The response contains a single string field for the Agda file.
+#[derive(Debug, Serialize)]
+struct AgdaResponse {
+    agda: String,
+}
