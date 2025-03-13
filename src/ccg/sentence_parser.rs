@@ -15,23 +15,23 @@ use super::node::{CCGNode};
 /// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the process fails.
 pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordclass)>) -> CCGNode {
 
-    // Determine the Python executable path based on the OS
+    /* Determine the Python executable path based on the OS */
     let python_executable = if cfg!(target_os = "windows") {
         "data/lambeq/lambeq_env/Scripts/python.exe"
     } else if cfg!(target_os = "macos") {
-        "data/lambeq/lambeq_env/bin/python3" // Adjust path for macOS
+        "data/lambeq/lambeq_env/bin/python3"
     } else {
-        "data/lambeq/lambeq_env/bin/python3" // or whatever linux uses.
+        "data/lambeq/lambeq_env/bin/python3"
     };
 
-    // Pass the sentence to the Python script as a command line argument
+    /* Pass the sentence to the Python script as a command line argument */
     let output = Command::new(python_executable)
         .arg("data/lambeq/run_lambeq.py")
         .arg(sentence) // Pass sentence as argument to Python script
         .output()
         .map_err(|_| "Failed to execute Python command. Ensure the virtual environment and lambeq are properly installed.");
 
-    // Read and parse the resulting JSON file into a CCGNode.
+    /* Read and parse the resulting JSON file into a `CCGNode`. */
     let original_tree = ccgnode_parse("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
 
     let tree = insert_tags(&original_tree, vec_of_words_to_tags);
@@ -40,19 +40,18 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
 }
 
 
-/// Reads a JSON file and attempts to deserialize it into a `CCGNode`.
+
+/// Function to read a JSON file and attempts to deserialize it into a `CCGNode`.
 ///
 /// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the file can't be read or parsed.
-pub(crate) fn ccgnode_parse(file_path: &str) -> Result<CCGNode, String> {
+pub fn ccgnode_parse(file_path: &str) -> Result<CCGNode, String> {
     let mut content = String::new();
 
-    // Open the file and read its content into a string.
     File::open(file_path)
         .map_err(|e| format!("Failed to open file: {}", e))?
         .read_to_string(&mut content)
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
     // Deserialize the JSON content into a CCGNode.
-    println!("Raw CCG Output:\n {}", content);
     serde_json::from_str(&content).map_err(|e: SerdeError| format!("Failed to parse CCG from JSON: {}", e))
 }
