@@ -18,6 +18,8 @@ pub enum CCGType {
     Empty
 }
 
+
+
 /// Implementation for `Deserialize` to parse CCG categories from JSON strings.
 impl<'de> Deserialize<'de> for CCGType {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -28,6 +30,8 @@ impl<'de> Deserialize<'de> for CCGType {
         Ok(parse_category(value.as_str()).unwrap().1)
     }
 }
+
+
 
 /// Implementation of pretty prints for `CCGType`.
 impl fmt::Display for CCGType {
