@@ -10,47 +10,52 @@ use crate::wordnet::postag::WordnetTag;
 use crate::wordnet::wordnode::Wordnode;
 use std::io::{BufRead};
 
-// Define a static singleton for word meanings
+/// Static singleton to store word meanings.
+/// This is initialized lazily and is protected by a Mutex for thread safety.
 static WORD_MEANINGS: Lazy<Mutex<HashMap<String, Vec<Wordnode>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 
-// Initialize the word meanings from the JSON file
+
+/// Function to initialize the wordnet by reading from the `wordnet.json` file.
+/// This function loads the data, processes it, and populates the WORD_MEANINGS singleton.
 pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
+    /* Open the wordnet JSON file and read its contents. */
     let mut file = File::open("data/wordnet.json")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
+    /* Deserialize the JSON data into a Value object. */
     let data: Value = serde_json::from_str(&contents)?;
     let synsets = data.get("synset").and_then(|s| s.as_object()).ok_or("Invalid JSON structure")?;
 
     let mut word_meanings = HashMap::new();
     let empty_array: Vec<Value> = Vec::new();
 
-    // Iterate over the synsets to extract meanings, POS, IDs, and synonyms
+    /* Iterate over the synsets to extract meanings, POS, IDs, and synonyms. */
     for (id, synset) in synsets {
         let words = synset.get("word").and_then(|w| w.as_array()).unwrap_or(&empty_array);
         let gloss = synset.get("gloss").and_then(|g| g.as_str()).unwrap_or("");
         let pos = synset.get("pos").and_then(|p| p.as_str()).unwrap_or("");
 
-        // Split the gloss by semicolon and take the part before the first semicolon, basically process the definition
+        /* Split the gloss by semicolon and take the part before the first semicolon, process the definition. */
         let meaning = gloss.split(';').next().unwrap_or(gloss).trim().to_string();
 
-        // Collect all the synonyms (other words in the same synset)
+        /* Collect all the synonyms (other words in the same synset). */
         let synonyms: Vec<String> = words.iter()
             .filter_map(|w| w.as_str())
             .map(|w| w.to_string())
             .collect();
 
-        // Create Wordnodes for each word in the synset
+        /* Create Wordnodes for each word in the synset. */
         for word in words.iter().filter_map(|w| w.as_str()) {
-            // Remove the current word from its synonyms
+            /* Remove the current word from its synonyms. */
             let filtered_synonyms: Vec<String> = synonyms
                 .iter()
                 .filter(|&synonym| synonym != word)
                 .cloned()
                 .collect();
 
-            // Create the Wordnode, here `synonyms` refers to a vector of indexes.
+            /* Create the Wordnode, here `synonyms` refers to a vector of indexes. */
             let word_definition = Wordnode {
                 meaning: meaning.clone(),
                 pos: WordnetTag::from(pos),
@@ -58,7 +63,7 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
                 synonyms: filtered_synonyms,
             };
 
-            // Insert the Wordnode into the vector for each word
+            /* Insert the Wordnode into the vector for each word. */
             word_meanings
                 .entry(word.to_string())
                 .or_insert_with(Vec::new)
@@ -66,6 +71,7 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    /* Lock and update the static singleton with the word meanings. */
     let mut meanings = WORD_MEANINGS.lock().unwrap();
     *meanings = word_meanings;
 
@@ -73,8 +79,15 @@ pub fn init_wordnet() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 
-// Access the meanings from the singleton
+
+/// Function to access the meanings of a given word from the WORD_MEANINGS singleton.
+/// This function returns a vector of Wordnodes corresponding to the word.
 pub fn get_meanings(word: &str) -> Option<Vec<Wordnode>> {
+    /* Lock the WORD_MEANINGS singleton and retrieve the meanings for the given word. */
     let meanings = WORD_MEANINGS.lock().unwrap();
     meanings.get(word).cloned()
 }
+
+
+
+
