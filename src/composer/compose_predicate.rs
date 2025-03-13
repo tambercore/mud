@@ -42,8 +42,6 @@ pub fn unwrap(mut p: Relation, f: &mut AgdaFile, props: Vec<Token>) -> (Relation
     /* Base Case */
     if p.0 != "is" || p.1.len() <= 1 { return (p, props.clone()) }
 
-    println!("relation: {:?}", p);
-
     /* Recursive Case: Get the right-hand side variable/predicate */
     let mut final_idx = p.1.len() - 1;
     let mut lastarg = p.1.last().clone().expect("Expected arguments in relation.");
