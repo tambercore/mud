@@ -5,10 +5,12 @@ use std::fmt;
 
 
 /* Semantic Tree, in this definition has relations, tokens and joins */
-type Relation = (String, Vec<Box<SemanticTree>>);
-type Token = String;
-type Join = (Box<SemanticTree>, Box<SemanticTree>);
 
+pub type Relation = (String, Vec<Box<SemanticTree>>);
+pub type Token = String;
+pub type Join = (Box<SemanticTree>, Box<SemanticTree>);
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum SemanticTree {
     NonTerminal(Relation),
     Terminal(Token),

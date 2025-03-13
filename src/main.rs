@@ -79,16 +79,12 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> (String, AgdaType) {
     let eta_reduction = (reduction).eliminate_leftovers();
     println!("\n\nEta Reduces to: \n{}", eta_reduction);
 
-    let semantic_tree = lambda_to_semantic(Box::from(eta_reduction.clone()));
-    match semantic_tree {
-        Ok(tree) => { println!("Semantic Tree:\n{}", tree); }
-        Err(_) => {}
-    }
-
     let expanded_expression: Box<LambdaEntity> = Box::from(eta_reduction.expand());
     println!("\n\nExpands to: {}", expanded_expression);
 
-    let encoded_sentence = compose(expanded_expression, f, vec![]);
+    let semantic_tree = lambda_to_semantic(Box::from(expanded_expression.clone())).expect("Failed to parse semantic tree.");
+
+    let encoded_sentence = compose(Box::from(semantic_tree), f, vec![]);
     encoded_sentence
 }
 
