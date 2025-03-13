@@ -40,7 +40,7 @@ pub fn contains_uquant(l: Box<SemanticTree>) -> bool {
 pub fn unwrap(mut p: Relation, f: &mut AgdaFile, props: Vec<Token>) -> (Relation, Vec<Token>) {
 
     /* Base Case */
-    if p.0 != "is" || p.0.len() <= 1 { return (p, props.clone()) }
+    if p.0 != "is" || p.1.len() <= 1 { return (p, props.clone()) }
 
     println!("relation: {:?}", p);
 
