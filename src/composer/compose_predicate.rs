@@ -9,7 +9,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τRecProj, τSimp};
+use crate::{tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τRecProj, τSimp};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
@@ -17,48 +17,49 @@ use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 use crate::composer::compose_variable::compose_variable;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
+use crate::composer::langtree::{Relation, SemanticTree, Token};
+use crate::composer::langtree::SemanticTree::Terminal;
 
-pub fn contains_uquant(l: Box<LambdaEntity>) -> bool {
+pub fn contains_uquant(l: Box<SemanticTree>) -> bool {
     match *l {
-        LambdaEntity::Pred(p) => {
-            if p.iden == "every" { true }
+        SemanticTree::NonTerminal(relation) => {
+            if relation.0 == "every" { true }
             else {
-                for a in p.args {
+                for a in relation.1 {
                     if contains_uquant(a) { return true } else { continue }
                 }
                 return false
             }
         }
-        _ => {false}
+        _ => false
     }
 }
 
 // When we handle 'is' predicates, we need to 'unwrap' them. This means we recursively peel
 // out each variable/predicate on the right into props. i.e. is(john, lovely(man)) [] -> is(john) [lovely, man]
-pub fn unwrap(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> (Predicate, Vec<Variable>) {
+pub fn unwrap(mut p: Relation, f: &mut AgdaFile, props: Vec<Token>) -> (Relation, Vec<Token>) {
 
     /* Base Case */
-    if p.iden != "is" || p.args.len() <= 1 { return (p.clone(), props.clone()) }
+    if p.0 != "is" || p.1.len() <= 1 { return (p, props.clone()) }
 
     /* Recursive Case: Get the right-hand side variable/predicate */
-    let mut final_idx = p.args.len() - 1;
-    let mut lastarg = (p.args.clone())[final_idx].clone();
+    let mut final_idx = p.1.len() - 1;
+    let mut lastarg = p.1.last().clone().expect("Expected arguments in relation.");
     match *lastarg.clone() {
 
-        /* If it's a variable, then pop it from the args, and add to props */
-        Var(v) => {
+        /* If it's a predicate, replace with its first variable and move p to props */
+        SemanticTree::NonTerminal(mut relation) => {
+            let inner_arg = relation.1.pop().unwrap();
             let mut new_props = props.clone();
-            new_props.push(v);
-            let _ = p.args.pop();
+            new_props.push(relation.0);
+            p.1[final_idx] = inner_arg;
             return unwrap(p.clone(), f, new_props)
         }
-
-        /* If it's a predicate, replace with its first variable and move p to props */
-        LambdaEntity::Pred(mut inner_p) => {
-            let inner_arg = inner_p.args.pop().unwrap();
+        /* If it's a variable, then pop it from the args, and add to props */
+        SemanticTree::Terminal(token) => {
             let mut new_props = props.clone();
-            new_props.push(Variable{ name: inner_p.iden, id: None });
-            p.args[final_idx] = inner_arg;
+            new_props.push(token);
+            let _ = p.1.pop();
             return unwrap(p.clone(), f, new_props)
         }
         _ => { panic!("There is an `is` predicate that contains something that isn't pred/var.")}
@@ -66,35 +67,35 @@ pub fn unwrap(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> (Pred
 }
 
 
-type QVec = Vec<(Variable, Box<LambdaEntity>)>;
+type QVec = Vec<(Token, Box<SemanticTree>)>;
 
 /// Convert to Prenex Normal Form (i.e. P(T1, T2) -> {(a,T1), (b,T2)} P(a, b) .
-pub fn prenex(p: &mut Predicate, equants: &mut QVec, uquants: &mut QVec) -> () {
+pub fn prenex(p: &mut Relation, equants: &mut QVec, uquants: &mut QVec) -> () {
     /* Factor out UQuantifiers into uquants & EQuantifiers into equants */
-    for i in 0..p.clone().args.len() {
-        let mut arg = p.args.get(i).unwrap();
-        match contains_uquant((arg.clone()).into()) {
+    for i in 0..p.clone().1.len() {
+        let mut arg = p.1.get(i).unwrap();
+        match contains_uquant(arg.clone().into()) {
             true => {
                 /* It's a universal quantifier node! Move into uquants and replace with `a` */
                 /* This is usually in the form every(P(x)) -> P(x)                          */
                 let mut internal = match *arg.clone() {
-                    LambdaEntity::Pred(p) => p.args.get(0).unwrap().clone(),
+                    SemanticTree::NonTerminal(relation) => p.1.get(0).unwrap().clone(),
                     _ => { panic!("Universal Quantification can't unwrap the every.") }
                 };
 
                 uquants.push((
-                    Variable{ name: format!("a{}", to_unicode_subscript(uquants.len() + 1)), id: None },
-                    internal.clone()));
+                    format!("a{}", to_unicode_subscript(uquants.len() + 1)),
+                    Box::new(*internal.clone())));
 
-                p.args[i] = λVar!(format!("a{}", to_unicode_subscript(uquants.len() + 0)));
+                p.1[i] = tToken!(format!("a{}", to_unicode_subscript(uquants.len() + 0)));
             }
             false => {
                 /* It's a existential quantifier node! Move into equants and replace with `e` */
                 equants.push((
-                    Variable{ name: format!("e{}", to_unicode_subscript(equants.len() + 1)), id: None },
-                    Box::from(*(arg.clone()))));
+                    format!("e{}", to_unicode_subscript(equants.len() + 1)),
+                    Box::new(*arg.clone())));
 
-                p.args[i] = λVar!(format!("e{}", to_unicode_subscript(equants.len() + 0)));
+                p.1[i] = tToken!(format!("e{}", to_unicode_subscript(equants.len() + 0)));
             }
         }
     }
@@ -116,13 +117,13 @@ pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaType>>) -> Box
 }
 
 
-pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
+pub fn compose_predicate(relation: Relation, f: &mut AgdaFile, props: Vec<Token>) -> (String, AgdaType) {
 
     let mut is_negated: i32 = 0;
 
 
     /* Handle 'is' cases using unwrapping. */
-    let (mut p, props) = unwrap(p, f, props.clone());
+    let (mut p, props) = unwrap(relation, f, props.clone());
 
 
     /* Prenex Normal Transformation (derive quantifiers and bind anaphora) */
@@ -131,7 +132,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
 
 
     /* Admin (boring) */
-    let mut iden = format!("{}", p.iden);
+    let mut iden = format!("{}", p.0);
     let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
     let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
     let mut symbol_table: HashMap<String, (String, AgdaType)> = HashMap::new();
@@ -143,7 +144,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
      */
     for (identifier, _type) in equants.clone() {
         let pair = compose(_type.clone(), f, vec![]);
-        symbol_table.insert(identifier.clone().name, pair.clone());
+        symbol_table.insert(identifier.clone(), pair.clone());
         fields.push(RecordField(identifier.to_string(), Simple(pair.0.clone())));
     }
 
@@ -153,14 +154,14 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
      */
     for (identifier, _type) in uquants.clone() {
         let pair = compose(_type, f, vec![]);
-        symbol_table.insert(identifier.name, pair);
+        symbol_table.insert(identifier, pair);
     }
 
 
     /* Verify there are no unbound references in the predicate arguments. */
-    let mut var_idens: Vec<String> = p.clone().args.iter().map(
+    let mut var_idens: Vec<String> = p.clone().1.iter().map(
         |arg|  { match *arg.clone() {
-            Var(var) => {var.name}
+            SemanticTree::Terminal(token) => {token}
             _ => { panic!("Predicate still contains non-bound argument.")}
         }}).collect();
 
@@ -176,11 +177,11 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
     /* If there are no Universal Quantifiers, we compose is as a variable using props.
      * This handles cases such as `x is a adj noun`, `x is adj`, `x is noun`.
      */
-    if p.iden == "is" && uquants.is_empty() {
-        match *(p.args.get(0).unwrap().clone()) {
-            Var(v) => {
-                let v_name = symbol_table.get(v.name.as_str()).unwrap().clone().0.replace('ᵣ', "");
-                return compose_variable(Variable { name: v_name, id: None }, f, props)
+    if p.0 == "is" && uquants.is_empty() {
+        match *p.1.get(0).unwrap().clone() {
+            Terminal(v) => {
+                let v_name = symbol_table.get(v.as_str()).unwrap().clone().0.replace('ᵣ', "");
+                return compose_variable(v_name, f, props)
             }
             _ => { panic!("Invalid!") }
         }
@@ -189,23 +190,23 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
     /* Handle `is` cases with some Universal Quantification on the left.
      * This is handled as a Pi Type.
      */
-    else if(p.iden == "is") {
+    else if(p.0 == "is") {
 
         /* Append record fields to the name and constructor name of the record. */
         /* Admin */
-        record_name.extend(props.iter().map(|v| { format!("_{}", v.name) }));
-        constructor_name.extend(props.iter().map(|v| { format!("_{}", v.name) }));
+        record_name.extend(props.iter().map(|v| { format!("_{}", v) }));
+        constructor_name.extend(props.iter().map(|v| { format!("_{}", v) }));
 
         /* In a sentence of `every _ is _` there will be at most 1 every - or it's nonsensical. */
         /* This uquant can also be a compound type i.e. `man` so we get the rec proj. function  */
         let (uquant_iden, _) = uquants.get(0).unwrap();
-        let uquant_projection_function = symbol_table.get(&uquant_iden.name).unwrap().clone().1;
+        let uquant_projection_function = symbol_table.get(uquant_iden).unwrap().clone().1;
 
         let mut returned_proofs: Vec<Box<AgdaType>> = vec![];
         for current_prop in props.clone() {
 
             /* If this `prop` is a not, then we should increase negation by 1 layer. */
-            if current_prop.name == "not" {
+            if current_prop == "not" {
                 is_negated = is_negated + 1;
                 continue;
             }
@@ -225,7 +226,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
              */
             returned_proofs.push(τApp!(τSimp!(rhs_property.clone()),
                         Box::from(replace_innermost_simple(uquant_projection_function.clone(),
-                        Simple(uquant_iden.clone().name)))
+                        Simple(uquant_iden.clone())))
             ));
         }
 
@@ -238,7 +239,7 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
     /* Handles normal predicates */
     else {
         /* Postulate the predicate as a function to Set. */
-        f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(p.args.len())));
+        f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(p.1.len())));
 
         /* Then, `inner` becomes the application of that function to the arguments */
         inner = var_idens.iter().fold(
@@ -256,8 +257,8 @@ pub fn compose_predicate(mut p: Predicate, f: &mut AgdaFile, props: Vec<Variable
      */
     inner = uquants.into_iter().rev()
         .fold(inner, |acc, (current, typ)| {
-            let rec_name = symbol_table.get(&current.name).unwrap().0.clone();
-            τDepFunc!(current.name, τSimp!(rec_name), acc)
+            let rec_name = symbol_table.get(&current).unwrap().0.clone();
+            τDepFunc!(current, τSimp!(rec_name), acc)
         });
 
     /* Store this in the record under `p` */
