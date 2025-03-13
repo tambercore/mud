@@ -181,7 +181,7 @@ pub fn benchmark_pos_tagger(conllu_filepath: &str, lexical_ruleset: &Vec<Lexical
 
 
 
-// Function to analyze a CSV of tagging results
+/// Function to analyze a CSV of tagging results
 pub fn analyze_pos_csv(filepath: &str) {
     // Open the CSV file
     let file = File::open(filepath).expect("Failed to open CSV file");
@@ -234,7 +234,7 @@ pub fn analyze_pos_csv(filepath: &str) {
 
 
 
-// Function to write benchmark data to a CSV file
+/// Function to write benchmark data to a CSV file
 fn save_benchmark_data_to_csv(filepath: &str, data: &Vec<BenchmarkData>) {
     let file = File::create(filepath).expect("Unable to create file");
     let writer = BufWriter::new(file);
