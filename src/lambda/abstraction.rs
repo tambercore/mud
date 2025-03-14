@@ -11,7 +11,7 @@ pub struct Abstraction {
 }
 
 
-/// Implementation of λ-substitution for λ-Abstractions.
+/// Implementation of substitution for λ-Abstractions.
 impl Substitutable for Abstraction {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
 

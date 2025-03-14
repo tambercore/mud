@@ -5,7 +5,7 @@ use crate::ccg::word::CCGWord;
 
 
 
-/// Function to recursively add tags to a 'CCGNode' and its children.
+/// Function to recursively add tags to a [`CCGNode`] and its children.
 fn _insert_tags<I>(old_node: &CCGNode, words_and_tags_iter: &mut I) -> CCGNode where I: Iterator<Item = (String, Wordclass)>,
 {
     /* Recursively insert tags in the children of a `CCGNode`. */
