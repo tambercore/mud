@@ -17,7 +17,7 @@ pub struct Variable {
 
 
 
-/// Implementation of Substitution for [`Variable`]. This is the base case
+/// Implementation of [`Substitutable`] for [`Variable`]. This is the base case
 /// for all substitution in the λ-calculus, and swaps if a match occurs.
 impl Substitutable for Variable {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
@@ -28,7 +28,7 @@ impl Substitutable for Variable {
 
 
 
-/// Implementation of Partial Equality for [`Variable`], states that equality
+/// Implementation of [`Partial Equality`] for [`Variable`], states that equality
 /// of [`Variable`] maps to the equality of the `name` attributes. Additionally,
 /// this states that any non-variable lambda entity is inequal to any [`Variable`].
 impl PartialEq<LambdaEntity> for Variable {
