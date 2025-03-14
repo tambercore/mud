@@ -17,8 +17,8 @@ pub struct Abstraction {
 
 
 /// Implementation of [`Substitutable`] for [`Abstraction`]. This captures the
-/// process of substituting a source λ-term with another λ-term (target)
-/// inside the body of the abstraction. Comparable to β-reduction.
+/// process of substituting a source λ-term with another λ-term (target) inside
+/// the body of the abstraction. Comparable to β-reduction.
 impl Substitutable for Abstraction {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
 
