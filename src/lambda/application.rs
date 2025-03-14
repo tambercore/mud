@@ -5,7 +5,7 @@ use std::fmt::Formatter;
 
 
 
-/// Structure to define [`Application`]/λ-terms. These represent an application
+/// Structure to define [`Application`]/λ-App. These represent an application
 /// in the λ-calculus (λx. e @ t), where one expression is applied to another.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Application {
