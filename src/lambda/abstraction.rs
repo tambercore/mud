@@ -3,6 +3,8 @@ use crate::λAbs;
 use std::fmt;
 use std::fmt::Formatter;
 
+
+
 /// Structure to define [`Abstraction`]/λ-Abs. These represent λ-expressions of
 /// the form (λx. e) in the λ-calculus, where a bound variable is declared with
 /// a body expression that may depend (contain) on that bound variable.
@@ -11,6 +13,7 @@ pub struct Abstraction {
     pub bound_var: Box<LambdaEntity>,
     pub body: Box<LambdaEntity>,
 }
+
 
 
 /// Implementation of [`Substitutable`] for [`Abstraction`]. This captures the
@@ -36,6 +39,7 @@ impl Substitutable for Abstraction {
 }
 
 
+
 /// Implementation of [`PartialEq`] for [`Abstraction`]. States that two [`Abstraction`]s
 /// are equal if they share the same bound variable and the same body expression. Any
 /// non-abstraction is automatically considered unequal.
@@ -48,6 +52,7 @@ impl PartialEq<LambdaEntity> for Abstraction {
 
     }
 }
+
 
 
 /// Implementation of '_pretty print_' for [`Abstraction`]. Used to generate
