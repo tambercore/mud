@@ -2,6 +2,8 @@
 
 
 /* Enumeration to denote Simple & Function types in Agda */
+use crate::composer::langtree::SemanticTree;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum AgdaType {
     Simple(String),
@@ -12,6 +14,25 @@ pub enum AgdaType {
     Product(Box<AgdaType>, Box<AgdaType>)
 }
 
+
+#[macro_export]
+macro_rules! tToken {
+    ($s:expr) => {
+        Box::from(SemanticTree::Terminal($s))
+    };
+}
+#[macro_export]
+macro_rules! tRelation {
+    ($s:expr) => {
+        Box::from(SemanticTree::NonTerminal($s))
+    };
+}
+#[macro_export]
+macro_rules! tJoin {
+    ($s:expr) => {
+        Box::from(SemanticTree::Conj($s))
+    };
+}
 
 #[macro_export]
 macro_rules! τSimp {

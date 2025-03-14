@@ -17,13 +17,14 @@ use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 use crate::composer::compose_predicate::compose_predicate;
 use crate::composer::compose_variable::compose_variable;
+use crate::composer::langtree::{Join, SemanticTree, Token};
 
 pub fn generate_function_header(arity: usize) -> AgdaType {
     if arity == 0 {
-        AgdaType::Simple("Set".to_string())
+        Simple("Set".to_string())
     } else {
         AgdaType::Function(
-            Box::new(AgdaType::Simple("Entity".to_string())),
+            Box::new(Simple("Entity".to_string())),
             Box::new(generate_function_header(arity - 1)),
         )
     }
@@ -50,18 +51,11 @@ pub fn replace_innermost_simple(expr: AgdaType, new_value: AgdaType) -> AgdaType
     }
 }
 
-
-
-
-
-
-
-
-pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, AgdaType) {
+pub fn compose_product(c: Join, f: &mut AgdaFile) -> (String, AgdaType) {
 
     /* Extract projections */
-    let proj1 = c.lhs;
-    let proj2 = c.rhs;
+    let proj1 = c.0;
+    let proj2 = c.1;
 
     let proj1_iden = compose(proj1, f, vec![]);
     let proj2_iden = compose(proj2, f, vec![]);
@@ -95,22 +89,12 @@ pub fn compose_product(c: Conjunction, f: &mut AgdaFile) -> (String, AgdaType) {
 }
 
 
-pub fn compose(e: Box<LambdaEntity>, f: &mut AgdaFile, props: Vec<Variable>) -> (String, AgdaType) {
+pub fn compose(e: Box<SemanticTree>, f: &mut AgdaFile, props: Vec<Token>) -> (String, AgdaType) {
 
     match *e {
-
-        LambdaEntity::App(_) => { panic!("Critical! System failed to compute output.") }
-
-        LambdaEntity::Abs(_) => { panic!("Critical! System failed to compute output.") }
-
-        LambdaEntity::Var(v) => { compose_variable(v, f, props) }
-
-        LambdaEntity::Pred(p) => { compose_predicate(p, f, props) }
-
-        LambdaEntity::Conj(c) => { compose_product(c, f) }
-
-        _ => { panic!("Compose failed.") }
-
+        SemanticTree::NonTerminal(relation) => {compose_predicate(relation, f, props)}
+        SemanticTree::Terminal(token) => {compose_variable(token, f, props)}
+        SemanticTree::Conj(join) => {compose_product(join, f)}
     }
 
 }
