@@ -23,7 +23,8 @@ use crate::composer::langtree::SemanticTree::Terminal;
 pub fn contains_uquant(l: Box<SemanticTree>) -> bool {
     match *l {
         SemanticTree::NonTerminal(relation) => {
-            if relation.0 == "every" { true }
+            if relation.0 == "every" {
+                true }
             else {
                 for a in relation.1 {
                     if contains_uquant(a) { return true } else { continue }
@@ -79,7 +80,7 @@ pub fn prenex(p: &mut Relation, equants: &mut QVec, uquants: &mut QVec) -> () {
                 /* It's a universal quantifier node! Move into uquants and replace with `a` */
                 /* This is usually in the form every(P(x)) -> P(x)                          */
                 let mut internal = match *arg.clone() {
-                    SemanticTree::NonTerminal(relation) => p.1.get(0).unwrap().clone(),
+                    SemanticTree::NonTerminal(relation) => relation.1.get(0).unwrap().clone(),
                     _ => { panic!("Universal Quantification can't unwrap the every.") }
                 };
 
