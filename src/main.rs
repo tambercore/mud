@@ -123,13 +123,13 @@ fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> (AgdaFil
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("a man is socrates");
+    let config = Config::from_args("socrates is a man & every man is mortal -> socrates is mortal");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
     /* If config.server, create an endpoint and wait for client requests. */
     if config.server {
-        create_endpoint().await;
+        create_endpoint(config.output_file).await;
     }
 
     /* Run locally and save agda as a file. */
