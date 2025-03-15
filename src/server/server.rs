@@ -13,6 +13,8 @@ struct SentenceInput {
 #[derive(Debug, Serialize)]
 struct AgdaResponse {
     agda: String,
+    premises: Vec<String>,
+    conclusions: Vec<String>
 }
 
 
@@ -27,8 +29,9 @@ pub async fn create_endpoint() {
         .and(warp::post())
         .and(warp::body::json::<SentenceInput>())
         .map(|input: SentenceInput| {
-            let agda_file = english_to_agda(input.knowledge, input.conclusions).agdaify();
-            warp::reply::json(&AgdaResponse { agda: agda_file })
+            let (agda_str, premises, conclusions) = english_to_agda(input.knowledge, input.conclusions);
+            let agda_file = agda_str.agdaify();
+            warp::reply::json(&AgdaResponse { agda: agda_file, premises: premises, conclusions: conclusions})
         })
         .with(cors);  // Apply CORS to the route
 
