@@ -15,8 +15,21 @@ struct SentenceInput {
 #[derive(Debug, Serialize)]
 struct AgdaResponse {
     agda: String,
-    premises: Vec<String>,
-    conclusions: Vec<String>
+    premises: Vec<AgdaPremise>,
+    conclusions: Vec<AgdaConclusion>
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgdaPremise {
+    pub(crate) text: String,
+    pub(crate) ccg_tree: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AgdaConclusion {
+    pub(crate) text: String,
+    pub(crate) ccg_tree: String,
+    pub(crate) filled: bool
 }
 
 
@@ -33,13 +46,14 @@ pub async fn create_endpoint(output_location: String) {
         .and(warp::post())
         .and(warp::body::json::<SentenceInput>())
         .map(move |input: SentenceInput| {
-            let output_loc = output_location_clone.clone(); // Clone inside closure
+            let output_loc = output_location_clone.clone();
 
-            let (mut agda_file, premises, conclusions) = english_to_agda(input.knowledge, input.conclusions);
+            let (mut agda_file, premises, mut conclusions) = english_to_agda(input.knowledge, input.conclusions);
 
             /* Write to file to fill in the hole. */
-            agda_file.write_to_file(output_loc.clone()); // Clone before using
-            fill_holes(output_loc.clone()); // Clone before using
+            agda_file.write_to_file(output_loc.clone());
+
+            fill_holes(output_loc.clone(), &mut conclusions);
 
             /* Read the file as a string. */
             let agda_str = fs::read_to_string(output_loc).expect("Failed to read file");
