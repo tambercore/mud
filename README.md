@@ -6,7 +6,7 @@
     <img src=".github/assets/Mud-Logo.png" alt="Logo" width="320" height="180">
   </a>
 
-<h1 align="center"><a href="https://github.com/tambercore/mud">Mud</a> for <a href="https://wiki.portal.chalmers.se/agda/pmwiki.php">Agda</a></h1>
+<h1 align="center"><a href="https://github.com/tambercore/mud">Mud Theorem Prover</a></h1>
 
   <p align="center">
     Automatically transform Natural Language into <a href="https://wiki.portal.chalmers.se/agda/pmwiki.php">Agda</a> with <a href="https://github.com/tambercore/hottnat">Mudskip</a> provides a complete symbolic derivation <br> from Natural Language Statements to Agda, using Lambeq, CCG, λ-Calculus, and Dependent Type Theory.
