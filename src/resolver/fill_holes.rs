@@ -2,7 +2,7 @@ use std::{fs, io};
 use std::process::{Command, Stdio, Child, ChildStdin, ChildStdout};
 use std::io::{Write, BufRead, BufReader};
 use serde_json::Value;
-
+use crate::server::server::AgdaConclusion;
 /* Starts Agda in interaction mode and returns the child process. */
 fn start_agda() -> Child {
     Command::new("agda")
@@ -114,7 +114,7 @@ fn replace_holes_in_file(filepath: &str, filled_holes: &Vec<Option<String>>) -> 
 }
 
 /* Main function to fill holes in the Agda file. */
-pub fn fill_holes(filepath: String) {
+pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) {
     let mut agda = start_agda();
     let stdin = agda.stdin.as_mut().expect("Failed to get stdin");
     let stdout = agda.stdout.as_mut().expect("Failed to get stdout");
@@ -134,10 +134,18 @@ pub fn fill_holes(filepath: String) {
         .map(|&hole_id| fill_hole(stdin, stdout, filepath.clone(), hole_id.0))
         .collect();
 
+    /* Update AgdaConclusion based on filled holes */
+    for (i, filled) in filled_holes.iter().enumerate() {
+        if let Some(_) = filled {
+            conclusions[i].filled = true;
+        }
+    }
+
     /* Update the file with holes filled in. */
     let updated_content = replace_holes_in_file(&filepath, &filled_holes);
-    fs::write(filepath, updated_content);
+    fs::write(&filepath, updated_content).expect("Failed to write updated file");
     println!("Updated file with filled holes");
 
     agda.kill().expect("Failed to terminate Agda");
 }
+

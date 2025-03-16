@@ -1,4 +1,4 @@
-use std::{process::Command, fs::File, io::Read};
+use std::{process::Command, fs::File, io::Read, fs};
 use serde_json::Error as SerdeError;
 use crate::brill::wordclass::Wordclass;
 use super::tag_insertion::insert_tags;
@@ -13,7 +13,7 @@ use super::node::{CCGNode};
 /// After executing the Python script, it reads and deserializes the CCG JSON result from `data/temp_ccg_parsed_sentence.json`.
 ///
 /// Returns a `Result` containing the parsed `CCGNode` on success, or an error message if the process fails.
-pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordclass)>) -> CCGNode {
+pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordclass)>) -> (CCGNode, String) {
 
     // Determine the Python executable path based on the OS
     let python_executable = if cfg!(target_os = "windows") {
@@ -31,12 +31,15 @@ pub fn english_to_ccg(sentence: &str, vec_of_words_to_tags: Vec<(String, Wordcla
         .output()
         .map_err(|_| "Failed to execute Python command. Ensure the virtual environment and lambeq are properly installed.");
 
+    /* Read the json file to a String. */
+    let json_string = fs::read_to_string("data/temp_ccg_parsed_sentence.json").expect("Failed to read file");
+
     // Read and parse the resulting JSON file into a CCGNode.
     let original_tree = ccgnode_parse("data/temp_ccg_parsed_sentence.json").expect("Failed to read tree");
 
     let tree = insert_tags(&original_tree, vec_of_words_to_tags);
 
-    tree
+    (tree, json_string)
 }
 
 

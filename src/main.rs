@@ -38,7 +38,7 @@ use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
 use crate::resolver::fill_holes::fill_holes;
-use crate::server::server::create_endpoint;
+use crate::server::server::{create_endpoint, AgdaConclusion, AgdaPremise};
 // use crate::resolver::fill_holes::fill_holes;
 
 // Assuming these types exist in your code:
@@ -55,7 +55,7 @@ static WC_MAPPING: Lazy<Mutex<WordclassMap>> = Lazy::new(|| {
     Mutex::new(initialize_tagger("data/lexicon.txt").unwrap())
 });
 
-fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> (String, AgdaType) {
+fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), String) {
 
     /* Access the global references for the brill tagger! */
     let lexical_ruleset = &*LEXICAL_RULESET;
@@ -67,7 +67,7 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> (String, AgdaType) {
     create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
     println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
 
-    let mut ccg = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
+    let (mut ccg, json_tree) = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
     println!("Lambeq's CCG: \n{}", ccg);
 
     let lambda_expression = ccg_to_lambda(&mut ccg);
@@ -85,31 +85,43 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> (String, AgdaType) {
     let semantic_tree = lambda_to_semantic(Box::from(expanded_expression.clone())).expect("Failed to parse semantic tree.");
 
     let encoded_sentence = compose(Box::from(semantic_tree), f, vec![]);
-    encoded_sentence
+    (encoded_sentence, json_tree)
 }
 
-fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile {
+fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFile, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
 
     /* Initialise the Agda File (get it ready) */
     let mut f = initialise_agda_file();
 
+    /* Initialise an empty vector to hold each premise and conclusion in JSON form. */
+    let mut premises : Vec<AgdaPremise> = Vec::new();
+    let mut conclusions: Vec<AgdaConclusion> = Vec::new();
+
     /* Handle Assumptions */
     let mut encoded_knowledge: KnowledgeBase = vec![];
     for sentence in knowledge {
-        let encoded_sentence = sentence_to_agda(sentence, &mut f);
+        let (encoded_sentence, ccg_json) = sentence_to_agda(sentence.clone(), &mut f);
         encoded_knowledge.push(encoded_sentence);
+
+        /* Collect information about premises into a struct. */
+        let premise = AgdaPremise {text : sentence.clone(), ccg_tree : ccg_json};
+        premises.push(premise);
     }
     compose_kb(encoded_knowledge, &mut f);
 
     /* Handle Conclusions */
     let mut encoded_conclusions: Vec<(String, AgdaType)> = vec![];
-    for conclusion in conclusions {
-        let encoded_conclusion = sentence_to_agda(conclusion, &mut f);
-        encoded_conclusions.push(encoded_conclusion)
+    for derivation in derivations {
+        let (encoded_conclusion, ccg_json) = sentence_to_agda(derivation.clone(), &mut f);
+        encoded_conclusions.push(encoded_conclusion);
+
+        /* Collect information about conclusions into a struct. */
+        let conclusion = AgdaConclusion {text : derivation.clone(), ccg_tree : ccg_json, filled : false};
+        conclusions.push(conclusion);
     }
     compose_conclusions(encoded_conclusions, &mut f);
 
-    f
+    (f, premises, conclusions)
 }
 
 
@@ -117,19 +129,20 @@ fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("every socrates loves big smelly cheese");
+    let config = Config::from_args("every man is mortal & socrates is a man -> socrates is happy & socrates is mortal");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
     /* If config.server, create an endpoint and wait for client requests. */
     if config.server {
-        create_endpoint().await;
+        create_endpoint(config.output_file).await;
     }
 
     /* Run locally and save agda as a file. */
     else {
-        let mut agda_file = english_to_agda(knowledge, conclusions);
+        let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge, conclusions);
         agda_file.write_to_file(config.output_file.clone());
-        fill_holes(config.output_file.clone());
+        fill_holes(config.output_file.clone(), &mut conclusions);
+        println!("conclusions: {:?}", conclusions);
     }
 }
