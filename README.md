@@ -33,6 +33,8 @@ Each _lexeme_ (word) in a natural language statement is assigned a part-of-speec
 1. Words are tagged using a [Brill Tagger](https://en.wikipedia.org/wiki/Brill_tagger), a transformational system.
 2. CCG is generated, each word maps to a _syntactic type_.
 3. Functors in the CCG are converted to λ-Calculus, with types being inferred.
-4. Code is generated to [Agda](https://wiki.portal.chalmers.se/agda/pmwiki.php)
+4. Code is generated (by records) to [Agda](https://wiki.portal.chalmers.se/agda/pmwiki.php)
+5. Agsy (or `auto` tactics) are used to fill the theorem hole, providing a constructive proof.
+   
 ### Contributors
 Mud Theorem Prover is designed, and developed by [Amber Swarbrick](https://github.com/aswarbs/) and [Toby Clark](https://github.com/tobybenjaminclark/) in a joint-disseration for masters in Computer Science under the supervision of [Professor. Thorsten Altenkirch](https://en.wikipedia.org/wiki/Thorsten_Altenkirch) at [University of Nottingham](https://www.nottingham.ac.uk/). If you're interested in contributing, have a question or are interested, please get in touch!
