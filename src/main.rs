@@ -117,7 +117,7 @@ fn english_to_agda(knowledge: Vec<String>, conclusions: Vec<String>) -> AgdaFile
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("every john is not jack");
+    let config = Config::from_args("every socrates loves big smelly cheese");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
