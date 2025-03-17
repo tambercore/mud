@@ -12,7 +12,7 @@ use uuid::Uuid;
 /// A structure to encapsulate a node of hierarchial information returned by `lambeq`.
 /// In the CCG Tree, each `CCGNode` has a `CCGType` and `CCGRule`.
 /// Terminal nodes are associated with words. Non-terminal nodes point to children.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Hash, Eq, PartialEq)]
 pub struct CCGNode {
     #[serde(rename = "type")]
     pub node_type: CCGType,

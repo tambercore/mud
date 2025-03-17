@@ -2,8 +2,8 @@ use std::fmt;
 use serde::{Deserialize, Deserializer};
 use crate::brill::wordclass::Wordclass;
 
+#[derive(Debug, Clone, Hash, Eq)]
 /// Structure to represent a word with its associated part of speech.
-#[derive(Debug, Clone)]
 pub struct CCGWord {
     pub text: String,
     pub tag: Wordclass,
