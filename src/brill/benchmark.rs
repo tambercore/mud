@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::BufWriter;
 use csv::ReaderBuilder;
 use serde::{Deserialize, Serialize};
-//use std::fs::File;
 use super::wordclass::Wordclass;
 use super::conllu_parser::{parse_conllu_file, UPOS}; // Import your custom parser
 use super::brill_tagger::tag_sentence;
@@ -13,51 +12,58 @@ use super::lex_rulespec_id::LexicalRulespec;
 use super::init_tagger::WordclassMap;
 
 
+
+/// Function providing an injective mapping between lexical categories in
+/// `Wordclass` to `UPOS` tags used by `.conllu` benchmark instances.
 pub fn wordclass_to_upos(wordclass: &Wordclass) -> UPOS {
     match wordclass {
-        Wordclass::CC    => UPOS::CCONJ, // Coordinating conjunction
-        Wordclass::CD    => UPOS::NUM,   // Cardinal number
-        Wordclass::DT    => UPOS::DET,   // Determiner
-        Wordclass::FW    => UPOS::X,     // Foreign word
+        Wordclass::CC    => UPOS::CCONJ,        // Coordinating conjunction
+        Wordclass::CD    => UPOS::NUM,          // Cardinal number
+        Wordclass::DT    => UPOS::DET,          // Determiner
+        Wordclass::FW    => UPOS::X,            // Foreign word
         Wordclass::IN    => UPOS::SCONJORADP,   // Preposition or subordinating conjunction
-        Wordclass::JJ    => UPOS::ADJ,   // Adjective
-        Wordclass::JJR   => UPOS::ADJ,   // Comparative adjective
-        Wordclass::JJS   => UPOS::ADJ,   // Superlative adjective
-        Wordclass::LS    => UPOS::X,     // List marker
-        Wordclass::MD    => UPOS::VERB,   // Modal verb
-        Wordclass::NN    => UPOS::NOUN,  // Noun
-        Wordclass::NNS   => UPOS::NOUN,  // Plural noun
-        Wordclass::NNP   => UPOS::PROPN,  // Proper noun
-        Wordclass::NNPS  => UPOS::PROPN,  // Plural proper noun
-        Wordclass::PDT   => UPOS::DET,   // Predeterminer
-        Wordclass::POS   =>UPOS::PART,  // Possessive ending
-        Wordclass::RB    => UPOS::ADV,   // Adverb
-        Wordclass::RBR   => UPOS::ADV,   // Comparative adverb
-        Wordclass::RBS   => UPOS::ADV,   // Superlative adverb
-        Wordclass::RP    => UPOS::PART,  // Particle
-        Wordclass::SYM   => UPOS::SYM,   // Symbol
-        Wordclass::TO    => UPOS::PART,  // Infinitive marker (to)
-        Wordclass::UH    => UPOS::INTJ,  // Interjection
-        Wordclass::VB    => UPOS::VERB,   // Verb
-        Wordclass::VBD   => UPOS::VERB,   // Past tense verb
-        Wordclass::VBG   => UPOS::VERB,   // Gerund/Present participle
-        Wordclass::VBN   => UPOS::VERB,   // Past participle
-        Wordclass::WDT   => UPOS::PRON,   // Wh-determiner
-        Wordclass::WPR   => UPOS::PRON,   // Wh-pronoun
-        Wordclass::WPO   => UPOS::PRON,   // Wh-other pronoun
-        Wordclass::WRB   => UPOS::ADV,    // Wh-adverb
-        Wordclass::PUNC  => UPOS::PUNCT,  // Punctuation
-        Wordclass::EX    => UPOS::ADV,    // Existential "there"
-        Wordclass::PRPO  => UPOS::PRON,   // Possessive pronoun
-        Wordclass::PRPE  => UPOS::PRON,   // Personal pronoun
-        Wordclass::VBP   => UPOS::VERB,    // Present tense verb
-        Wordclass::VBZ   => UPOS::VERB,    // 3rd-person singular verb
-        Wordclass::NUM   => UPOS::NUM,    // Numeral
-        Wordclass::ANY   => UPOS::PROPN,   // Ambiguous, may need clarification in usage
+        Wordclass::JJ    => UPOS::ADJ,          // Adjective
+        Wordclass::JJR   => UPOS::ADJ,          // Comparative adjective
+        Wordclass::JJS   => UPOS::ADJ,          // Superlative adjective
+        Wordclass::LS    => UPOS::X,            // List marker
+        Wordclass::MD    => UPOS::VERB,         // Modal verb
+        Wordclass::NN    => UPOS::NOUN,         // Noun
+        Wordclass::NNS   => UPOS::NOUN,         // Plural noun
+        Wordclass::NNP   => UPOS::PROPN,        // Proper noun
+        Wordclass::NNPS  => UPOS::PROPN,        // Plural proper noun
+        Wordclass::PDT   => UPOS::DET,          // Predeterminer
+        Wordclass::POS   =>UPOS::PART,          // Possessive ending
+        Wordclass::RB    => UPOS::ADV,          // Adverb
+        Wordclass::RBR   => UPOS::ADV,          // Comparative adverb
+        Wordclass::RBS   => UPOS::ADV,          // Superlative adverb
+        Wordclass::RP    => UPOS::PART,         // Particle
+        Wordclass::SYM   => UPOS::SYM,          // Symbol
+        Wordclass::TO    => UPOS::PART,         // Infinitive marker (to)
+        Wordclass::UH    => UPOS::INTJ,         // Interjection
+        Wordclass::VB    => UPOS::VERB,         // Verb
+        Wordclass::VBD   => UPOS::VERB,         // Past tense verb
+        Wordclass::VBG   => UPOS::VERB,         // Gerund/Present participle
+        Wordclass::VBN   => UPOS::VERB,         // Past participle
+        Wordclass::WDT   => UPOS::PRON,         // Wh-determiner
+        Wordclass::WPR   => UPOS::PRON,         // Wh-pronoun
+        Wordclass::WPO   => UPOS::PRON,         // Wh-other pronoun
+        Wordclass::WRB   => UPOS::ADV,          // Wh-adverb
+        Wordclass::PUNC  => UPOS::PUNCT,        // Punctuation
+        Wordclass::EX    => UPOS::ADV,          // Existential "there"
+        Wordclass::PRPO  => UPOS::PRON,         // Possessive pronoun
+        Wordclass::PRPE  => UPOS::PRON,         // Personal pronoun
+        Wordclass::VBP   => UPOS::VERB,         // Present tense verb
+        Wordclass::VBZ   => UPOS::VERB,         // 3rd-person singular verb
+        Wordclass::NUM   => UPOS::NUM,          // Numeral
+        Wordclass::ANY   => UPOS::PROPN,        // Ambiguous, may need clarification in usage
     }
 }
 
-#[derive(Serialize)]  // Enable CSV serialization for the struct
+
+
+/// Structure to encapsulate data about individual tokens in a benchmark
+/// instance. Stores the actual POS, and the assigned POS tag.
+#[derive(Serialize)]
 struct BenchmarkData {
     sentence_id: usize,
     original_word: String,
@@ -67,6 +73,10 @@ struct BenchmarkData {
     match_status: bool,
 }
 
+
+
+/// Structure to encapsulate data about a row in a benchmarking CSV.
+/// Contains the sentence ID, original POS and assigned POS tag.
 #[derive(Debug, Deserialize)]
 struct CsvRow {
     sentence_id: usize,
@@ -77,6 +87,11 @@ struct CsvRow {
     match_status: bool,
 }
 
+
+
+/// Function to benchmark the Brill Tagger implementation, requires a
+/// `LexicalRulespec`, `ContextualRulespec` and a Lexicon, `WordclassMap`.
+/// Returns a `f32` denoting tagger accuracy (0 = 0%, 1 = 100%)
 pub fn benchmark_pos_tagger(conllu_filepath: &str, lexical_ruleset: &Vec<LexicalRulespec>, contextual_ruleset: &HashMap<Wordclass, Vec<ContextualRulespec>>, wc_mapping: &mut WordclassMap) -> f32 {
     // Open the file and create a buffered reader
     let sentences = parse_conllu_file(conllu_filepath).expect("Failed to parse file");
@@ -166,7 +181,7 @@ pub fn benchmark_pos_tagger(conllu_filepath: &str, lexical_ruleset: &Vec<Lexical
 
 
 
-// Function to analyze a CSV of tagging results
+/// Function to analyze a CSV of tagging results
 pub fn analyze_pos_csv(filepath: &str) {
     // Open the CSV file
     let file = File::open(filepath).expect("Failed to open CSV file");
@@ -216,7 +231,10 @@ pub fn analyze_pos_csv(filepath: &str) {
         println!("{} -> {}: {} times", original, predicted, count);
     }
 }
-// Function to write benchmark data to a CSV file
+
+
+
+/// Function to write benchmark data to a CSV file
 fn save_benchmark_data_to_csv(filepath: &str, data: &Vec<BenchmarkData>) {
     let file = File::create(filepath).expect("Unable to create file");
     let writer = BufWriter::new(file);
@@ -230,11 +248,3 @@ fn save_benchmark_data_to_csv(filepath: &str, data: &Vec<BenchmarkData>) {
 
     csv_writer.flush().expect("Failed to flush data");
 }
-
-/*
-#[test]
-fn analyse_csv() {
-    let filepath: &str = "pos_benchmark_results.csv";
-    analyze_pos_csv(filepath);
-}
-*/

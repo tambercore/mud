@@ -52,6 +52,10 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
         AgdaType::Product(item1, item2) => {
             format!("{} × {}", format_agda_type_prec(item1, prec), format_agda_type_prec(item2, prec))
         }
+
+        AgdaType::PropEq(item1, item2) => {
+            format!("{} ≡ {}", format_agda_type_prec(item1, prec), format_agda_type_prec(item2, prec))
+        }
     }
 }
 
@@ -71,14 +75,24 @@ impl AgdaFile {
         let mut code = String::new();
         code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".agda", "")));
         code.push_str( &format!("open import Data.Product\n\n"));
+        code.push_str(&format!("open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)\n\n"));
         code.push_str("postulate\n");
 
-        for PostulateEntry(name, agda_type) in &self.postulate {
-            let typ_str = format_agda_type(agda_type);
-            // Each postulate becomes a line in the Agda output.
+
+        let mut postulate = self.postulate.clone();
+        let (propeqs, regular_postulates): (Vec<_>, Vec<_>) =
+            postulate.into_iter().partition(|entry| matches!(entry.1, AgdaType::PropEq(_, _)));
+
+        for PostulateEntry(name, agda_type) in regular_postulates {
+            let typ_str = format_agda_type(&agda_type);
             code.push_str(&format!("  {} : {}\n", name, typ_str));
         }
-        code.push_str("\n");
+
+        // Handle propositional equalities separately afterward
+        for PostulateEntry(name, agda_type) in propeqs {
+            let typ_str = format_agda_type(&agda_type);
+            code.push_str(&format!("  {} : {}\n", name, typ_str));
+        }
         
         for def in &self.definitions {
             match def {

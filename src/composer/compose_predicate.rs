@@ -1,24 +1,45 @@
+use std::char::MAX;
+use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::ptr::eq;
 use crate::ccg::rule::CCGRule;
 use crate::composer::postulate::{initialise_agda_file, AgdaFile, AgdaStructure, DefinitionInserter, PostulateEntry, PostulateInserter};
 use crate::composer::record::{RecordDefinition, RecordField};
 use crate::composer::structures::{AgdaType};
-use crate::composer::structures::AgdaType::{Application, Simple};
+use crate::composer::structures::AgdaType::{Application, PropEq, Simple};
 use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τRecProj, τSimp};
+use crate::{astApply, astLambda, astTerm, tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
+use crate::composer::ast_format::format_agda_ast;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 use crate::composer::compose_variable::compose_variable;
+use crate::composer::function_def::FunctionDefinition;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
 use crate::composer::langtree::{Relation, SemanticTree, Token};
 use crate::composer::langtree::SemanticTree::Terminal;
+use crate::composer::postulate::AgdaStructure::FunctionDef;
+use crate::wordnet::interface::{get_meanings, init_wordnet};
+use crate::wordnet::wordnode::Wordnode;
+use crate::composer::ast::*;
+use crate::composer::synonym_handler::handle_synonyms;
+
+
+
+pub fn add_describer(current_prop: Token, f: &mut AgdaFile) {
+
+    /* Add the describer as an Adjective */
+    let mut property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
+    f.insert_postulate(PostulateEntry(property.clone(), generate_function_header(1)));
+    handle_synonyms(current_prop.as_str(), f);
+}
+
+
 
 pub fn contains_uquant(l: Box<SemanticTree>) -> bool {
     match *l {
@@ -217,7 +238,7 @@ pub fn compose_predicate(relation: Relation, f: &mut AgdaFile, props: Vec<Token>
              * a proof of this property for the given entity.
              */
             let mut rhs_property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
-            f.insert_postulate(PostulateEntry(rhs_property.clone(), generate_function_header(1)));
+            add_describer(current_prop, f);
 
 
             /* This constructs the `property` returned in the dependent function. If the current property `current_prop`
