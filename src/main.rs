@@ -30,6 +30,8 @@ use crate::composer::structures::AgdaType;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use attohttpc::header::SERVER;
+use colored::Colorize;
+use crossterm::style::Stylize;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
@@ -66,6 +68,9 @@ static WORDS_IN_EXISTENCE: Lazy<Mutex<HashSet<String>>> = Lazy::new(|| {
 
 fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), String) {
 
+    show_header(&format!("Processing Sentence '{}'", sentence));
+    let brill_task_id = create_task(1, "Assigning POS Tags w/ Brill");
+
     /* Access the global references for the brill tagger! */
     let lexical_ruleset = &*LEXICAL_RULESET;
     let contextual_ruleset = &*CONTEXTUAL_RULESET;
@@ -74,7 +79,11 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
     let possible_tags = get_sentence_tags(&sentence, &mut wc_mapping);
     let vec_of_word_tag_tuples = tag_sentence(&sentence, lexical_ruleset, contextual_ruleset, &mut wc_mapping);
     create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
-    println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
+
+    update_task(brill_task_id);
+
+    let lc_task_id = create_task(1, "Converting CCG to λ-Calculus");
+    // println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
 
     let (mut ccg, json_tree) = if SERVER_RUNNING.load(Ordering::SeqCst) {
         let ccg = SENTENCE_TO_CCG.read().unwrap().iter().find(|(s, _)| *s == sentence).map(|(_, ccg)| ccg.clone()).expect("Failed to map sentence to ccg.");
@@ -84,29 +93,57 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
         english_to_ccg(&sentence, vec_of_word_tag_tuples.clone())
     };
 
-    println!("Lambeq's CCG: \n{}", ccg);
-
     let lambda_expression = ccg_to_lambda(&mut ccg);
-    println!("Result: \n{}", lambda_expression);
+    //println!("Result: \n{}", lambda_expression);
+    update_task(lc_task_id);
 
+    let lc_task_id2 = create_task(1, "β-Reduction, η-Reduction & Expansions");
     let reduction = (*lambda_expression).beta_reduce();
-    println!("\n\nReduces to: \n{}", reduction);
+    //println!("\n\nReduces to: \n{}", reduction);
 
     let eta_reduction = (reduction).eliminate_leftovers();
-    println!("\n\nEta Reduces to: \n{}", eta_reduction);
+    //println!("\n\nEta Reduces to: \n{}", eta_reduction);
 
     let expanded_expression: Box<LambdaEntity> = Box::from(eta_reduction.expand());
-    println!("\n\nExpands to: {}", expanded_expression);
+    //println!("\n\nExpands to: {}", expanded_expression);
+    update_task(lc_task_id2);
 
+    let semtree_id = create_task(1, "Converting to Semantic Tree");
     let semantic_tree = lambda_to_semantic(Box::from(expanded_expression.clone())).expect("Failed to parse semantic tree.");
+    update_task(semtree_id);
 
+
+    let agda_id = create_task(1, "Generating Agda Constructs");
     let encoded_sentence = compose(Box::from(semantic_tree), f, vec![]);
+    update_task(agda_id);
+    println!("");
+
+    show_header(&format!("Displaying CCG Derivation for '{}'", sentence));
+    println!("{}", ccg);
+
     (encoded_sentence, json_tree)
 }
 
 
 
 fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFile, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
+
+    println!();
+    print!("\x1b[38;5;130m[mud]\x1b[0m \x1b[1m{}\x1b[0m", "");
+    print!(" Welcome to the \x1b[38;5;130mMud Theorem Prover\x1b[0m");
+    println!("!");
+    println!(" ⋅ It seems you have given me some {}, and {},", Colorize::purple("Premises"), Colorize::blue("Conclusions"));
+    println!(" ⋅ I will try my best to construct this as a proof in {}.", (Colorize::underline(Colorize::cyan("Agda"))));
+    println!(" ⋅ Here's exactly what I am going to try and prove.");
+
+    for (i, item) in knowledge.iter().enumerate() {
+        println!(" ⋅ {}   →   '{}'", (Colorize::purple(format!("Premise {}   ", i+1).as_str())), Colorize::italic(item.as_str()));
+    }
+
+    for (i, item) in derivations.iter().enumerate() {
+        println!(" ⋅ {}   →   '{}'", (Colorize::blue(format!("Hypothesis {}", i+1).as_str())), Colorize::italic(item.as_str()));
+    }
+    println!();
 
     show_header("Initializing Dependencies & Preprocessing");
 
@@ -146,6 +183,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
         SERVER_RUNNING.store(true, Ordering::SeqCst);
     }
     update_task(ccg_task_id);
+    println!("");
 
     /* Initialise the Agda File (get it ready) */
     let mut f = initialise_agda_file();
@@ -164,7 +202,6 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
         let premise = AgdaPremise {text : sentence.clone(), ccg_tree : ccg_json};
         premises.push(premise);
     }
-    compose_kb(encoded_knowledge, &mut f);
 
     /* Handle Conclusions */
     let mut encoded_conclusions: Vec<(String, AgdaType)> = vec![];
@@ -176,7 +213,15 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
         let conclusion = AgdaConclusion {text : derivation.clone(), ccg_tree : ccg_json, filled : false};
         conclusions.push(conclusion);
     }
+
+    show_header("Generating Agda Code & Writing File");
+    let kb_task = create_task(1, "Composing Premises to Agda (KB).");
+    compose_kb(encoded_knowledge, &mut f);
+    update_task(kb_task);
+
+    let cc_task = create_task(1, "Composing Conclusions to Agda.");
     compose_conclusions(encoded_conclusions, &mut f);
+    update_task(cc_task);
 
     (f, premises, conclusions)
 }
@@ -193,9 +238,16 @@ async fn main() {
         create_endpoint(config.output_file).await;
     } else {
         let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge.clone(), conclusions.clone());
+
+        let write_tsk = create_task(1, "Writing to Agda File.");
         agda_file.write_to_file(config.output_file.clone());
+        update_task(write_tsk);
+
+        let hole_tsk = create_task(1, "Synthesise Holes with Agsy.");
         fill_holes(config.output_file.clone(), &mut conclusions);
-        println!("conclusions: {:?}", conclusions);
+        update_task(hole_tsk);
+
+        // println!("\n\nconclusions: {:?}", conclusions);
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally
     }
 }
