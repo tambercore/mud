@@ -1,4 +1,3 @@
-
 use super::category::CCGType;
 use nom::{
     branch::alt,
@@ -12,7 +11,7 @@ use nom::multi::many0;
 
 
 
-// Helper function to parse atomic categories
+/// Function to parse atomic categories into CCGTypes.
 fn parse_atomic(input: &str) -> IResult<&str, CCGType> {
     alt((
         map(tag("s"), |_| CCGType::Sentence),
@@ -28,21 +27,21 @@ fn parse_atomic(input: &str) -> IResult<&str, CCGType> {
 
 
 
-// Parser for the backslash operator '\'
+/// Parser for the backslash operator '\'
 pub fn parse_backwards_functor(left: CCGType, right: CCGType) -> CCGType {
     CCGType::BackwardsFunctor(Box::new(left), Box::new(right))
 }
 
 
 
-// Parser for the forward slash operator '/'
+/// Parser for the forward slash operator '/'
 pub fn parse_forward_functor(left: CCGType, right: CCGType) -> CCGType {
     CCGType::ForwardsFunctor(Box::new(left), Box::new(right))
 }
 
 
 
-// The main parser that handles operators and precedence
+/// Function to parse CCGRules, handles operators and precedence.
 pub fn parse_category(input: &str) -> IResult<&str, CCGType> {
     let mut atom = alt((
         delimited(
@@ -53,16 +52,16 @@ pub fn parse_category(input: &str) -> IResult<&str, CCGType> {
         parse_atomic,
     ));
 
-    // Parse an operator and the next atom
+    /* Parse an operator and the next atom */
     let operator = preceded(multispace0, alt((char('\\'), char('/'))));
 
-    // First, parse the initial atom
+    /* First, parse the initial atom */
     let (input, initial) = atom(input)?;
 
-    // Then, parse zero or more (operator, atom) pairs
+    /* Then, parse zero or more (operator, atom) pairs */
     let (input, ops) = many0(pair(operator, atom))(input)?;
 
-    // Now, fold the operations manually into the AST
+    /* Now, fold the operations manually into the AST */
     let acc = ops.into_iter().fold(initial, |acc, (op, right)| {
         match op {
             '\\' => parse_backwards_functor(acc, right),
