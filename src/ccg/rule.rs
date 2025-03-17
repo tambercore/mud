@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 /// Structure to represent rules in the CCG, matching `lambeq`'s CCGRule Structure.
 /// For more information, see: https://docs.quantinuum.com/lambeq/root-api.html#lambeq.CCGRule.
-    #[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize)]
+    #[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize, Hash)]
     pub enum CCGRule {
         #[serde(rename = "BA")]
         BackwardApplication,

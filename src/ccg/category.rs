@@ -4,7 +4,7 @@ use crate::ccg::type_parser::parse_category;
 
 /// Structure to represent types in the CCG, matching `lambeq`'s CCGType Structure.
 /// For more information, see: https://docs.quantinuum.com/lambeq/root-api.html#lambeq.CCGType.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CCGType {
     ForwardsFunctor(Box<CCGType>, Box<CCGType>),
     BackwardsFunctor(Box<CCGType>, Box<CCGType>),

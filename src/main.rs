@@ -9,14 +9,15 @@ mod command_line;
 mod server;
 mod resolver;
 
-
-
+use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicBool, Ordering};
+use serde::{Deserialize, Serialize};
+use warp::Filter;
 use crate::brill::brill_tagger::{get_sentence_tags, tag_sentence};
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::brill::utils::{create_tag_mapping, TAG_MAPPING};
-use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
@@ -25,25 +26,21 @@ use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
 use crate::composer::knowledge_base::{compose_kb, KnowledgeBase};
 use crate::composer::structures::AgdaType;
+// use crate::server::server::create_endpoint;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+use attohttpc::header::SERVER;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
+use crate::ccg::lambeq_parser::{sentences_to_ccg_hashsets, SENTENCE_TO_CCG, SENTENCE_TO_JSON};
+use crate::ccg::sentence_parser::english_to_ccg;
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::{create_endpoint, AgdaConclusion, AgdaPremise};
 use crate::wordnet::interface::init_wordnet;
-
-
-
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
-use std::collections::{HashMap, HashSet};
-use serde::{Deserialize, Serialize};
-use warp::Filter;
-
-
 
 // Assuming these types exist in your code:
 struct LexicalRuleset { /* ... */ }
@@ -61,6 +58,7 @@ static WC_MAPPING: Lazy<Mutex<WordclassMap>> = Lazy::new(|| {
     Mutex::new(initialize_tagger("data/lexicon.txt").unwrap())
 });
 
+static SERVER_RUNNING: AtomicBool = AtomicBool::new(false);
 static WORDS_IN_EXISTENCE: Lazy<Mutex<HashSet<String>>> = Lazy::new(|| {
     Mutex::new(HashSet::new())
 });
@@ -77,7 +75,14 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
     create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
     println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
 
-    let (mut ccg, json_tree) = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
+    let (mut ccg, json_tree) = if SERVER_RUNNING.load(Ordering::SeqCst) {
+        let ccg = SENTENCE_TO_CCG.read().unwrap().iter().find(|(s, _)| *s == sentence).map(|(_, ccg)| ccg.clone()).expect("Failed to map sentence to ccg.");
+        let json_tree = SENTENCE_TO_JSON.read().unwrap().iter().find(|(s, _)| *s == sentence).map(|(_, json)| json.clone()).expect("Failed to map sentence to json.");
+        (ccg, json_tree)
+    } else {
+        english_to_ccg(&sentence, vec_of_word_tag_tuples.clone())
+    };
+
     println!("Lambeq's CCG: \n{}", ccg);
 
     let lambda_expression = ccg_to_lambda(&mut ccg);
@@ -158,22 +163,30 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
 
 
 
+
 #[tokio::main]
 async fn main() {
     let config = Config::from_args("every man is fast & john is man -> john is quick");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
-    /* If config.server, create an endpoint and wait for client requests. */
-    if config.server {
-        create_endpoint(config.output_file).await;
+    let sentences: Vec<String> = knowledge.clone().into_iter().chain(conclusions.clone().into_iter()).collect();
+
+    if let Err(err) = sentences_to_ccg_hashsets(sentences) {
+        eprintln!("Failed to parse sentences into CCG: {}", err);
+        SERVER_RUNNING.store(false, Ordering::SeqCst);
+    } else {
+        SERVER_RUNNING.store(true, Ordering::SeqCst);
     }
 
-    /* Run locally and save agda as a file. */
-    else {
-        let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge, conclusions);
+    if config.server {
+        create_endpoint(config.output_file).await;
+    } else {
+        let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge.clone(), conclusions.clone());
         agda_file.write_to_file(config.output_file.clone());
         fill_holes(config.output_file.clone(), &mut conclusions);
         println!("conclusions: {:?}", conclusions);
+        SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally
     }
 }
+
