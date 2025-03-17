@@ -34,7 +34,7 @@ use std::sync::Mutex;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
-use crate::ccg::lambeq_parser::sentences_to_ccgs;
+use crate::ccg::lambeq_parser::{sentences_to_ccg_hashsets, sentences_to_ccg_hashsets_async, SENTENCE_TO_CCG, SENTENCE_TO_JSON};
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
@@ -69,6 +69,10 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
     println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
 
     let (mut ccg, json_tree) = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
+
+    let mut ccg = SENTENCE_TO_CCG.read().unwrap().iter().find(|(s, _)| *s == sentence.clone()).map(|(_, ccg)| ccg.clone()).expect("Failed to map sentence to ccg.");
+    let json_tree = SENTENCE_TO_JSON.read().unwrap().iter().find(|(s, _)| *s == sentence.clone()).map(|(_, json)| json.clone()).expect("Failed to map sentence to json.");
+
     println!("Lambeq's CCG: \n{}", ccg);
 
     let lambda_expression = ccg_to_lambda(&mut ccg);
@@ -133,16 +137,23 @@ async fn main() {
     let config = Config::from_args("every man is mortal & socrates is a man -> socrates is happy & socrates is mortal");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
-    let knowledge_ccg = sentences_to_ccgs(knowledge);
-g
-    /* If config.server, create an endpoint and wait for client requests. */
+
+    /* Combine knowledge and conclusions */
+    let sentences: Vec<String> = knowledge.clone().into_iter().chain(conclusions.clone().into_iter()).collect();
+
+    /* Use `.await` since `sentences_to_ccg_hashsets` is now async */
+    if let Err(err) = sentences_to_ccg_hashsets_async(sentences).await {
+        eprintln!("Failed to parse sentences into CCG: {}", err);
+        return;
+    }
+
+    /* If config.server, create an endpoint and wait for client requests */
     if config.server {
         create_endpoint(config.output_file).await;
     }
-
-    /* Run locally and save agda as a file. */
+    /* Run locally and save Agda as a file */
     else {
-        let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge, conclusions);
+        let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge.clone(), conclusions.clone());
         agda_file.write_to_file(config.output_file.clone());
         fill_holes(config.output_file.clone(), &mut conclusions);
         println!("conclusions: {:?}", conclusions);

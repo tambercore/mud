@@ -17,4 +17,7 @@ uuid = { version = "1.12.1", features = ["v4"] }
 clap = "4.5.31"
 tokio = { version = "1.43.0", features = ["full"] }
 warp="*"
-reqwest = { version = "0.12.14", features = ["json"] }
+lazy_static = "1.5.0"
+
+reqwest = { version = "*" , features = ["blocking", "json"] }
+anyhow = "1.0.97"

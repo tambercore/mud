@@ -2,7 +2,7 @@ use std::fmt;
 use serde::{Deserialize, Deserializer};
 use crate::brill::wordclass::Wordclass;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, Eq)]
 pub struct CCGWord {
     pub text: String,
     pub tag: Wordclass
