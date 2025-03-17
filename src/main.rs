@@ -110,6 +110,15 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
     /* Initialize Wordnet */
     init_wordnet();
 
+    /* Initialise the CCG and JSON representations of each sentence. */
+    let sentences: Vec<String> = knowledge.clone().into_iter().chain(derivations.clone().into_iter()).collect();
+    if let Err(err) = sentences_to_ccg_hashsets(sentences) {
+        eprintln!("Failed to parse sentences into CCG: {}", err);
+        SERVER_RUNNING.store(false, Ordering::SeqCst);
+    } else {
+        SERVER_RUNNING.store(true, Ordering::SeqCst);
+    }
+
     /* Compute and update the global words in existence */
     let mut knowledge_mut = knowledge.clone();
     knowledge_mut.extend(derivations.clone());
@@ -169,15 +178,6 @@ async fn main() {
     let config = Config::from_args("every man is fast & john is man -> john is quick");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
-
-    let sentences: Vec<String> = knowledge.clone().into_iter().chain(conclusions.clone().into_iter()).collect();
-
-    if let Err(err) = sentences_to_ccg_hashsets(sentences) {
-        eprintln!("Failed to parse sentences into CCG: {}", err);
-        SERVER_RUNNING.store(false, Ordering::SeqCst);
-    } else {
-        SERVER_RUNNING.store(true, Ordering::SeqCst);
-    }
 
     if config.server {
         create_endpoint(config.output_file).await;
