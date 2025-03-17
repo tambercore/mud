@@ -1,4 +1,4 @@
-``#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 A REST API server that uses lambeq's BobcatParser to parse sentences into CCG trees.
 

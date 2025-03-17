@@ -17,7 +17,6 @@ use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::brill::utils::{create_tag_mapping, TAG_MAPPING};
-use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
@@ -34,7 +33,7 @@ use std::sync::Mutex;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
-use crate::ccg::lambeq_parser::{sentences_to_ccg_hashsets, sentences_to_ccg_hashsets_async, SENTENCE_TO_CCG, SENTENCE_TO_JSON};
+use crate::ccg::lambeq_parser::{sentences_to_ccg_hashsets, SENTENCE_TO_CCG, SENTENCE_TO_JSON};
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
@@ -67,8 +66,6 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
     let vec_of_word_tag_tuples = tag_sentence(&sentence, lexical_ruleset, contextual_ruleset, &mut wc_mapping);
     create_tag_mapping(possible_tags, vec_of_word_tag_tuples.clone());
     println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
-
-    let (mut ccg, json_tree) = english_to_ccg(&sentence, vec_of_word_tag_tuples.clone());
 
     let mut ccg = SENTENCE_TO_CCG.read().unwrap().iter().find(|(s, _)| *s == sentence.clone()).map(|(_, ccg)| ccg.clone()).expect("Failed to map sentence to ccg.");
     let json_tree = SENTENCE_TO_JSON.read().unwrap().iter().find(|(s, _)| *s == sentence.clone()).map(|(_, json)| json.clone()).expect("Failed to map sentence to json.");
@@ -141,8 +138,7 @@ async fn main() {
     /* Combine knowledge and conclusions */
     let sentences: Vec<String> = knowledge.clone().into_iter().chain(conclusions.clone().into_iter()).collect();
 
-    /* Use `.await` since `sentences_to_ccg_hashsets` is now async */
-    if let Err(err) = sentences_to_ccg_hashsets_async(sentences).await {
+    if let Err(err) = sentences_to_ccg_hashsets(sentences) {
         eprintln!("Failed to parse sentences into CCG: {}", err);
         return;
     }
