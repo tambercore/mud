@@ -18,7 +18,7 @@ pub fn sentences_to_ccg_hashsets(sentences: Vec<String>) -> Result<()> {
 
     /* Construct the JSON payload with the "sentences" field */
     let payload = json!({ "sentences": sentences });
-    println!("payload: {}", payload);
+    // println!("payload: {}", payload);
 
     /* Send the POST request */
     let response = attohttpc::post(url)

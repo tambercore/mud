@@ -35,6 +35,7 @@ use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
 use crate::ccg::lambeq_parser::{sentences_to_ccg_hashsets, SENTENCE_TO_CCG, SENTENCE_TO_JSON};
 use crate::ccg::sentence_parser::english_to_ccg;
+use crate::command_line::output_handler::{create_task, show_header, update_task};
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
@@ -107,18 +108,14 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
 
 fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFile, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
 
+    show_header("Initializing Dependencies & Preprocessing");
+
     /* Initialize Wordnet */
+    let wordnet_task_id = create_task(1, "Initializing Wordnet.");
     init_wordnet();
+    update_task(wordnet_task_id);
 
-    /* Initialise the CCG and JSON representations of each sentence. */
-    let sentences: Vec<String> = knowledge.clone().into_iter().chain(derivations.clone().into_iter()).collect();
-    if let Err(err) = sentences_to_ccg_hashsets(sentences) {
-        eprintln!("Failed to parse sentences into CCG: {}", err);
-        SERVER_RUNNING.store(false, Ordering::SeqCst);
-    } else {
-        SERVER_RUNNING.store(true, Ordering::SeqCst);
-    }
-
+    let global_wordset_task_id = create_task(1, "Computing Global Wordset.");
     /* Compute and update the global words in existence */
     let mut knowledge_mut = knowledge.clone();
     knowledge_mut.extend(derivations.clone());
@@ -136,6 +133,19 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
         let mut global_words = WORDS_IN_EXISTENCE.lock().unwrap();
         *global_words = new_words_in_existence;
     }
+    update_task(global_wordset_task_id);
+
+
+    /* Initialise the CCG and JSON representations of each sentence. */
+    let ccg_task_id = create_task(1, "Initializing CCG Trees with Lambeq.");
+    let sentences: Vec<String> = knowledge.clone().into_iter().chain(derivations.clone().into_iter()).collect();
+    if let Err(err) = sentences_to_ccg_hashsets(sentences) {
+        // eprintln!("Failed to parse sentences into CCG: {}", err);
+        SERVER_RUNNING.store(false, Ordering::SeqCst);
+    } else {
+        SERVER_RUNNING.store(true, Ordering::SeqCst);
+    }
+    update_task(ccg_task_id);
 
     /* Initialise the Agda File (get it ready) */
     let mut f = initialise_agda_file();
