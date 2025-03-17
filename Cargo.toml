@@ -20,3 +20,5 @@ warp="*"
 lazy_static = "1.5.0"
 attohttpc = { version = "*", features = ["json"] }
 anyhow = "1.0.97"
+colored = "3.0.0"
+crossterm = "*"

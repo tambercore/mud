@@ -41,6 +41,14 @@ use crate::lambda::etalike::Eliminator;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::{create_endpoint, AgdaConclusion, AgdaPremise};
 use crate::wordnet::interface::init_wordnet;
+use once_cell::sync::Lazy;
+use std::sync::{Arc, Mutex};
+use std::collections::{HashMap, HashSet};
+use std::thread::sleep;
+use std::time::Duration;
+use serde::{Deserialize, Serialize};
+use warp::Filter;
+use crate::command_line::output_handler::{create_task, show_header, update_task, Progress};
 
 // Assuming these types exist in your code:
 struct LexicalRuleset { /* ... */ }
@@ -189,4 +197,3 @@ async fn main() {
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally
     }
 }
-
