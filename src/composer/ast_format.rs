@@ -1,4 +1,3 @@
-use crate::composer::structures::{AgdaType};
 use crate::composer::ast::AgdaAst;
 
 
