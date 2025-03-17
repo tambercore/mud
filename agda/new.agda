@@ -60,5 +60,11 @@ record QuickJohnᵣ : Set where
 
 
 thm₁ : KnowledgeBaseᵣ → QuickJohnᵣ
-thm₁ = {!   !}
+thm₁ = λ z →
+  QuickJohn꜀ (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+  (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.p₁)
+  (fast_syn_quick_pointwise (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+   (z .KnowledgeBaseᵣ.j₁ .IsManFastᵣ.p
+    (Man꜀ (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+     (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.p₀))))
 

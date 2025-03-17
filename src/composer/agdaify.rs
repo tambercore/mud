@@ -78,12 +78,21 @@ impl AgdaFile {
         code.push_str(&format!("open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)\n\n"));
         code.push_str("postulate\n");
 
-        for PostulateEntry(name, agda_type) in &self.postulate {
-            let typ_str = format_agda_type(agda_type);
-            // Each postulate becomes a line in the Agda output.
+
+        let mut postulate = self.postulate.clone();
+        let (propeqs, regular_postulates): (Vec<_>, Vec<_>) =
+            postulate.into_iter().partition(|entry| matches!(entry.1, AgdaType::PropEq(_, _)));
+
+        for PostulateEntry(name, agda_type) in regular_postulates {
+            let typ_str = format_agda_type(&agda_type);
             code.push_str(&format!("  {} : {}\n", name, typ_str));
         }
-        code.push_str("\n");
+
+        // Handle propositional equalities separately afterward
+        for PostulateEntry(name, agda_type) in propeqs {
+            let typ_str = format_agda_type(&agda_type);
+            code.push_str(&format!("  {} : {}\n", name, typ_str));
+        }
         
         for def in &self.definitions {
             match def {
