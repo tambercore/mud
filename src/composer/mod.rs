@@ -13,3 +13,4 @@ mod compose_variable;
 pub mod langtree;
 mod ast;
 mod ast_format;
+mod synonym_handler;
