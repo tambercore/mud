@@ -34,6 +34,7 @@ use std::sync::Mutex;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
+use crate::ccg::lambeq_parser::sentences_to_ccgs;
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
@@ -132,7 +133,8 @@ async fn main() {
     let config = Config::from_args("every man is mortal & socrates is a man -> socrates is happy & socrates is mortal");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
-
+    let knowledge_ccg = sentences_to_ccgs(knowledge);
+g
     /* If config.server, create an endpoint and wait for client requests. */
     if config.server {
         create_endpoint(config.output_file).await;
