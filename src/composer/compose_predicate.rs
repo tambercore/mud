@@ -11,7 +11,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τRecProj, τSimp};
+use crate::{tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τRecProj, τSimp, WORDS_IN_EXISTENCE};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
@@ -28,25 +28,39 @@ pub enum SynsetStrategy {
     Ignore, BestMatch, AllMeanings
 }
 
+pub enum SynsetRelevancyStrategy {
+    Ignore, Relevant, All
+}
+
 pub fn handle_synonyms(property: &str, f: &mut AgdaFile) {
 
-    println!("Handling Synonyms for {property}");
-
     let SYNSTRAT: SynsetStrategy = SynsetStrategy::AllMeanings;
+    let SYNRELEVANT: SynsetRelevancyStrategy = SynsetRelevancyStrategy::Relevant;
 
-    /* Handle Synonyms & Synsets */
     if let SynsetStrategy::Ignore = SYNSTRAT { return; }
 
-    init_wordnet();
     let wordnet_neighbours = get_meanings(property).unwrap_or_default();
-    for wordnode in wordnet_neighbours {
-        println!("Wordnode Neighbour of Mortal: {wordnode}");
 
+    let words_in_existence_snapshot = {
+        let words_in_existence = WORDS_IN_EXISTENCE.lock().unwrap();
+        words_in_existence.clone()
+    };
+
+    for wordnode in wordnet_neighbours {
         for synonym in wordnode.synonyms {
-            println!("Synonym of {property} is {synonym}");
-            let mut is_property = convert_case(format!("is_{}", property).as_str(), CaseStyle::CamelCase);
-            let mut is_synonym = convert_case(format!("is_{}", synonym).as_str(), CaseStyle::CamelCase);
-            f.insert_postulate(PostulateEntry(format!("{}_syn_{}", property, synonym), Simple(format!("{is_property} ≡ {is_synonym}"))));
+
+            if matches!(SYNRELEVANT, SynsetRelevancyStrategy::Relevant) && !words_in_existence_snapshot.contains(&synonym) {
+                continue;
+            } else {
+                let is_property = convert_case(format!("is_{}", property).as_str(), CaseStyle::CamelCase);
+                let is_synonym = convert_case(format!("is_{}", synonym).as_str(), CaseStyle::CamelCase);
+
+                println!("Adding : {property} ≡ {synonym}");
+                f.insert_postulate(PostulateEntry(
+                    format!("{}_syn_{}", property, synonym),
+                    Simple(format!("{is_property} ≡ {is_synonym}")),
+                ));
+            }
         }
         if let SynsetStrategy::BestMatch = SYNSTRAT { return; }
     }
