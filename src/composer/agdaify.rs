@@ -71,6 +71,7 @@ impl AgdaFile {
         let mut code = String::new();
         code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".agda", "")));
         code.push_str( &format!("open import Data.Product\n\n"));
+        code.push_str(&format!("open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)\n\n"));
         code.push_str("postulate\n");
 
         for PostulateEntry(name, agda_type) in &self.postulate {

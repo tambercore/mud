@@ -1,3 +1,5 @@
+use std::char::MAX;
+use std::cmp::PartialEq;
 use std::collections::HashMap;
 use std::ptr::eq;
 use crate::ccg::rule::CCGRule;
@@ -19,6 +21,44 @@ use crate::composer::compose_variable::compose_variable;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
 use crate::composer::langtree::{Relation, SemanticTree, Token};
 use crate::composer::langtree::SemanticTree::Terminal;
+use crate::wordnet::interface::{get_meanings, init_wordnet};
+use crate::wordnet::wordnode::Wordnode;
+
+pub enum SynsetStrategy {
+    Ignore, BestMatch, AllMeanings
+}
+
+pub fn handle_synonyms(property: &str, f: &mut AgdaFile) {
+
+    println!("Handling Synonyms for {property}");
+
+    let SYNSTRAT: SynsetStrategy = SynsetStrategy::AllMeanings;
+
+    /* Handle Synonyms & Synsets */
+    if let SynsetStrategy::Ignore = SYNSTRAT { return; }
+
+    init_wordnet();
+    let wordnet_neighbours = get_meanings(property).unwrap_or_default();
+    for wordnode in wordnet_neighbours {
+        println!("Wordnode Neighbour of Mortal: {wordnode}");
+
+        for synonym in wordnode.synonyms {
+            println!("Synonym of {property} is {synonym}");
+            let mut is_property = convert_case(format!("is_{}", property).as_str(), CaseStyle::CamelCase);
+            let mut is_synonym = convert_case(format!("is_{}", synonym).as_str(), CaseStyle::CamelCase);
+            f.insert_postulate(PostulateEntry(format!("{}_syn_{}", property, synonym), Simple(format!("{is_property} ≡ {is_synonym}"))));
+        }
+        if let SynsetStrategy::BestMatch = SYNSTRAT { return; }
+    }
+}
+
+pub fn add_describer(current_prop: Token, f: &mut AgdaFile) {
+
+    /* Add the describer as an Adjective */
+    let mut property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
+    f.insert_postulate(PostulateEntry(property.clone(), generate_function_header(1)));
+    handle_synonyms(current_prop.as_str(), f);
+}
 
 pub fn contains_uquant(l: Box<SemanticTree>) -> bool {
     match *l {
@@ -217,7 +257,7 @@ pub fn compose_predicate(relation: Relation, f: &mut AgdaFile, props: Vec<Token>
              * a proof of this property for the given entity.
              */
             let mut rhs_property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
-            f.insert_postulate(PostulateEntry(rhs_property.clone(), generate_function_header(1)));
+            add_describer(current_prop, f);
 
 
             /* This constructs the `property` returned in the dependent function. If the current property `current_prop`
