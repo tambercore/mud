@@ -9,9 +9,8 @@ mod command_line;
 mod server;
 mod resolver;
 
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
-use warp::Filter;
+
+
 use crate::brill::brill_tagger::{get_sentence_tags, tag_sentence};
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
@@ -21,16 +20,11 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
-use crate::monty::typing_context::{reset_typing_context, TYPING_CONTEXT};
 use crate::composer::postulate::{initialise_agda_file, AgdaFile};
-use crate::composer::agdaify::*;
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
 use crate::composer::knowledge_base::{compose_kb, KnowledgeBase};
 use crate::composer::structures::AgdaType;
-// use crate::server::server::create_endpoint;
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
@@ -39,7 +33,17 @@ use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::{create_endpoint, AgdaConclusion, AgdaPremise};
-// use crate::resolver::fill_holes::fill_holes;
+use crate::wordnet::interface::init_wordnet;
+
+
+
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+use std::collections::{HashMap, HashSet};
+use serde::{Deserialize, Serialize};
+use warp::Filter;
+
+
 
 // Assuming these types exist in your code:
 struct LexicalRuleset { /* ... */ }
@@ -48,11 +52,17 @@ struct ContextualRuleset { /* ... */ }
 static LEXICAL_RULESET: Lazy<Vec<LexicalRulespec>> = Lazy::new(|| {
     parse_lexical_ruleset("data/rulefile_lexical.txt").unwrap()
 });
+
 static CONTEXTUAL_RULESET: Lazy<HashMap<Wordclass, Vec<ContextualRulespec>>> = Lazy::new(|| {
     parse_contextual_ruleset("data/rulefile_contextual.txt").unwrap()
 });
+
 static WC_MAPPING: Lazy<Mutex<WordclassMap>> = Lazy::new(|| {
     Mutex::new(initialize_tagger("data/lexicon.txt").unwrap())
+});
+
+static WORDS_IN_EXISTENCE: Lazy<Mutex<HashSet<String>>> = Lazy::new(|| {
+    Mutex::new(HashSet::new())
 });
 
 fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), String) {
@@ -89,6 +99,27 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
 }
 
 fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFile, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
+
+    /* Initialize Wordnet */
+    init_wordnet();
+
+    /* Compute and update the global words in existence */
+    let mut knowledge_mut = knowledge.clone();
+    knowledge_mut.extend(derivations.clone());
+
+    /* Wrap in a codeblock to release deadlock on global_words */
+    {
+        /* todo: Update this to use the post-contraction versions */
+        let new_words_in_existence: HashSet<String> = knowledge_mut
+            .iter()
+            .flat_map(|s| s.split_whitespace())
+            .map(String::from)
+            .collect();
+
+        /* Lock the mutex and update the set */
+        let mut global_words = WORDS_IN_EXISTENCE.lock().unwrap();
+        *global_words = new_words_in_existence;
+    }
 
     /* Initialise the Agda File (get it ready) */
     let mut f = initialise_agda_file();
@@ -129,7 +160,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("every man is mortal & socrates is a man -> socrates is happy & socrates is mortal");
+    let config = Config::from_args("every man is fast & john is man -> john is quick");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 

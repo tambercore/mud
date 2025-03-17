@@ -1,8 +1,8 @@
-module new where
+module mortal where
 
 open import Data.Product
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)
 
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)
 
 postulate
   Entity : Set
@@ -10,10 +10,8 @@ postulate
   isFast : Entity → Set
   isJohn : Entity → Set
   isQuick : Entity → Set
-  fast_syn_quick : isFast ≡ isQuick
 
-fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
-fast_syn_quick_pointwise = λ (e) → λ (m) → subst (λ (X) → X e) fast_syn_quick m
+  fast_syn_quick : isFast ≡ isQuick
 
 
 record Manᵣ : Set where
@@ -21,6 +19,10 @@ record Manᵣ : Set where
   field
     e₁ : Entity
     p₁ : isMan e₁
+
+{- Derive an explicit pointwise equality for Fast = Quick -}
+fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
+fast_syn_quick_pointwise = λ (e) → λ (m) → subst (λ (X) → X e) fast_syn_quick m
 
 
 record IsManFastᵣ : Set where
@@ -61,10 +63,10 @@ record QuickJohnᵣ : Set where
 
 thm₁ : KnowledgeBaseᵣ → QuickJohnᵣ
 thm₁ = λ z →
-  QuickJohn꜀ (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
-  (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.p₁)
-  (fast_syn_quick_pointwise (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
-   (z .KnowledgeBaseᵣ.j₁ .IsManFastᵣ.p
-    (Man꜀ (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
-     (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.p₀))))
+    QuickJohn꜀ (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+    (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.p₁)
+    (fast_syn_quick_pointwise (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+     (z .KnowledgeBaseᵣ.j₁ .IsManFastᵣ.p
+      (Man꜀ (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+       (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.p₀))))
 
