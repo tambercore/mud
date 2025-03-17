@@ -52,6 +52,10 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
         AgdaType::Product(item1, item2) => {
             format!("{} × {}", format_agda_type_prec(item1, prec), format_agda_type_prec(item2, prec))
         }
+
+        AgdaType::PropEq(item1, item2) => {
+            format!("{} ≡ {}", format_agda_type_prec(item1, prec), format_agda_type_prec(item2, prec))
+        }
     }
 }
 

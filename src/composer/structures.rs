@@ -9,6 +9,7 @@ pub enum AgdaType {
     Simple(String),
     Function(Box<AgdaType>, Box<AgdaType>),
     DepFunc(String, Box<AgdaType>, Box<AgdaType>),
+    PropEq(Box<AgdaType>, Box<AgdaType>),
     Application(Box<AgdaType>, Box<AgdaType>),
     RecordProj(Box<AgdaType>, Box<AgdaType>),
     Product(Box<AgdaType>, Box<AgdaType>)
@@ -45,6 +46,13 @@ macro_rules! τSimp {
 macro_rules! τFunc {
     ($from:expr, $to:expr) => {
         Box::from(AgdaType::Function($from, $to))
+    };
+}
+
+#[macro_export]
+macro_rules! τPropEq {
+    ($from:expr, $to:expr) => {
+        Box::from(AgdaType::PropEq($from, $to))
     };
 }
 

@@ -111,7 +111,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
             .map(String::from)
             .collect();
 
-        // Lock the mutex and update the set
+        /* Lock the mutex and update the set
         let mut global_words = WORDS_IN_EXISTENCE.lock().unwrap();
         *global_words = new_words_in_existence;
     }

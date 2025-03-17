@@ -6,12 +6,12 @@ use crate::ccg::rule::CCGRule;
 use crate::composer::postulate::{initialise_agda_file, AgdaFile, AgdaStructure, DefinitionInserter, PostulateEntry, PostulateInserter};
 use crate::composer::record::{RecordDefinition, RecordField};
 use crate::composer::structures::{AgdaType};
-use crate::composer::structures::AgdaType::{Application, Simple};
+use crate::composer::structures::AgdaType::{Application, PropEq, Simple};
 use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τRecProj, τSimp, WORDS_IN_EXISTENCE};
+use crate::{tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::lambda::conjunction::Conjunction;
@@ -24,13 +24,19 @@ use crate::composer::langtree::SemanticTree::Terminal;
 use crate::wordnet::interface::{get_meanings, init_wordnet};
 use crate::wordnet::wordnode::Wordnode;
 
+
+
 pub enum SynsetStrategy {
     Ignore, BestMatch, AllMeanings
 }
 
+
+
 pub enum SynsetRelevancyStrategy {
     Ignore, Relevant, All
 }
+
+
 
 pub fn handle_synonyms(property: &str, f: &mut AgdaFile) {
 
@@ -49,6 +55,7 @@ pub fn handle_synonyms(property: &str, f: &mut AgdaFile) {
     for wordnode in wordnet_neighbours {
         for synonym in wordnode.synonyms {
 
+            /* Often, it's possible to prune the search by only looking for other words used in the sentence */
             if matches!(SYNRELEVANT, SynsetRelevancyStrategy::Relevant) && !words_in_existence_snapshot.contains(&synonym) {
                 continue;
             } else {
@@ -58,13 +65,15 @@ pub fn handle_synonyms(property: &str, f: &mut AgdaFile) {
                 println!("Adding : {property} ≡ {synonym}");
                 f.insert_postulate(PostulateEntry(
                     format!("{}_syn_{}", property, synonym),
-                    Simple(format!("{is_property} ≡ {is_synonym}")),
+                    *τPropEq!(τSimp!(is_property), τSimp!(is_synonym)),
                 ));
             }
         }
         if let SynsetStrategy::BestMatch = SYNSTRAT { return; }
     }
 }
+
+
 
 pub fn add_describer(current_prop: Token, f: &mut AgdaFile) {
 
@@ -73,6 +82,8 @@ pub fn add_describer(current_prop: Token, f: &mut AgdaFile) {
     f.insert_postulate(PostulateEntry(property.clone(), generate_function_header(1)));
     handle_synonyms(current_prop.as_str(), f);
 }
+
+
 
 pub fn contains_uquant(l: Box<SemanticTree>) -> bool {
     match *l {
