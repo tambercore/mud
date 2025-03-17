@@ -12,16 +12,15 @@ postulate
   isQuick : Entity → Set
   fast_syn_quick : isFast ≡ isQuick
 
+fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
+fast_syn_quick_pointwise = λ (e) → λ (m) → subst (λ (X) → X e) fast_syn_quick m
+
 
 record Manᵣ : Set where
   constructor Man꜀
   field
     e₁ : Entity
     p₁ : isMan e₁
-
-
-fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
-fast_syn_quick_pointwise = λ (e) → λ (m) → subst (λ (X) → X e) fast_syn_quick m
 
 
 record IsManFastᵣ : Set where
