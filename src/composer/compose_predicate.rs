@@ -11,18 +11,22 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
+use crate::{astApply, astLambda, astTerm, tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
+use crate::composer::ast_format::format_agda_ast;
 use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 use crate::composer::compose_variable::compose_variable;
+use crate::composer::function_def::FunctionDefinition;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
 use crate::composer::langtree::{Relation, SemanticTree, Token};
 use crate::composer::langtree::SemanticTree::Terminal;
+use crate::composer::postulate::AgdaStructure::FunctionDef;
 use crate::wordnet::interface::{get_meanings, init_wordnet};
 use crate::wordnet::wordnode::Wordnode;
+use crate::composer::ast::*;
 
 
 
@@ -35,7 +39,6 @@ pub enum SynsetStrategy {
 pub enum SynsetRelevancyStrategy {
     Ignore, Relevant, All
 }
-
 
 
 pub fn handle_synonyms(property: &str, f: &mut AgdaFile) {
@@ -63,10 +66,51 @@ pub fn handle_synonyms(property: &str, f: &mut AgdaFile) {
                 let is_synonym = convert_case(format!("is_{}", synonym).as_str(), CaseStyle::CamelCase);
 
                 println!("Adding : {property} ≡ {synonym}");
+                let equality_identifier: String = format!("{}_syn_{}", property, synonym);
                 f.insert_postulate(PostulateEntry(
-                    format!("{}_syn_{}", property, synonym),
-                    *τPropEq!(τSimp!(is_property), τSimp!(is_synonym)),
+                    equality_identifier.clone(),
+                    *τPropEq!(τSimp!(is_property.clone()), τSimp!(is_synonym.clone())),
                 ));
+
+                let ast = astLambda!(
+                    String::from("e"),
+                    astLambda!(
+                        String::from("m"),
+                        astApply!(
+                            astApply!(
+                                astTerm!(String::from("subst")),
+                                astLambda!(
+                                    String::from("X"),
+                                    astApply!(astTerm!(String::from("X")), astTerm!(String::from("e")))
+                                )
+                            ),
+                            astApply!(
+                                astTerm!(equality_identifier.clone()),
+                                astTerm!(String::from("m"))
+                            )
+                        )
+                    )
+                );
+                let type_header =
+                    τDepFunc!(
+                    "e".parse().unwrap(), τSimp!("Entity".parse().unwrap()),
+                    τFunc!(τApp!(τSimp!(is_property), τSimp!("e".parse().unwrap())), τApp!(τSimp!(is_synonym),  τSimp!("e".parse().unwrap())))
+                );
+
+                f.insert_definition(FunctionDef(FunctionDefinition {
+                    function_name: (*format!("{}_syn_{}_pointwise", property, synonym)).parse().unwrap(),
+                    function_type: *type_header,
+                    function_body: *ast,
+                }));
+
+                /* Derive a Pointwise Equality Function from this Equality */
+                // MortalPerishablePointwise : (e : Entity) → isMortal e → isPerishable e
+                // MortalPerishablePointwise e m = subst (λ X → X e) eqMortalPerishable m
+
+                // make an ast here following this general form:
+                // {property}_{synonym}_pointwise = lambda e -> lambda m -> subst ( lambda X to X e) {property}_syn_{synonym}
+
+
             }
         }
         if let SynsetStrategy::BestMatch = SYNSTRAT { return; }

@@ -1,3 +1,4 @@
+use crate::composer::ast::AgdaAst;
 use crate::composer::function_def::FunctionDefinition;
 use crate::composer::postulate::{AgdaFile, AgdaStructure, DefinitionInserter};
 use crate::composer::structures::AgdaType;
@@ -11,6 +12,7 @@ pub fn compose_conclusions(conclusions: Vec<(String, AgdaType)>, f: &mut AgdaFil
         let func = FunctionDefinition{
             function_name: format!("thm{}", to_unicode_subscript(assumtion_index)),
             function_type: AgdaType::Function(Box::from(Simple("KnowledgeBaseᵣ".parse().unwrap())), Box::from(Simple(conc_name))),
+            function_body: AgdaAst::Term(String::from("?"))
         };
         assumtion_index = assumtion_index + 1;
         f.insert_definition(AgdaStructure::FunctionDef(func));

@@ -9,9 +9,8 @@ mod command_line;
 mod server;
 mod resolver;
 
-use std::collections::{HashMap, HashSet};
-use serde::{Deserialize, Serialize};
-use warp::Filter;
+
+
 use crate::brill::brill_tagger::{get_sentence_tags, tag_sentence};
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::init_tagger::{initialize_tagger, WordclassMap};
@@ -26,8 +25,6 @@ use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
 use crate::composer::knowledge_base::{compose_kb, KnowledgeBase};
 use crate::composer::structures::AgdaType;
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
@@ -37,7 +34,15 @@ use crate::lambda::etalike::Eliminator;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::{create_endpoint, AgdaConclusion, AgdaPremise};
 use crate::wordnet::interface::init_wordnet;
-use once_cell::sync::OnceCell;
+
+
+
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+use std::collections::{HashMap, HashSet};
+use serde::{Deserialize, Serialize};
+use warp::Filter;
+
 
 
 // Assuming these types exist in your code:
@@ -111,7 +116,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
             .map(String::from)
             .collect();
 
-        /* Lock the mutex and update the set
+        /* Lock the mutex and update the set */
         let mut global_words = WORDS_IN_EXISTENCE.lock().unwrap();
         *global_words = new_words_in_existence;
     }

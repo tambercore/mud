@@ -1,15 +1,18 @@
 module mortal where
 
 open import Data.Product
+
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)
 
 postulate
   Entity : Set
   isMan : Entity → Set
-  isMortal : Entity → Set
-  isPerishable : Entity → Set
-  isSocrates : Entity → Set
-  eqMortalPerishable :  isMortal ≡ isPerishable
+  isFast : Entity → Set
+  isJohn : Entity → Set
+  isQuick : Entity → Set
+
+  fast_syn_quick : isFast ≡ isQuick
+
 
 record Manᵣ : Set where
   constructor Man꜀
@@ -17,64 +20,53 @@ record Manᵣ : Set where
     e₁ : Entity
     p₁ : isMan e₁
 
-record IsManMortalᵣ : Set where
-  constructor IsManMortal꜀
+{- Derive an explicit pointwise equality for Fast = Quick -}
+fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
+fast_syn_quick_pointwise = λ (e) → λ (m) → subst (λ (X) → X e) fast_syn_quick m
+
+
+record IsManFastᵣ : Set where
+  constructor IsManFast꜀
   field
-    p : (a₁ : Manᵣ) → isMortal (Manᵣ.e₁ a₁)
+    p : (a₁ : Manᵣ) → isFast (Manᵣ.e₁ a₁)
 
 
-record Socratesᵣ : Set where
-  constructor Socrates꜀
-  field
-    e₁ : Entity
-    p₁ : isSocrates e₁
-
-
-record ManSocratesᵣ : Set where
-  constructor ManSocrates꜀
+record Johnᵣ : Set where
+  constructor John꜀
   field
     e₁ : Entity
-    p₁ : isSocrates e₁
+    p₁ : isJohn e₁
+
+
+record ManJohnᵣ : Set where
+  constructor ManJohn꜀
+  field
+    e₁ : Entity
+    p₁ : isJohn e₁
     p₀ : isMan e₁
 
 
 record KnowledgeBaseᵣ : Set where
   constructor KnowledgeBase꜀
   field
-    j₁ : IsManMortalᵣ
-    j₂ : ManSocratesᵣ
+    j₁ : IsManFastᵣ
+    j₂ : ManJohnᵣ
 
 
-record MortalSocratesᵣ : Set where
-  constructor MortalSocrates꜀
+record QuickJohnᵣ : Set where
+  constructor QuickJohn꜀
   field
     e₁ : Entity
-    p₁ : isSocrates e₁
-    p₀ : isMortal e₁
+    p₁ : isJohn e₁
+    p₀ : isQuick e₁
 
-record PerishableSocrates : Set where
-  constructor mkPerishableSocrates
-  field
-    e₁ : Entity
-    p₁ : isSocrates e₁
-    p₀ : isPerishable e₁
 
-thm₁ : KnowledgeBaseᵣ → MortalSocratesᵣ
+thm₁ : KnowledgeBaseᵣ → QuickJohnᵣ
 thm₁ = λ z →
-  MortalSocrates꜀ (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.e₁)
-  (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.p₁)
-  (z .KnowledgeBaseᵣ.j₁ .IsManMortalᵣ.p
-   (Man꜀ (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.e₁)
-    (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.p₀)))
+    QuickJohn꜀ (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+    (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.p₁)
+    (fast_syn_quick_pointwise (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+     (z .KnowledgeBaseᵣ.j₁ .IsManFastᵣ.p
+      (Man꜀ (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.e₁)
+       (z .KnowledgeBaseᵣ.j₂ .ManJohnᵣ.p₀))))
 
-{-
-    The issue here is that Agsy doesn't recognise `subst`
--}
-thm₂ : KnowledgeBaseᵣ → PerishableSocrates
-thm₂ = λ z →
-    mkPerishableSocrates (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.e₁)
-    (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.p₁)
-    (eqMortalPerishable (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.e₁)
-     (z .KnowledgeBaseᵣ.j₁ .IsManMortalᵣ.p
-      (Man꜀ (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.e₁)
-       (z .KnowledgeBaseᵣ.j₂ .ManSocratesᵣ.p₀))))

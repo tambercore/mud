@@ -1,74 +1,64 @@
-
 module new where
 
-{-
+open import Data.Product
 
-postulate: 
-{"x1": "amber", "x0": "fruit", , "x6": "amber", 'Entity' : 'Set'}
-
-reduced expression: 
-Σ(a: Amber) ( Π(x5 : Cake) (likes(a, x5)) x Σ(x0 : Fruit) (likes(x1, a)) )
-
-expanded expression: Π(x5:) (likes(x6, x5)) ^ Σ(x0) (likes(x1, x0))
-
-knwoledge toby will need to get this to work
-
-know that fruit is a  set
-know that amber is a  set
-know that cake is a  set
-
---
-the context in a dependent sum or product is just the bound variable -- i said this amber
-
-in the bound expression of a given Pi Type, the local context extends the heirarchial parent with the bound variable and it's type.
-
-John likes cake
-john : Entity , entity : set, likes: 
-
-
-Σ(a: Amber) → ( Π(x5 : Cake) (likes(a, x5)) x Σ(x0 : Fruit) (likes(x1, a)) )
-                                    ^   Gamma here
-
-
-element of (x1 : amber)
-x1 is a element of amber
-
-THIS IS A TYPE
-Σ(x1: Amber) → ( Π(x5 : Cake) (likes(a, x5)) x Σ(x0 : Fruit) (likes(x1, a)) )
-
-
-AN ELEMENT OF THIS IS A FUNCTION TAKING PROOF OF AMBER TO PROOF THAT THAT AMBER LIKES CAKE AND PROOF THAT THAT AMBER LIKES A FRUIT
-
-|   =   ( <x5, cake> <a, Amber>)
- 
--}
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)
 
 postulate
-    "x1": "amber"
-    "x0": "fruit"
-    "x5": "cake
-    "x6": "amber"
-    'Entity' : 'Set'
+  Entity : Set
+  isMan : Entity → Set
+  isFast : Entity → Set
+  isJohn : Entity → Set
+  isQuick : Entity → Set
+  fast_syn_quick : isFast ≡ isQuick
 
-  isFruit : Entity → Set
+record Manᵣ : Set where
+  constructor Man꜀
+  field
+    e₁ : Entity
+    p₁ : isMan e₁
 
 
-record Fruit : Set where
-    constructor fruit
-    field
-        e₁ : Entity
-        proofFruit : isFruit e₁
+fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
+fast_syn_quick_pointwise = λ (e) → λ (m) → subst (λ (X) → X e) fast_syn_quick m
 
-record Amber : Set where
-    constructor fruit
-    field
-        e₁ : Entity
-        proofFruit : isFruit e₁
 
-record Fruit : Set where
-    constructor fruit
-    field
-        e₁ : Entity
-        proofFruit : isFruit e₁
+record IsManFastᵣ : Set where
+  constructor IsManFast꜀
+  field
+    p : (a₁ : Manᵣ) → isFast (Manᵣ.e₁ a₁)
 
--- Π(x5) (likes(x6, x5)) ^ Σ(x0) (likes(x1, x0))
+
+record Johnᵣ : Set where
+  constructor John꜀
+  field
+    e₁ : Entity
+    p₁ : isJohn e₁
+
+
+record ManJohnᵣ : Set where
+  constructor ManJohn꜀
+  field
+    e₁ : Entity
+    p₁ : isJohn e₁
+    p₀ : isMan e₁
+
+
+record KnowledgeBaseᵣ : Set where
+  constructor KnowledgeBase꜀
+  field
+    j₁ : IsManFastᵣ
+    j₂ : ManJohnᵣ
+
+
+record QuickJohnᵣ : Set where
+  constructor QuickJohn꜀
+  field
+    e₁ : Entity
+    p₁ : isJohn e₁
+    p₀ : isQuick e₁
+
+
+thm₁ : KnowledgeBaseᵣ → QuickJohnᵣ
+thm₁ = {!   !}
+
