@@ -1,6 +1,8 @@
 use std::io::{stdout, Write};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+use std::sync::OnceLock;
+
 
 
 /// Structure to encapsulate a singular [`Task`], representing something in the
@@ -121,12 +123,15 @@ impl Progress {
     }
 }
 
-// --- Global Progress Object ---
 
-use std::sync::OnceLock;
 
+/// Progress is managed through the [`GLOBAL_PROGRESS`] instance, which saves having to pass
+/// [`Progress`] objects around the entire program.
 static GLOBAL_PROGRESS: OnceLock<Mutex<Progress>> = OnceLock::new();
 
+
+
+/// Function to get the [`GLOBAL_PROGRESS`] instance (_static_ lifetime).
 fn get_global_progress() -> &'static Mutex<Progress> {
     GLOBAL_PROGRESS.get_or_init(|| Mutex::new(Progress::new()))
 }
@@ -151,7 +156,7 @@ pub fn update_task(id: usize) {
 
 
 
-/// Functon to display a formatted header with the [mud] prefix.
+/// Function to display a formatted header with the [mud] prefix.
 pub fn show_header(header: &str) {
     /*
      * \x1b[38;5;130m   sets a brown tone.
