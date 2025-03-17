@@ -9,7 +9,7 @@ mod command_line;
 mod server;
 mod resolver;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
 use warp::Filter;
@@ -41,16 +41,6 @@ use crate::lambda::etalike::Eliminator;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::{create_endpoint, AgdaConclusion, AgdaPremise};
 use crate::wordnet::interface::init_wordnet;
-
-
-
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
-use std::collections::{HashMap, HashSet};
-use serde::{Deserialize, Serialize};
-use warp::Filter;
-
-
 
 // Assuming these types exist in your code:
 struct LexicalRuleset { /* ... */ }
