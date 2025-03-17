@@ -5,6 +5,8 @@ use std::fmt;
 use std::fmt::Formatter;
 use crate::lambda::variable::Variable;
 
+
+
 /// Structure to define Conjunctions e.g. a ^ b
 #[derive(Clone, Debug, PartialEq)]
 pub struct Conjunction {

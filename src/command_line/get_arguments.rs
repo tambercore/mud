@@ -1,5 +1,8 @@
 use clap::{Arg, Command};
 
+
+
+/// Structure to store configuration settings parsed from command-line arguments.
 pub struct Config {
     pub knowledge: Vec<String>,
     pub conclusions: Vec<String>,
@@ -7,7 +10,10 @@ pub struct Config {
     pub server: bool,
 }
 
+
+
 impl Config {
+    /// Function to parse command-line arguments and create a `Config` instance.
     pub fn from_args(default_sentence: &str) -> Self {
         let matches = Command::new("mudskip")
             .about("Mudskip provides a complete symbolic derivation from Natural Language Statements to Agda, using Lambeq, CCG, λ-Calculus, and Dependent Type Theory.")
@@ -21,7 +27,7 @@ impl Config {
                 .short('s')
                 .long("server")
                 .help("Run as a server")
-                .action(clap::ArgAction::SetTrue)) // This makes it a boolean flag
+                .action(clap::ArgAction::SetTrue))
             .arg(Arg::new("output")
                 .short('o')
                 .long("output")
@@ -58,6 +64,7 @@ impl Config {
 
         let output_file = matches.get_one::<String>("output").unwrap().to_string();
 
+        /* Validate that the output file has a .agda extension */
         if !output_file.ends_with(".agda") {
             eprintln!("Error: Output file must have a .agda extension.");
             std::process::exit(1);
@@ -67,12 +74,20 @@ impl Config {
     }
 }
 
-/* Parse input of form ... & ... & ... -> ... & ..., into lists of premises and conclusions. */
+
+
+/// Function to parse an input string into lists of premises and conclusions.
 pub fn parse_input(input: String) -> Result<(Vec<String>, Vec<String>), String> {
     let parts: Vec<&str> = input.split("->").collect();
+
     match parts.len() {
-        1 => Ok((parts[0].split('&').map(|s| s.trim().to_string()).collect(), vec![])),
+        1 => Ok((
+            /* Split premises by '&' and trim whitespace */
+            parts[0].split('&').map(|s| s.trim().to_string()).collect(),
+            vec![]
+        )),
         2 => Ok((
+            /* Split premises and conclusions by '&' and trim whitespace */
             parts[0].split('&').map(|s| s.trim().to_string()).collect(),
             parts[1].split('&').map(|s| s.trim().to_string()).collect(),
         )),

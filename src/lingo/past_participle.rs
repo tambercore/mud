@@ -5,13 +5,16 @@ use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use crate::lingo::verb_conjugation::apply_conjugation_rules;
 
+
+
 /// Static variable to hold the irregular verb mappings, parsed from `data/irregular_verbs.txt`.
+/// The HashMap stores the base verb as the key and its past participle as the value.
 static IRREGULAR_VERBS: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
     let mut map = HashMap::new();
     let file = File::open("data/irregular_verbs.txt").expect("File not found");
     let reader = io::BufReader::new(file);
 
-    // Parse the file
+    /* Parse the file and populate the HashMap with verb mappings */
     for line in reader.lines() {
         let line = line.expect("Failed to read line");
         let parts: Vec<&str> = line.split_whitespace().collect();
@@ -26,24 +29,28 @@ static IRREGULAR_VERBS: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| {
 
 
 
-/// Function to get the past participle of a verb
+/// Function to get the past participle of a verb.
+/// If the verb is irregular, it retrieves the past participle from the static map.
+/// Otherwise, it applies regular conjugation rules to form the past participle.
 pub fn get_past_participle(verb: String) -> String {
 
-    // Checking if the word is irregular, as the rules don't apply to irregular verbs.
+    /* Checking if the word is irregular, as the rules don't apply to irregular verbs. */
     let map = IRREGULAR_VERBS.lock().expect("Failed to lock map");
     if let Some(past_participle) = map.get(verb.as_str()) {
         return past_participle.clone();
     }
 
-    // The verb is regular, so we can apply generic conjugation rules.
+    /* The verb is regular, so we can apply generic conjugation rules. */
     return apply_conjugation_rules(verb);
 }
 
 
 
+/// Test function to validate the correctness of `get_past_participle` function.
+/// It checks various verbs (both regular and irregular) and compares the result with expected participles.
 #[test]
 fn test_get_past_participle() {
-    // Create a vector of test cases with verbs and their expected past participles
+    /* Create a vector of test cases with verbs and their expected past participles */
     let test_cases = vec![
         ("eat", "eaten"),
         ("play", "played"),
@@ -72,7 +79,7 @@ fn test_get_past_participle() {
         ("kick", "kicked"),
     ];
 
-    // Iterate through the test cases and assert the expected result
+    /* Iterate through the test cases and assert the expected result */
     for (verb, expected_participle) in test_cases {
         assert_eq!(get_past_participle(verb.to_string()), expected_participle);
     }

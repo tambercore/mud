@@ -3,7 +3,11 @@ use crate::λAbs;
 use std::fmt;
 use std::fmt::Formatter;
 
-/// Structure to define λ-Abstractions (λx. e)
+
+
+/// Structure to define [`Abstraction`]/λ-Abs. These represent λ-expressions of
+/// the form (λx. e) in the λ-calculus, where a bound variable is declared with
+/// a body expression that may depend (contain) on that bound variable.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Abstraction {
     pub bound_var: Box<LambdaEntity>,
@@ -11,7 +15,10 @@ pub struct Abstraction {
 }
 
 
-/// Implementation of λ-substitution for λ-Abstractions.
+
+/// Implementation of [`Substitutable`] for [`Abstraction`]. This captures the
+/// process of substituting a source λ-term with another λ-term (target) inside
+/// the body of the abstraction. Comparable to β-reduction.
 impl Substitutable for Abstraction {
     fn substitute(&self, source: &LambdaEntity, target: &LambdaEntity) -> Box<LambdaEntity> {
 
@@ -32,7 +39,10 @@ impl Substitutable for Abstraction {
 }
 
 
-/// Implementation of Partial Equality, used for substitution.
+
+/// Implementation of [`PartialEq`] for [`Abstraction`]. States that two [`Abstraction`]s
+/// are equal if they share the same bound variable and the same body expression. Any
+/// non-abstraction is automatically considered unequal.
 impl PartialEq<LambdaEntity> for Abstraction {
     fn eq(&self, other: &LambdaEntity) -> bool {
         match other {
@@ -44,7 +54,9 @@ impl PartialEq<LambdaEntity> for Abstraction {
 }
 
 
-/// Implementation of Pretty Print for Abstractions
+
+/// Implementation of '_pretty print_' for [`Abstraction`]. Used to generate
+/// displays of larger λ-calculus expressions, follows `agda` syntax.
 impl fmt::Display for Abstraction {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "(λ{} → {})", self.bound_var, self.body)
