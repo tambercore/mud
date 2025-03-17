@@ -1,8 +1,8 @@
 module new where
 
 open import Data.Product
-
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)
+
 
 postulate
   Entity : Set
@@ -11,6 +11,7 @@ postulate
   isJohn : Entity → Set
   isQuick : Entity → Set
   fast_syn_quick : isFast ≡ isQuick
+
 
 record Manᵣ : Set where
   constructor Man꜀

@@ -1,8 +1,11 @@
 use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::composer::postulate::{AgdaFile, DefinitionInserter, PostulateEntry, PostulateInserter};
 use crate::wordnet::interface::get_meanings;
+use crate::composer::structures::{AgdaType};
+use crate::composer::structures::AgdaType::{Application, PropEq, Simple};
 use crate::{astApply, astLambda, astTerm, tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
 use crate::composer::function_def::FunctionDefinition;
+use crate::composer::ast::AgdaAst;
 use crate::composer::postulate::AgdaStructure::FunctionDef;
 
 
