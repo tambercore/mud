@@ -38,12 +38,13 @@ use crate::wordnet::interface::init_wordnet;
 
 
 use once_cell::sync::Lazy;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::collections::{HashMap, HashSet};
+use std::thread::sleep;
+use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use warp::Filter;
-
-
+use crate::command_line::output_handler::{create_task, show_header, update_task, Progress};
 
 // Assuming these types exist in your code:
 struct LexicalRuleset { /* ... */ }
@@ -177,3 +178,6 @@ async fn main() {
         println!("conclusions: {:?}", conclusions);
     }
 }
+
+
+
