@@ -2,7 +2,7 @@ use std::io::{stdout, Write};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use std::sync::OnceLock;
-
+use colored::*;
 
 
 /// Structure to encapsulate a singular [`Task`], representing something in the
@@ -76,10 +76,14 @@ impl Progress {
 
     /// Function to format time as `ms` or `s` dependent on size.
     fn format_time(duration: Duration) -> String {
-        if duration.as_secs() >= 1 { format!("{}s", duration.as_secs()) }
-        else { format!("{}ms", duration.as_millis()) }
+        if duration.as_secs() >= 1 {
+            format!("{}s", duration.as_secs())
+        } else if duration.as_millis() >= 2 {
+            format!("{}ms", duration.as_millis())
+        } else {
+            format!("{}µs", duration.as_micros())
+        }
     }
-
 
     /// Function to print the last task (as in-progress). This formats the current task
     /// and provides `...` as a placeholder for the time taken. Prints in amber.

@@ -66,7 +66,7 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
         /* Generates λ-Terms */
         CCGRule::Lexical => {
             let expr = lexical_to_lambda(current_node.clone());
-            println!("{} generated {}", current_node.word.unwrap().text, expr);
+            // println!("{} generated {}", current_node.word.unwrap().text, expr);
             expr
         }
 
