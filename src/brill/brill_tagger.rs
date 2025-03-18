@@ -55,7 +55,7 @@ fn apply_lexical_rules(sentence_to_tag: &mut Vec<(String, Wordclass)>, lexical_r
                 if !is_tag_contained_in_word_possible_tags(&possible_tags, &word, &rule.target_tag) { continue; }
                 match lexical_rule_apply(sentence_to_tag, index as i32, rule, wc_mapping){
                     Some(true) => {
-                        println!("LEXICAL {:?} tagged {:?} -> tag {:?}: ",word, tag, &rule.target_tag);
+                        //println!("LEXICAL {:?} tagged {:?} -> tag {:?}: ",word, tag, &rule.target_tag);
                         rules_applied += 1},
                     _ => {},
                 }

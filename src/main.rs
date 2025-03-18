@@ -110,6 +110,9 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
 
     let semtree_id = create_task(1, "Converting to Semantic Tree");
     let semantic_tree = lambda_to_semantic(Box::from(expanded_expression.clone())).expect("Failed to parse semantic tree.");
+
+    println!("Semantic Tree: {}", semantic_tree);
+
     update_task(semtree_id);
 
 
@@ -230,7 +233,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("every man is fast & john is man -> john is quick");
+    let config = Config::from_args("necessarily socrates is mortal");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
