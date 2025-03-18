@@ -246,7 +246,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("every goblin must steal gold");
+    let config = Config::from_args("possibly jesal is a goblin");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 

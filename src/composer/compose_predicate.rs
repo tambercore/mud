@@ -11,7 +11,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{astApply, astLambda, astTerm, tToken, λPred, λVar, τApp, τDepFunc, τFunc, τModalNecessity, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
+use crate::{astApply, astLambda, astTerm, tToken, λPred, λVar, τApp, τDepFunc, τFunc, τModalNecessity, τModalPossibility, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::composer::ast_format::format_agda_ast;
@@ -138,7 +138,7 @@ pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaType>>) -> Box
     }
 }
 
-pub fn handle_modal_necessity(rel: Relation, f: &mut AgdaFile, props: Vec<Token>) -> (String, AgdaType) {
+pub fn handle_modal_necessity(rel: Relation, f: &mut AgdaFile, props: Vec<Token>, is_possibility: bool) -> (String, AgdaType) {
 
     let mut relation = rel.clone();
     if relation.1.len() != 1 { panic!("`Necessity with more than one arg`") }
@@ -150,11 +150,12 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut AgdaFile, props: Vec<Token>
     let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
     let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
-    let mut fields: Vec<RecordField> = vec![
-        RecordField(String::from("I"),
-                    *τModalNecessity!(τSimp!(String::from(prop_rec_name)))
-        )
-    ];
+    let mut fields: Vec<RecordField> = vec![];
+    if is_possibility {
+        fields.push(RecordField(String::from("I"), *τModalPossibility!(τSimp!(String::from(prop_rec_name)))));
+    } else {
+        fields.push(RecordField(String::from("I"), *τModalNecessity!(τSimp!(String::from(prop_rec_name)))));
+    }
 
     let proj_func = replace_innermost_simple(prop_projection, *τApp!(
         τSimp!(String::from("□-T")),
@@ -175,7 +176,9 @@ pub fn compose_predicate(relation: Relation, f: &mut AgdaFile, props: Vec<Token>
     let mut is_negated: i32 = 0;
 
     if(vec!["necessarily", "must", "needs", "need"].contains(&&*relation.0.to_lowercase()) && relation.1.len() == 1 ) {
-        return handle_modal_necessity(relation, f, props);
+        return handle_modal_necessity(relation, f, props, false);
+    } else if (relation.0.to_lowercase() == "possibly" && relation.1.len() == 1) {
+        return handle_modal_necessity(relation, f, props, true);
     }
 
     /* Handle 'is' cases using unwrapping. */

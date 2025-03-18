@@ -60,6 +60,10 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
         AgdaType::ModalNecessity(prop) => {
             format!("□ {}", format_agda_type_prec(prop, prec))
         }
+
+        AgdaType::ModalPossibility(prop) => {
+            format!("◇ {}", format_agda_type_prec(prop, prec))
+        }
     }
 }
 
