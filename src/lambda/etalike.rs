@@ -25,6 +25,7 @@ impl Eliminator for LambdaEntity {
                                 return *λVar!(inner_pred.iden)
                             }
                         }
+
                     }
                     _ => {}
                 }

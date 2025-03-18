@@ -92,21 +92,30 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
     } else {
         english_to_ccg(&sentence, vec_of_word_tag_tuples.clone())
     };
+    println!("CCG: {}", ccg);
 
     let lambda_expression = ccg_to_lambda(&mut ccg);
     //println!("Result: \n{}", lambda_expression);
     update_task(lc_task_id);
 
+    println!("Lambda Expr: {lambda_expression}");
+
     let lc_task_id2 = create_task(1, "β-Reduction, η-Reduction & Expansions");
     let reduction = (*lambda_expression).beta_reduce();
     //println!("\n\nReduces to: \n{}", reduction);
 
+    println!("Lambda Expr pre-eta: {reduction}");
+
     let eta_reduction = (reduction).eliminate_leftovers();
     //println!("\n\nEta Reduces to: \n{}", eta_reduction);
+
+    println!("Reduced Expr: {eta_reduction}");
 
     let expanded_expression: Box<LambdaEntity> = Box::from(eta_reduction.expand());
     //println!("\n\nExpands to: {}", expanded_expression);
     update_task(lc_task_id2);
+
+    println!("Expanded Expr: {expanded_expression}");
 
     let semtree_id = create_task(1, "Converting to Semantic Tree");
     let semantic_tree = lambda_to_semantic(Box::from(expanded_expression.clone())).expect("Failed to parse semantic tree.");
@@ -233,7 +242,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("jesal must eat cake -> jesal eat cake");
+    let config = Config::from_args("employees need to use linux");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
