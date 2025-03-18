@@ -5,7 +5,7 @@ use crate::lambda::conjunction::Conjunction;
 use crate::lambda::variable::Variable;
 use crate::lambda::types::*;
 use crate::{λAbs, λApp, λPred, λConj, λVar};
-
+use crate::lambda::reducible::Reducible;
 
 /// Trait defining a function to reduce the lambda entity using a normal-order reduction strategy
 pub trait Eliminator {
@@ -34,6 +34,24 @@ impl Eliminator for LambdaEntity {
 
             /* Recur into predicate arguments */
             LambdaEntity::Pred(predicate) => {
+
+                /*
+                 * This matches the general pattern for non `is` relations, usually applying
+                 * to modals, such as necessity and possibility.
+                 */
+                if (predicate.iden != "is" && predicate.args.len() == 2) {
+                    match *predicate.args[1].clone() {
+                        LambdaEntity::Abs(func) => {
+                             return *λPred!(predicate.iden.clone(), vec![
+                                 Box::from(*λApp!(
+                                     predicate.args[1].clone(),
+                                     predicate.args[0].clone()
+                                 ))]).beta_reduce().eliminate_leftovers().expand();
+                        }
+                        _ => (),
+                    }
+                }
+
                 let reduced_args: Vec<Box<LambdaEntity>> = predicate.args
                     .iter()
                     .map(|arg| Box::new(arg.eliminate_leftovers()))

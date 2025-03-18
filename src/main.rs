@@ -111,7 +111,11 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
 
     println!("Reduced Expr: {eta_reduction}");
 
-    let expanded_expression: Box<LambdaEntity> = Box::from(eta_reduction.expand());
+    let expansion = eta_reduction.expand();
+
+    println!("Expanded Expr: {expansion}");
+
+    let expanded_expression: Box<LambdaEntity> = Box::from(expansion);
     //println!("\n\nExpands to: {}", expanded_expression);
     update_task(lc_task_id2);
 
@@ -242,7 +246,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("employees need to use linux");
+    let config = Config::from_args("every goblin must steal gold");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 

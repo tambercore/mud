@@ -174,7 +174,7 @@ pub fn compose_predicate(relation: Relation, f: &mut AgdaFile, props: Vec<Token>
 
     let mut is_negated: i32 = 0;
 
-    if(relation.0.to_lowercase() == "necessarily") {
+    if(vec!["necessarily", "must", "needs", "need"].contains(&&*relation.0.to_lowercase()) && relation.1.len() == 1 ) {
         return handle_modal_necessity(relation, f, props);
     }
 
