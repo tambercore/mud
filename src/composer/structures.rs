@@ -12,7 +12,8 @@ pub enum AgdaType {
     PropEq(Box<AgdaType>, Box<AgdaType>),
     Application(Box<AgdaType>, Box<AgdaType>),
     RecordProj(Box<AgdaType>, Box<AgdaType>),
-    Product(Box<AgdaType>, Box<AgdaType>)
+    Product(Box<AgdaType>, Box<AgdaType>),
+    ModalNecessity(Box<AgdaType>)
 }
 
 
@@ -83,3 +84,11 @@ macro_rules! τProduct {
         Box::from(AgdaType::Product($item1, $item2))
     };
 }
+
+#[macro_export]
+macro_rules! τModalNecessity {
+    ($_type:expr) => {
+        Box::from(AgdaType::ModalNecessity($_type))
+    };
+}
+

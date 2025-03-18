@@ -11,7 +11,7 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{astApply, astLambda, astTerm, tToken, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
+use crate::{astApply, astLambda, astTerm, tToken, λPred, λVar, τApp, τDepFunc, τFunc, τModalNecessity, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
 use crate::brill::utils::TAG_MAPPING;
 use crate::brill::wordclass::Wordclass;
 use crate::composer::ast_format::format_agda_ast;
@@ -138,11 +138,45 @@ pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaType>>) -> Box
     }
 }
 
+pub fn handle_modal_necessity(rel: Relation, f: &mut AgdaFile, props: Vec<Token>) -> (String, AgdaType) {
+
+    let mut relation = rel.clone();
+    if relation.1.len() != 1 { panic!("`Necessity with more than one arg`") }
+
+    let arg = relation.1.pop().unwrap();
+    let (prop_rec_name, prop_projection) = compose(arg, f, props);
+
+    let mut iden = format!("{}_{}", rel.0, prop_rec_name.replace("ᵣ", ""));
+    let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
+    let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
+
+    let mut fields: Vec<RecordField> = vec![
+        RecordField(String::from("I"),
+                    *τModalNecessity!(τSimp!(String::from(prop_rec_name)))
+        )
+    ];
+
+    let proj_func = replace_innermost_simple(prop_projection, *τApp!(
+        τSimp!(String::from("□-T")),
+        τSimp!(String::from("I"))
+    ));
+
+    f.insert_definition(AgdaStructure::RecordDef(RecordDefinition {
+        record_name: record_name.clone(),
+        constructor_name,
+        fields,
+    }));
+
+    (record_name, proj_func)
+}
 
 pub fn compose_predicate(relation: Relation, f: &mut AgdaFile, props: Vec<Token>) -> (String, AgdaType) {
 
     let mut is_negated: i32 = 0;
 
+    if(vec!["necessarily", "must", "needs", "need"].contains(&&*relation.0.to_lowercase()) && relation.1.len() == 1 ) {
+        return handle_modal_necessity(relation, f, props);
+    }
 
     /* Handle 'is' cases using unwrapping. */
     let (mut p, props) = unwrap(relation, f, props.clone());

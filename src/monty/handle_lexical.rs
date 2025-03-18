@@ -52,11 +52,20 @@ pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
 
         /* Functor Types should bind variable into predicates through an abstraction */
         ForwardsFunctor(l, r) | BackwardsFunctor(r, l) => {
+
             /* Special handling for negation */
             if node.clone().word.unwrap().text == "not" {
                 return λAbs!(
                     λVar!(String::from("n₁")),
                     λPred!(String::from("not"), vec![λVar!(String::from("n₁"))])
+                );
+            }
+
+            /* Special case for to */
+            if node.clone().word.unwrap().text == "to" {
+                return λAbs!(
+                    λVar!(String::from("I")),
+                    λVar!(String::from("I"))
                 );
             }
 
