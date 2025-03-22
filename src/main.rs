@@ -8,6 +8,7 @@ mod composer;
 mod command_line;
 mod server;
 mod resolver;
+mod ast;
 
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
