@@ -1,0 +1,6 @@
+@echo off
+echo Activating virtual environment 'lambeq_env'...
+call ..\data\lambeq\lambeq_env\Scripts\activate
+
+echo Running the lambeq_server.py...
+python ..\data\lambeq\lambeq_server.py
