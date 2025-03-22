@@ -9,6 +9,7 @@ use crate::ast::unary_op::UnOperator;
 
 
 /// An enumeration of possible Expressions in Agda.
+#[derive(PartialEq)]
 pub enum AgdaExpr {
     Term(String),
     UnOp(UnOperator),
@@ -20,4 +21,11 @@ pub enum AgdaExpr {
     DepFun(DependentFunction),
     RecProj(RecordProjection),
     QuestionMark
+}
+
+#[macro_export]
+macro_rules! term {
+    ($iden:expr) => {
+        Box::from(Term(String::from($iden)))
+    };
 }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::ptr::eq;
 use crate::ccg::rule::CCGRule;
-use crate::composer::postulate::{initialise_agda_file, AgdaFile, AgdaStructure, DefinitionInserter, PostulateEntry, PostulateInserter};
+use crate::composer::postulate::{initialise_agda_file, AgdaStructure, DefinitionInserter, PostulateEntry, PostulateInserter};
 use crate::composer::record::{RecordDefinition, RecordField};
 use crate::composer::structures::{AgdaType};
 use crate::composer::structures::AgdaType::{Application, Simple};

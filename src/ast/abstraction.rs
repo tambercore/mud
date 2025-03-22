@@ -4,3 +4,9 @@ use crate::ast::agda_expr::AgdaExpr;
 /// These are of the form λ x → y, where x is an identifier and y is an expression.
 pub struct Abstraction
 {pub var: String, pub expr: Box<AgdaExpr>}
+
+impl PartialEq for Abstraction {
+    fn eq(&self, other: &Self) -> bool {
+        self.var == other.var && self.expr == other.expr
+    }
+}

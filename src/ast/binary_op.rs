@@ -4,3 +4,9 @@ use crate::ast::operator::Operator;
 /// A type to denote Binary Operations in Agda.
 /// Consists of the operator, and the lhs and rhs of the expression.
 pub struct BinOperator {pub symbol : Operator, pub lhs : Box<AgdaExpr>, pub rhs : Box<AgdaExpr>}
+
+impl PartialEq for BinOperator {
+    fn eq(&self, other: &Self) -> bool {
+        self.symbol == other.symbol && self.lhs == other.lhs && self.rhs == other.rhs
+    }
+}
