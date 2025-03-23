@@ -48,20 +48,15 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
      *
      * `λ (e) → λ (m) → subst (λ (X) → X e) identity_proof m`
      */
-    let app_rhs = app!(*term!(equality_identifier.clone()), *term!("m"));
-    let app_inner = app!(*term!("X"), *term!("e"));
-    let abs_inner = abstraction!("X", app_inner);
-    let app_abs = app!(*term!("subst"), abs_inner);
-    let app = app!(app_abs, app_rhs);
-    let abs_aux = abstraction!("m", app);
-    let ast = abstraction!("e", abs_aux);
+    let ast = abstraction!("e",
+    abstraction!("m",
+        app!(
+                app!(*term!("subst"), app!(*term!("X"), *term!("e"))), app!(*term!(equality_identifier.clone()), *term!("m"))
+            )));
 
     /* Next, the type header for this, following `(e : Entity) → is_p1 e → is_p2 e` */
-    let app_lhs = app!(*term!(is_synonym.clone()), *term!("e"));
-    let app_rhs = app!(*term!(is_property.clone()), *term!("e"));
-    let func = function_type!(app_lhs, app_rhs);
-    let term = var_decl!("e", *term!("Entity"));
-    let type_header = dependent_function!(term, func);
+    let type_header = dependent_function!(var_decl!("e", *term!("Entity")),
+        function_type!(app!(*term!(is_synonym.clone()), *term!("e")), app!(*term!(is_property.clone()), *term!("e"))));
 
     let theorem = theorem!(format!("{}_syn_{}_pointwise", property, synonym), type_header, ast, None);
     let function_def = theorem;
