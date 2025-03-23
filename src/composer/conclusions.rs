@@ -1,9 +1,8 @@
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::agda_expr::AgdaExpr::{FunType, QuestionMark};
 use crate::ast::function_type::FunctionType;
-use crate::ast::program::Program;
+use crate::ast::program::{DefinitionInserter, Program};
 use crate::ast::theorem_decl::Theorem;
-use crate::composer::postulate::{DefinitionInserter};
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::{term, theorem};
 use crate::ast::agda_expr::AgdaExpr;

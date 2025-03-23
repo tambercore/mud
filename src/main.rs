@@ -10,7 +10,7 @@ mod server;
 mod resolver;
 mod ast;
 
-use crate::ast::program::Program;
+use crate::ast::program::{initialise_agda_file, Program};
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,6 @@ use crate::brill::utils::{create_tag_mapping, TAG_MAPPING};
 use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
-use crate::composer::postulate::{initialise_agda_file};
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
 use crate::composer::knowledge_base::{compose_kb, KnowledgeBase};

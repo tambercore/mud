@@ -32,12 +32,12 @@ impl Record {
 
 #[macro_export]
 macro_rules! record {
-    ($record_iden:expr, $constructor_iden:expr, $($field:expr),*) => {
+    ($record_iden:expr, $constructor_iden:expr, $field:expr,$comment:expr) => {
         TDeclaration::RecordDecl(
         Record {
             record_iden: $record_iden.to_string(),
             constructor_iden: $constructor_iden.to_string(),
-            fields: vec![$($field),*],
+            fields: $field,
             comment: None
         })
     };

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::ptr::eq;
 use crate::ccg::rule::CCGRule;
-use crate::composer::postulate::{initialise_agda_file, DefinitionInserter, PostulateInserter};
 use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
@@ -12,7 +11,7 @@ use crate::{app, term};
 use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::agda_expr::AgdaExpr::FunType;
 use crate::ast::function_type::FunctionType;
-use crate::ast::program::Program;
+use crate::ast::program::{DefinitionInserter, Program};
 use crate::ast::record_decl::Record;
 use crate::ast::top_decl::TDeclaration::RecordDecl;
 use crate::ast::var_declaration::VarDecl;

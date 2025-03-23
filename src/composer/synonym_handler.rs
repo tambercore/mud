@@ -1,10 +1,11 @@
+use crate::ast::program::DefinitionInserter;
+use crate::ast::program::PostulateInserter;
 use crate::ast::theorem_decl::Theorem;
 use crate::ast::dependent_function::DependentFunction;
 use crate::ast::application::Application;
 use crate::ast::binary_op::BinOperator;
 use crate::ast::function_type::FunctionType;
 use crate::composer::case_converter::{convert_case, CaseStyle};
-use crate::composer::postulate::{DefinitionInserter, PostulateInserter};
 use crate::wordnet::interface::get_meanings;
 use crate::{abstraction, app, bin_op, dependent_function, function_type, term, theorem, var_decl, WORDS_IN_EXISTENCE};
 use crate::ast::agda_expr::AgdaExpr;

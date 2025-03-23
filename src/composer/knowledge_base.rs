@@ -1,8 +1,7 @@
 use crate::ast::agda_expr::AgdaExpr;
-use crate::ast::program::Program;
+use crate::ast::program::{DefinitionInserter, Program};
 use crate::ast::record_decl::Record;
 use crate::ast::var_declaration::VarDecl;
-use crate::composer::postulate::{DefinitionInserter};
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::top_decl::TDeclaration::RecordDecl;
 use crate::monty::fresh_variable::to_unicode_subscript;

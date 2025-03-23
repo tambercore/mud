@@ -67,7 +67,16 @@ fn format_agda_type_prec(agda_type: &AgdaExpr, prec: u8) -> String {
             if my_prec < prec { format!("({})", s) } else { s }
         }
         AgdaExpr::QuestionMark => {format!("?")}
-        _ => unimplemented!()
+
+        AgdaExpr::Abs(abs) => {
+            let _prec = 1;
+            let body_str = format_agda_type_prec(&*abs.expr, _prec);
+            let s = format!("λ {} → {}", abs.var, body_str);
+            if _prec < prec { format!("({})", s) } else { s }
+        }
+        AgdaExpr::Quant(_) => {unimplemented!()}
+
+
     }
 }
 
