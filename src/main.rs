@@ -8,7 +8,9 @@ mod composer;
 mod command_line;
 mod server;
 mod resolver;
+mod ast;
 
+use crate::ast::program::{initialise_agda_file, Program};
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
@@ -21,17 +23,15 @@ use crate::brill::utils::{create_tag_mapping, TAG_MAPPING};
 use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
-use crate::composer::postulate::{initialise_agda_file, AgdaFile};
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
 use crate::composer::knowledge_base::{compose_kb, KnowledgeBase};
-use crate::composer::structures::AgdaType;
-// use crate::server::server::create_endpoint;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use attohttpc::header::SERVER;
 use colored::Colorize;
 use crossterm::style::Stylize;
+use crate::ast::agda_expr::AgdaExpr;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
@@ -66,7 +66,7 @@ static WORDS_IN_EXISTENCE: Lazy<Mutex<HashSet<String>>> = Lazy::new(|| {
     Mutex::new(HashSet::new())
 });
 
-fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), String) {
+fn sentence_to_agda(sentence: String, f: &mut Program) -> ((String, AgdaExpr), String) {
 
     show_header(&format!("Processing Sentence '{}'", sentence));
     let brill_task_id = create_task(1, "Assigning POS Tags w/ Brill");
@@ -142,7 +142,7 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
 
 
 
-fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFile, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
+fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
 
     println!();
     print!("\x1b[38;5;130m[mud]\x1b[0m \x1b[1m{}\x1b[0m", "");
@@ -165,7 +165,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
 
     /* Initialize Wordnet */
     let wordnet_task_id = create_task(1, "Initializing Wordnet.");
-    init_wordnet();
+    // init_wordnet();
     update_task(wordnet_task_id);
 
     let global_wordset_task_id = create_task(1, "Computing Global Wordset.");
@@ -220,7 +220,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
     }
 
     /* Handle Conclusions */
-    let mut encoded_conclusions: Vec<(String, AgdaType)> = vec![];
+    let mut encoded_conclusions: Vec<(String, AgdaExpr)> = vec![];
     for derivation in derivations {
         let (encoded_conclusion, ccg_json) = sentence_to_agda(derivation.clone(), &mut f);
         encoded_conclusions.push(encoded_conclusion);
@@ -246,7 +246,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("every goblin must steal gold");
+    let config = Config::from_args("some socrates is a man & every man is mortal & every man likes every cheese and beans -> socrates is mortal & every man and woman like toby");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
