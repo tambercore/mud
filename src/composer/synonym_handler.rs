@@ -1,18 +1,15 @@
 use crate::ast::theorem_decl::Theorem;
 use crate::ast::dependent_function::DependentFunction;
-use crate::ast::application::TApplication;
+use crate::ast::application::Application;
 use crate::ast::binary_op::BinOperator;
 use crate::ast::function_type::FunctionType;
 use crate::composer::case_converter::{convert_case, CaseStyle};
-use crate::composer::postulate::{DefinitionInserter, PostulateEntry, PostulateInserter};
+use crate::composer::postulate::{DefinitionInserter, PostulateInserter};
 use crate::wordnet::interface::get_meanings;
-use crate::composer::structures::{AgdaType};
-use crate::composer::structures::AgdaType::{Application, PropEq, Simple};
-use crate::{abstraction, app, astApply, astLambda, astTerm, bin_op, dependent_function, function_type, tToken, term, theorem, var_decl, λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τPropEq, τRecProj, τSimp, WORDS_IN_EXISTENCE};
+use crate::{abstraction, app, bin_op, dependent_function, function_type, term, theorem, var_decl, WORDS_IN_EXISTENCE};
 use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::abstraction::Abstraction;
 use crate::ast::program::Program;
-use crate::composer::ast::AgdaAst;
 use crate::ast::var_declaration::VarDecl;
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::operator::Operator;
@@ -41,8 +38,8 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
     let equality_identifier: String = format!("{}_syn_{}", property, synonym);
 
     let _type = bin_op!(*term!(is_property.clone()), *term!(is_synonym.clone()), Operator::PropEq);
-    let entry = var_decl!(equality_identifier.clone(), AgdaExpr::BinOp(_type));
-    f.insert_postulate(*entry);
+    let entry = var_decl!(equality_identifier.clone(), _type);
+    f.insert_postulate(entry);
 
     /*
      * The following code dervies a pointwise equality function from the above declared
@@ -52,21 +49,21 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
      */
     let app_rhs = app!(*term!(equality_identifier.clone()), *term!("m"));
     let app_inner = app!(*term!("X"), *term!("e"));
-    let abs_inner = abstraction!("X", AgdaExpr::App(app_inner));
-    let app_abs = app!(*term!("subst"), AgdaExpr::Abs(abs_inner));
-    let app = app!(AgdaExpr::App(app_abs), AgdaExpr::App(app_rhs));
-    let abs_aux = abstraction!("m", AgdaExpr::App(app));
-    let ast = AgdaExpr::Abs(abstraction!("e", AgdaExpr::Abs(abs_aux)));
+    let abs_inner = abstraction!("X", app_inner);
+    let app_abs = app!(*term!("subst"), abs_inner);
+    let app = app!(app_abs, app_rhs);
+    let abs_aux = abstraction!("m", app);
+    let ast = abstraction!("e", abs_aux);
 
     /* Next, the type header for this, following `(e : Entity) → is_p1 e → is_p2 e` */
-    let app_lhs = AgdaExpr::App(app!(*term!(is_synonym.clone()), *term!("e")));
-    let app_rhs = AgdaExpr::App(app!(*term!(is_property.clone()), *term!("e")));
-    let func = AgdaExpr::FunType(function_type!(app_lhs, app_rhs));
+    let app_lhs = app!(*term!(is_synonym.clone()), *term!("e"));
+    let app_rhs = app!(*term!(is_property.clone()), *term!("e"));
+    let func = function_type!(app_lhs, app_rhs);
     let term = var_decl!("e", *term!("Entity"));
-    let type_header = AgdaExpr::DepFun(dependent_function!(*term, func));
+    let type_header = dependent_function!(term, func);
 
     let theorem = theorem!(format!("{}_syn_{}_pointwise", property, synonym), type_header, ast, None);
-    let function_def = TDeclaration::TheoremDecl(theorem);
+    let function_def = theorem;
 
     /* These definitions are bundled as the full function, and inserted into the file */
     f.insert_definition(function_def);
@@ -80,7 +77,7 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
 pub fn handle_synonyms(property: &str, f: &mut Program) {
 
     /* todo: Extend these to the CLI interface. */
-    let SYNSTRAT: SynsetStrategy = SynsetStrategy::AllMeanings;
+    let SYNSTRAT: SynsetStrategy = SynsetStrategy::Ignore;
     let SYNRELEVANT: SynsetRelevancyStrategy = SynsetRelevancyStrategy::Relevant;
     if let SynsetStrategy::Ignore = SYNSTRAT { return; }
 

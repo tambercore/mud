@@ -13,9 +13,10 @@ impl PartialEq for RecordProjection {
 #[macro_export]
 macro_rules! record_projection {
     ($lhs:expr, $rhs:expr) => {
+        AgdaExpr::RecProj(
         RecordProjection {
             lhs: Box::new($lhs),
             rhs: Box::new($rhs),
-        }
+        })
     };
 }

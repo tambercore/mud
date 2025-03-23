@@ -15,10 +15,12 @@ impl PartialEq for Quantification {
 #[macro_export]
 macro_rules! quant {
     ($symbol:expr, $vars:expr, $expr:expr) => {
+        AgdaExpr::Quant(
         Quantification {
             symbol: $symbol.to_string(),
             vars: $vars,
             expr: Box::new($expr)
         }
+        )
     };
 }

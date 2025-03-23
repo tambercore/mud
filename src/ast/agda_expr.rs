@@ -1,5 +1,5 @@
 use crate::ast::abstraction::Abstraction;
-use crate::ast::application::TApplication;
+use crate::ast::application::Application;
 use crate::ast::binary_op::BinOperator;
 use crate::ast::dependent_function::DependentFunction;
 use crate::ast::function_type::FunctionType;
@@ -13,7 +13,7 @@ pub enum AgdaExpr {
     Term(String),
     UnOp(UnOperator),
     BinOp(BinOperator),
-    App(TApplication),
+    App(Application),
     Abs(Abstraction),
     Quant(Quantification),
     FunType(FunctionType),

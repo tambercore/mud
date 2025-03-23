@@ -1,3 +1,4 @@
+use crate::ast::top_decl::TDeclaration;
 use crate::ast::agda_expr::AgdaExpr::{FunType, QuestionMark};
 use crate::ast::function_type::FunctionType;
 use crate::ast::program::Program;
@@ -25,6 +26,6 @@ pub fn compose_conclusions(conclusions: Vec<(String, AgdaExpr)>, f: &mut Program
 
         let func = theorem!(iden, hypothesis, proof, None);
         assumtion_index = assumtion_index + 1;
-        f.insert_definition(TheoremDecl(func));
+        f.insert_definition(func);
     }
 }

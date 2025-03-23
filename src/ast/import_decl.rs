@@ -8,6 +8,8 @@ pub struct Import {pub package : String, pub components : Vec<String>}
 #[macro_export]
 macro_rules! import {
     ($package:expr, $($component:expr),*) => {
-        Import {package: $package.to_string(), components: vec![$($component.to_string()),*]}
+        TDeclaration::ImportDecl(
+            Import {package: $package.to_string(), components: vec![$($component.to_string()),*]}
+            )
     };
 }

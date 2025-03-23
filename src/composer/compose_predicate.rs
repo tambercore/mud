@@ -1,36 +1,27 @@
+use crate::tToken;
 use crate::ast::record_projection::RecordProjection;
 use crate::ast::dependent_function::DependentFunction;
 use crate::ast::function_type::FunctionType;
-use crate::AgdaType::Simple;
 use crate::ast::binary_op::BinOperator;
 use std::collections::HashMap;
 use crate::composer::postulate::{DefinitionInserter, PostulateInserter};
-use crate::composer::structures::{AgdaType};
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{app, bin_op, dependent_function, function_type, record_projection, tToken, term, var_decl, τDepFunc, WORDS_IN_EXISTENCE};
+use crate::{app, bin_op, dependent_function, function_type, record_projection, term, var_decl};
 use crate::ast::agda_expr::AgdaExpr;
-use crate::ast::agda_expr::AgdaExpr::{BinOp, UnOp};
+use crate::ast::agda_expr::AgdaExpr::{UnOp};
 use crate::ast::agda_expr::AgdaExpr::Term;
-use crate::ast::application::TApplication;
+use crate::ast::application::Application;
 use crate::ast::operator::Operator::{Necessity, Product};
 use crate::ast::program::Program;
 use crate::ast::record_decl::Record;
 use crate::ast::top_decl::TDeclaration::RecordDecl;
 use crate::ast::unary_op::UnOperator;
 use crate::ast::var_declaration::VarDecl;
-use crate::brill::utils::TAG_MAPPING;
-use crate::brill::wordclass::Wordclass;
-use crate::composer::ast_format::format_agda_ast;
-use crate::lambda::conjunction::Conjunction;
-use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 use crate::composer::compose_variable::compose_variable;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
 use crate::composer::langtree::{Relation, SemanticTree, Token};
 use crate::composer::langtree::SemanticTree::Terminal;
-use crate::wordnet::interface::{get_meanings, init_wordnet};
-use crate::wordnet::wordnode::Wordnode;
-use crate::composer::ast::*;
 use crate::composer::synonym_handler::handle_synonyms;
 
 
@@ -40,7 +31,7 @@ pub fn add_describer(current_prop: Token, f: &mut Program) {
     /* Add the describer as an Adjective */
     let mut property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
     let entry = var_decl!(property.clone(), generate_function_header(1));
-    f.insert_postulate(*entry);
+    f.insert_postulate(entry);
     handle_synonyms(current_prop.as_str(), f);
 }
 
@@ -137,7 +128,7 @@ pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaExpr>>) -> Box
         returned_proofs.into_iter().rev().fold(None, |acc, proof| {
             match acc {
                 None => Some(proof),
-                Some(prod) => Some(Box::from(BinOp(bin_op!(*prod, *proof, Product))))
+                Some(prod) => Some(Box::from(bin_op!(*prod, *proof, Product)))
             }
         }).unwrap()
     }
@@ -168,10 +159,10 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
         )*/
     ];
 
-    let proj_func = replace_innermost_simple(&prop_projection, AgdaExpr::App(app!(
+    let proj_func = replace_innermost_simple(&prop_projection, app!(
         *term!("□-T"),
         *term!("I")
-    )));
+    ));
 
     let record = Record {
         record_iden: record_name.clone(),
@@ -304,19 +295,19 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
                                replace_innermost_simple(&uquant_projection_function,
                                                                   *term!(uquant_iden.clone())));
 
-            returned_proofs.push(Box::from(AgdaExpr::App(app)));
+            returned_proofs.push(Box::from(app));
         }
 
         inner = generate_predicate_output(returned_proofs);
 
         /* Handle layers of negation e.g. `not not P` / `not P` */
-        for _ in (0..is_negated) { inner = Box::from(AgdaExpr::FunType(function_type!(*inner, *term!("⊥".to_string())))); }
+        for _ in (0..is_negated) { inner = Box::from(function_type!(*inner, *term!("⊥".to_string()))); }
     }
 
     /* Handles normal predicates */
     else {
         /* Postulate the predicate as a function to Set. */
-        f.insert_postulate(*var_decl!(iden.clone(), generate_function_header(p.1.len())));
+        f.insert_postulate(var_decl!(iden.clone(), generate_function_header(p.1.len())));
 
         /* Then, `inner` becomes the application of that function to the arguments */
         inner = var_idens.iter().fold(
@@ -325,7 +316,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
                 let proj = symbol_table.get(name).unwrap().clone().1;
                 let app_proj = replace_innermost_simple(&proj, *term!(name.clone()));
 
-                Box::from(AgdaExpr::App(app!(*acc, app_proj)))
+                Box::from(app!(*acc, app_proj))
             }
         );
     }
@@ -337,7 +328,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         .fold(inner, |acc, (current, typ)| {
             let rec_name = symbol_table.get(&current).unwrap().0.clone();
             let var_decl = var_decl!(current, term!(rec_name));
-            Box::from(AgdaExpr::DepFun(dependent_function!(*var_decl, *acc)))
+            Box::from(dependent_function!(var_decl, *acc))
         });
 
     /* Store this in the record under `p` */
@@ -370,8 +361,8 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         if fields.len() == 2 {
             let outer_projection = symbol_table.get("e₁").unwrap().clone().1;
             let record_proj = record_projection!(*term!(record_name.clone()), *term!("e₁"));
-            let app = app!(AgdaExpr::RecProj(record_proj), *term!("e₁"));
-            replace_innermost_simple(&outer_projection, AgdaExpr::App(app))
+            let app = app!(record_proj, *term!("e₁"));
+            replace_innermost_simple(&outer_projection, app)
         } else { *term!(record_name.clone()) };
 
 

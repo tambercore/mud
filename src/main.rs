@@ -27,8 +27,6 @@ use crate::composer::postulate::{initialise_agda_file};
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
 use crate::composer::knowledge_base::{compose_kb, KnowledgeBase};
-use crate::composer::structures::AgdaType;
-// use crate::server::server::create_endpoint;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use attohttpc::header::SERVER;
@@ -168,7 +166,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
     /* Initialize Wordnet */
     let wordnet_task_id = create_task(1, "Initializing Wordnet.");
-    init_wordnet();
+    // init_wordnet();
     update_task(wordnet_task_id);
 
     let global_wordset_task_id = create_task(1, "Computing Global Wordset.");
@@ -249,7 +247,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("amber is happy and cute -> amber likes cheese");
+    let config = Config::from_args("socrates is a man & every man is mortal -> socrates is mortal & john is jack");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 

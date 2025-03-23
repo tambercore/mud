@@ -8,6 +8,6 @@ pub struct Infix {pub op : Operator}
 #[macro_export]
 macro_rules! infix {
     ($op:expr) => {
-        Infix { op: $op }
+        TDeclaration::InfixDecl(Infix { op: $op })
     };
 }

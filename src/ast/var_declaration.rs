@@ -16,6 +16,6 @@ impl PartialEq for VarDecl {
 #[macro_export]
 macro_rules! var_decl {
     ($iden:expr, $type:expr) => {
-        Box::from(VarDecl { iden: String::from($iden), _type: Box::from($type) })
+        VarDecl { iden: String::from($iden), _type: Box::from($type) }
     };
 }

@@ -1,6 +1,5 @@
 
 pub mod lambda_to_types;
-pub mod structures;
 pub mod agdaify;
 pub mod postulate;
 mod record;
@@ -14,3 +13,4 @@ pub mod langtree;
 mod ast;
 mod ast_format;
 mod synonym_handler;
+mod structures;

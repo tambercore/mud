@@ -1,5 +1,3 @@
-use crate::composer::structures::AgdaType;
-
 
 
 /// Structure to define lambda-calculus in terms of an Agda AST. Terms in the LC

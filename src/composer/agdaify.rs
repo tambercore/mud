@@ -7,12 +7,10 @@ use crate::ast::operator::Operator;
 use crate::ast::operator::Operator::PropEq;
 use crate::ast::postulate_decl::Postulate;
 use crate::ast::program::Program;
-use crate::ast::theorem_decl::{Agdaify, Theorem};
+use crate::ast::theorem_decl::{Agdaify};
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, TheoremDecl};
 use crate::ast::var_declaration::VarDecl;
-use crate::composer::postulate::{PostulateEntry};
-use crate::composer::structures::{AgdaType};
 
 
 

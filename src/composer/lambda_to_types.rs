@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 use std::ptr::eq;
 use crate::ccg::rule::CCGRule;
-use crate::composer::postulate::{initialise_agda_file, DefinitionInserter, PostulateEntry, PostulateInserter};
-use crate::composer::structures::{AgdaType};
+use crate::composer::postulate::{initialise_agda_file, DefinitionInserter, PostulateInserter};
 use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::ast::application::TApplication;
+use crate::ast::application::Application;
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::{app, term};
 use crate::ast::agda_expr::AgdaExpr;
@@ -37,7 +36,7 @@ pub fn replace_innermost_simple(expr: &AgdaExpr, new_value: AgdaExpr) -> AgdaExp
     match expr {
         AgdaExpr::App(app) => {
             let new_rhs = replace_innermost_simple(&app.rhs, new_value);
-            AgdaExpr::App(app!((*app.lhs).clone(), new_rhs))
+            app!((*app.lhs).clone(), new_rhs)
         },
         _ => new_value,
     }
@@ -51,8 +50,6 @@ let proj2 = c.1;
 
 let proj1_iden = compose(proj1, f, vec![]);
 let proj2_iden = compose(proj2, f, vec![]);
-
-use AgdaType::*;
 
 /* These sometimes have record identifiers in them ᵣ, remove! */
 let iden: String = format!("{}×{}", proj1_iden.0, proj2_iden.0)

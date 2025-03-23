@@ -1,12 +1,12 @@
 use crate::ast::record_projection::RecordProjection;
 use crate::ast::function_type::FunctionType;
 use crate::composer::case_converter::{convert_case, CaseStyle};
-use crate::composer::postulate::{DefinitionInserter, PostulateEntry, PostulateInserter};
+use crate::composer::postulate::{DefinitionInserter, PostulateInserter};
 use crate::{app, function_type, record_projection, term};
 use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::agda_expr::AgdaExpr::App;
-use crate::ast::application::TApplication;
+use crate::ast::application::Application;
 use crate::ast::postulate_decl::Postulate;
 use crate::ast::program::Program;
 use crate::ast::record_decl::Record;
@@ -23,8 +23,6 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let negation_layers = props.iter().filter(|p| *p == "not").count() as i32;
     let props: Vec<Token> = props.into_iter().filter(|p| p != "not").collect();
 
-    use crate::composer::structures::AgdaType::*;
-
     /* Generate Fields */
     let mut predicate_iden = convert_case(format!("is_{}", token).as_str(), CaseStyle::CamelCase);
 
@@ -33,7 +31,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         _type: term!("Entity"),
     };
     let mut fields: Vec<VarDecl> = vec![field ];
-    let app: AgdaExpr = App(app!(*term!(predicate_iden.clone()), *term!("e₁")));
+    let app: AgdaExpr = app!(*term!(predicate_iden.clone()), *term!("e₁"));
     let proj_field = VarDecl {
         iden: "p₁".to_string(),
         _type: Box::from(app),
@@ -46,7 +44,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     for p in (props.clone()) {
         let mut c_predicate = convert_case(format!("is_{}", p).as_str(), CaseStyle::CamelCase);
         let __type = app!(*term!(c_predicate.clone()), *term!("e₁"));
-        types.push(App(__type));
+        types.push(__type);
 
         let postulate_entry = VarDecl {
             iden: c_predicate,
@@ -71,7 +69,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     /* Handle cases with negation */
     else {
         let mut inner = generate_predicate_output(types.into_iter().map(|x| {Box::from(x)}).collect());
-        for _ in (0..negation_layers) { inner = Box::from(AgdaExpr::FunType(function_type!(*inner, *term!("⊥")))); }
+        for _ in (0..negation_layers) { inner = Box::from(function_type!(*inner, *term!("⊥"))); }
 
         let field = VarDecl {
             iden: format!("p{}", to_unicode_subscript(0)),
@@ -104,7 +102,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     f.insert_postulate(postulate_entry);
     f.insert_definition(RecordDecl(rec));
 
-    let proj = AgdaExpr::RecProj(record_projection!(*term!(record_name.clone()), *term!("e₁")));
-    let projection = AgdaExpr::App(app!(proj, *term!("e₁")));
+    let proj = record_projection!(*term!(record_name.clone()), *term!("e₁"));
+    let projection = app!(proj, *term!("e₁"));
     (record_name, projection)
 }

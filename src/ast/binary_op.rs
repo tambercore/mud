@@ -15,10 +15,10 @@ impl PartialEq for BinOperator {
 #[macro_export]
 macro_rules! bin_op {
     ($lhs:expr, $rhs:expr, $op:expr) => {
-        BinOperator {
+        AgdaExpr::BinOp( BinOperator {
             symbol: $op,
             lhs: Box::new($lhs),
             rhs: Box::new($rhs),
-        }
+        })
     };
 }

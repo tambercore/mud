@@ -6,20 +6,8 @@ use crate::ast::postulate_decl::Postulate;
 use crate::ast::program::Program;
 use crate::ast::top_decl::TDeclaration::PostulateDecl;
 use crate::ast::var_declaration::VarDecl;
-use crate::composer::structures::AgdaType;
 use crate::{postulate, term, var_decl};
-use crate::ast::record_decl::Record;
 use crate::ast::top_decl::TDeclaration;
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct PostulateEntry(pub String, pub AgdaType);
-
-/* #[derive(Clone, Debug, PartialEq)]
-pub enum AgdaStructure {
-    RecordDef(RecordDefinition),
-    FunctionDef(FunctionDefinition)
-}*/
-
 
 pub fn initialise_agda_file() -> Program {
     let mut f = Program{
@@ -29,10 +17,10 @@ pub fn initialise_agda_file() -> Program {
 
     let typ = term!("Set");
     let decl = var_decl!("Entity", *typ);
-    let postulate = postulate!(vec![*decl], None);
+    let postulate = postulate!(vec![decl], None);
 
     /* Add `Entity : Set` as a declaration */
-    f.declarations.push(PostulateDecl(postulate));
+    f.declarations.push(postulate);
 
     f
 }

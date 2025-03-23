@@ -16,9 +16,9 @@ impl PartialEq for DependentFunction {
 #[macro_export]
 macro_rules! dependent_function {
     ($vars: expr, $expr: expr) => {
-        DependentFunction {
+        AgdaExpr::DepFun(DependentFunction {
             bound_var: $vars,
             expr: Box::new($expr)
-        }
+        })
     };
 }
