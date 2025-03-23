@@ -7,7 +7,7 @@ use crate::ast::theorem_decl::Theorem;
 
 /// Enum to describe a top-level declaration in an AgdaFile.
 /// These can be literate (tex segments), or programmatic.
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum TDeclaration {
     ImportDecl(Import),
     InfixDecl(Infix),

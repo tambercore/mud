@@ -32,7 +32,7 @@ fn format_agda_type_prec(agda_type: &AgdaExpr, prec: u8) -> String {
         AgdaExpr::BinOp(binop) => {
             match binop.symbol {
                 PropEq => {format!("{} ≡ {}", format_agda_type_prec(&*binop.lhs, prec), format_agda_type_prec(&*binop.rhs, prec))}
-                Product => {format!("{} × {}", format_agda_type_prec(&*binop.lhs, prec), format_agda_type_prec(&*binop.rhs, prec))}
+                Operator::Product => {format!("{} × {}", format_agda_type_prec(&*binop.lhs, prec), format_agda_type_prec(&*binop.rhs, prec))}
                 _ => panic!("Expected Binary Operator, found {:?}", binop.symbol)
             }
         }
@@ -87,7 +87,7 @@ pub fn format_agda_type(agda_type: &AgdaExpr) -> String {
 impl Program {
 
     fn get_postulates(&self) -> Vec<Postulate> {
-        self.declarations
+        <Vec<TDeclaration> as Clone>::clone(&self.declarations)
             .into_iter()
             .filter_map(|decl| if let PostulateDecl(inner) = decl { Some(inner) } else { None })
             .collect()
@@ -95,7 +95,7 @@ impl Program {
 
 
     fn get_definitions(&self) -> Vec<TDeclaration> {
-        self.declarations
+        self.declarations.clone()
             .into_iter()
             .filter_map(|decl| match decl {
                 RecordDecl(inner) => Some(TDeclaration::RecordDecl(inner)),

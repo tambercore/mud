@@ -215,7 +215,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
      */
     for (identifier, _type) in equants.clone() {
         let pair = compose(_type.clone(), f, vec![]);
-        symbol_table.insert(identifier.clone(), pair);
+        symbol_table.insert(identifier.clone(), pair.clone());
         let field = VarDecl {
             iden: identifier.to_string(),
             _type: term!(pair.0.clone()),
@@ -357,7 +357,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let record = Record {
         record_iden: record_name.clone(),
         constructor_iden: constructor_name,
-        fields: fields,
+        fields: fields.clone(),
         comment: None,
     };
 
@@ -369,10 +369,10 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let projection =
         if fields.len() == 2 {
             let outer_projection = symbol_table.get("e₁").unwrap().clone().1;
-            let record_proj = record_projection!(*term!(record_name), *term!("e₁"));
+            let record_proj = record_projection!(*term!(record_name.clone()), *term!("e₁"));
             let app = app!(AgdaExpr::RecProj(record_proj), *term!("e₁"));
             replace_innermost_simple(&outer_projection, AgdaExpr::App(app))
-        } else { *term!(record_name) };
+        } else { *term!(record_name.clone()) };
 
 
     (record_name, projection)

@@ -40,7 +40,7 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
     /* Add a term of the identity type to the postulate */
     let equality_identifier: String = format!("{}_syn_{}", property, synonym);
 
-    let _type = bin_op!(*term!(is_property), *term!(is_synonym), Operator::PropEq);
+    let _type = bin_op!(*term!(is_property.clone()), *term!(is_synonym.clone()), Operator::PropEq);
     let entry = var_decl!(equality_identifier.clone(), AgdaExpr::BinOp(_type));
     f.insert_postulate(*entry);
 

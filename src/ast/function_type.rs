@@ -2,6 +2,7 @@ use crate::ast::agda_expr::AgdaExpr;
 
 /// A type to denote functions in Agda.
 /// Functions take the form lhs → rhs.
+#[derive(Clone)]
 pub struct FunctionType {pub lhs : Box<AgdaExpr>, pub rhs : Box<AgdaExpr>}
 
 impl PartialEq for FunctionType {
