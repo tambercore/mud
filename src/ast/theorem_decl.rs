@@ -1,4 +1,5 @@
 use crate::ast::agda_expr::AgdaExpr;
+use crate::composer::agdaify::format_agda_type;
 
 /// A type to denote Theorems in Agda.
 /// Consists of an identifier, hypothesis (type signature), proof (body), and an optional comment.
@@ -15,8 +16,12 @@ pub trait Agdaify {
 }
 
 impl Agdaify for Theorem {
-    fn agdaify(&self) -> String {
-        unimplemented!()
+    /// Converts the Theorem into valid Agda code.
+     fn agdaify(&self) -> String {
+        let mut code = String::new();
+        code.push_str(&(format!("{} : {}\n", self.iden, format_agda_type(&self.hypothesis))));
+        code.push_str(&(format!("{} = {}\n", self.iden, format_agda_type(&self.proof))));
+        code
     }
 }
 impl PartialEq for Theorem {
