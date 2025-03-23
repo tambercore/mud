@@ -9,6 +9,15 @@ pub struct Theorem {
     pub proof : Box<AgdaExpr>,
     pub comment : Option<String>}
 
+pub trait Agdaify {
+    fn agdaify(&self) -> String;
+}
+
+impl Agdaify for Theorem {
+    fn agdaify(&self) -> String {
+        unimplemented!()
+    }
+}
 impl PartialEq for Theorem {
     fn eq(&self, other: &Self) -> bool {
         self.iden == other.iden

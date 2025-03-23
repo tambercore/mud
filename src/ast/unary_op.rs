@@ -15,8 +15,8 @@ impl PartialEq for UnOperator {
     }
 }
 #[macro_export]
-macro_rules! term {
-    ($e:expr) => {
-        Box::from(AgdaExpr::Term($e))
+macro_rules! unop {
+    ($op:expr, $e:expr) => {
+        Box::from(AgdaExpr::UnOp(UnOperator { op: $op, expr: $e }))
     };
 }

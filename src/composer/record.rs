@@ -1,5 +1,6 @@
 
 /* Singular Field */
+/* use crate::ast::var_declaration::VarDecl;
 use crate::composer::agdaify::format_agda_type;
 use crate::composer::structures::AgdaType;
 
@@ -28,10 +29,11 @@ impl RecordDefinition {
         // Begin the field section.
         code.push_str("  field\n");
         // Iterate over each field and add it to the code.
-        for RecordField(field_name, field_type) in &self.fields {
+
+        for VarDecl{iden: field_name, _type: field_type} in &self.fields {
             let type_str = format_agda_type(field_type);
             code.push_str(&format!("    {} : {}\n", field_name, type_str));
         }
         code
     }
-}
+} */

@@ -10,6 +10,12 @@ pub struct Record {
     pub fields : Vec<VarDecl>,
     pub comment : Option<String>}
 
+impl Record {
+    pub(crate) fn agdaify(&self) -> String {
+        todo!()
+    }
+}
+
 #[macro_export]
 macro_rules! record {
     ($record_iden:expr, $constructor_iden:expr, $($field:expr),*) => {

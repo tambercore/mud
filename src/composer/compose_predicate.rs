@@ -1,14 +1,18 @@
-use std::char::MAX;
-use std::cmp::PartialEq;
+use crate::ast::record_projection::RecordProjection;
+use crate::ast::dependent_function::DependentFunction;
+use crate::ast::function_type::FunctionType;
+use crate::AgdaType::Simple;
+use crate::ast::binary_op::BinOperator;
 use std::collections::HashMap;
 use crate::composer::postulate::{DefinitionInserter, PostulateInserter};
 use crate::composer::structures::{AgdaType};
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{app, dependent_function, function_type, record_projection, term, τDepFunc, WORDS_IN_EXISTENCE};
-use crate::ast::agda_expr::AgdaExpr::UnOp;
+use crate::{app, bin_op, dependent_function, function_type, record_projection, tToken, term, var_decl, τDepFunc, WORDS_IN_EXISTENCE};
+use crate::ast::agda_expr::AgdaExpr;
+use crate::ast::agda_expr::AgdaExpr::{BinOp, UnOp};
 use crate::ast::agda_expr::AgdaExpr::Term;
-use crate::ast::operator::Operator;
-use crate::ast::operator::Operator::Necessity;
+use crate::ast::application::TApplication;
+use crate::ast::operator::Operator::{Necessity, Product};
 use crate::ast::program::Program;
 use crate::ast::record_decl::Record;
 use crate::ast::top_decl::TDeclaration::RecordDecl;
@@ -21,11 +25,9 @@ use crate::lambda::conjunction::Conjunction;
 use crate::lambda::types::LambdaEntity::{App, Var};
 use crate::composer::case_converter::*;
 use crate::composer::compose_variable::compose_variable;
-use crate::composer::function_def::FunctionDefinition;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
 use crate::composer::langtree::{Relation, SemanticTree, Token};
 use crate::composer::langtree::SemanticTree::Terminal;
-use crate::composer::postulate::AgdaStructure::FunctionDef;
 use crate::wordnet::interface::{get_meanings, init_wordnet};
 use crate::wordnet::wordnode::Wordnode;
 use crate::composer::ast::*;
@@ -37,7 +39,8 @@ pub fn add_describer(current_prop: Token, f: &mut Program) {
 
     /* Add the describer as an Adjective */
     let mut property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
-    f.insert_postulate(PostulateEntry(property.clone(), generate_function_header(1)));
+    let entry = var_decl!(property.clone(), generate_function_header(1));
+    f.insert_postulate(*entry);
     handle_synonyms(current_prop.as_str(), f);
 }
 
@@ -126,7 +129,7 @@ pub fn prenex(p: &mut Relation, equants: &mut QVec, uquants: &mut QVec) -> () {
 }
 
 
-pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaType>>) -> Box<AgdaType> {
+pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaExpr>>) -> Box<AgdaExpr> {
     if returned_proofs.len() == 0 { panic!("Something has gone wrong!") }
     if returned_proofs.len() == 1 { returned_proofs.pop().unwrap() }
     else {
@@ -134,13 +137,13 @@ pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaType>>) -> Box
         returned_proofs.into_iter().rev().fold(None, |acc, proof| {
             match acc {
                 None => Some(proof),
-                Some(prod) => Some(τProduct!(proof, prod))
+                Some(prod) => Some(Box::from(BinOp(bin_op!(*prod, *proof, Product))))
             }
         }).unwrap()
     }
 }
 
-pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>) -> (String, AgdaType) {
+pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 
     let mut relation = rel.clone();
     if relation.1.len() != 1 { panic!("`Necessity with more than one arg`") }
@@ -165,10 +168,10 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
         )*/
     ];
 
-    let proj_func = replace_innermost_simple(prop_projection, *app!(
-        term!(String::from("□-T")),
-        term!(String::from("I"))
-    ));
+    let proj_func = replace_innermost_simple(&prop_projection, AgdaExpr::App(app!(
+        *term!("□-T"),
+        *term!("I")
+    )));
 
     let record = Record {
         record_iden: record_name.clone(),
@@ -182,7 +185,7 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
     (record_name, proj_func)
 }
 
-pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>) -> (String, AgdaType) {
+pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 
     let mut is_negated: i32 = 0;
 
@@ -203,7 +206,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let mut iden = format!("{}", p.0);
     let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
     let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
-    let mut symbol_table: HashMap<String, (String, AgdaType)> = HashMap::new();
+    let mut symbol_table: HashMap<String, (String, AgdaExpr)> = HashMap::new();
     let mut fields: Vec<VarDecl> = vec![];
 
 
@@ -212,7 +215,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
      */
     for (identifier, _type) in equants.clone() {
         let pair = compose(_type.clone(), f, vec![]);
-        symbol_table.insert(identifier.clone(), pair.clone());
+        symbol_table.insert(identifier.clone(), pair);
         let field = VarDecl {
             iden: identifier.to_string(),
             _type: term!(pair.0.clone()),
@@ -244,7 +247,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     constructor_name.extend(var_idens.iter().map(|v| {
         format!("_{}", symbol_table.get(v).unwrap().0.clone()) }));
 
-    let mut inner = term!("Temporary".parse().unwrap());
+    let mut inner = term!("Temporary");
 
     /* If there are no Universal Quantifiers, we compose is as a variable using props.
      * This handles cases such as `x is a adj noun`, `x is adj`, `x is noun`.
@@ -274,7 +277,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         let (uquant_iden, _) = uquants.get(0).unwrap();
         let uquant_projection_function = symbol_table.get(uquant_iden).unwrap().clone().1;
 
-        let mut returned_proofs: Vec<Box<AgdaType>> = vec![];
+        let mut returned_proofs: Vec<Box<AgdaExpr>> = vec![];
         for current_prop in props.clone() {
 
             /* If this `prop` is a not, then we should increase negation by 1 layer. */
@@ -296,31 +299,33 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
              * e.g. if the anaphora is John then this would generate `isHappy (John.e₁ a₁)`.
              * (The Function `replace_innermost_simple` handles the conversion of e₁ to a₁ here.)
              */
-            returned_proofs.push(app!(term!(rhs_property.clone()),
-                        Box::from(replace_innermost_simple(uquant_projection_function.clone(),
-                        Simple(uquant_iden.clone())))
-            ));
+
+            let app = app!(*term!(rhs_property.clone()),
+                               replace_innermost_simple(&uquant_projection_function,
+                                                                  *term!(uquant_iden.clone())));
+
+            returned_proofs.push(Box::from(AgdaExpr::App(app)));
         }
 
         inner = generate_predicate_output(returned_proofs);
 
         /* Handle layers of negation e.g. `not not P` / `not P` */
-        for _ in (0..is_negated) { inner = function_type!(inner, term!("⊥".to_string())); }
+        for _ in (0..is_negated) { inner = Box::from(AgdaExpr::FunType(function_type!(*inner, *term!("⊥".to_string())))); }
     }
 
     /* Handles normal predicates */
     else {
         /* Postulate the predicate as a function to Set. */
-        f.insert_postulate(PostulateEntry(iden.clone(), generate_function_header(p.1.len())));
+        f.insert_postulate(*var_decl!(iden.clone(), generate_function_header(p.1.len())));
 
         /* Then, `inner` becomes the application of that function to the arguments */
         inner = var_idens.iter().fold(
             term!(iden.clone()),
             |acc, name| {
                 let proj = symbol_table.get(name).unwrap().clone().1;
-                let app_proj = replace_innermost_simple(proj, *term!(name.clone()));
+                let app_proj = replace_innermost_simple(&proj, *term!(name.clone()));
 
-                app!(acc, app_proj)
+                Box::from(AgdaExpr::App(app!(*acc, app_proj)))
             }
         );
     }
@@ -331,18 +336,14 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     inner = uquants.into_iter().rev()
         .fold(inner, |acc, (current, typ)| {
             let rec_name = symbol_table.get(&current).unwrap().0.clone();
-            let term = term!(rec_name);
-            let var_decl = VarDecl {
-                iden: String::from(current),
-                _type: Box::from(typ),
-            };
-            dependent_function!(var_decl, acc)
+            let var_decl = var_decl!(current, term!(rec_name));
+            Box::from(AgdaExpr::DepFun(dependent_function!(*var_decl, *acc)))
         });
 
     /* Store this in the record under `p` */
     let var = VarDecl {
         iden: String::from("p"),
-        _type: Box::from(inner.clone()),
+        _type: Box::from(inner),
     };
     fields.push(var);
 
@@ -356,7 +357,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let record = Record {
         record_iden: record_name.clone(),
         constructor_iden: constructor_name,
-        fields: fields.clone(),
+        fields: fields,
         comment: None,
     };
 
@@ -368,9 +369,9 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let projection =
         if fields.len() == 2 {
             let outer_projection = symbol_table.get("e₁").unwrap().clone().1;
-            let record_proj = record_projection!(term!(record_name), term!("e₁"));
-            let app = app!(record_proj, term!("e₁"));
-            replace_innermost_simple(outer_projection, app)
+            let record_proj = record_projection!(*term!(record_name), *term!("e₁"));
+            let app = app!(AgdaExpr::RecProj(record_proj), *term!("e₁"));
+            replace_innermost_simple(&outer_projection, AgdaExpr::App(app))
         } else { *term!(record_name) };
 
 

@@ -1,7 +1,6 @@
-use crate::composer::agdaify::format_agda_type;
+/* use crate::composer::agdaify::format_agda_type;
 use crate::composer::ast::AgdaAst;
 use crate::composer::ast_format::format_agda_ast;
-use crate::composer::record::RecordDefinition;
 use crate::composer::structures::AgdaType;
 
 
@@ -21,4 +20,4 @@ impl FunctionDefinition {
         code.push_str(&(format!("{} = {}\n", self.function_name, format_agda_ast(&self.function_body))));
         code
     }
-}
+}*/

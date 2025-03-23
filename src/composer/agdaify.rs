@@ -1,11 +1,17 @@
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use crate::ast::agda_expr::AgdaExpr;
+use crate::ast::binary_op::BinOperator;
+use crate::ast::operator::Operator;
+use crate::ast::operator::Operator::PropEq;
 use crate::ast::postulate_decl::Postulate;
 use crate::ast::program::Program;
+use crate::ast::theorem_decl::{Agdaify, Theorem};
+use crate::ast::top_decl::TDeclaration;
 use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, TheoremDecl};
 use crate::ast::var_declaration::VarDecl;
-use crate::composer::postulate::{AgdaStructure, PostulateEntry};
+use crate::composer::postulate::{PostulateEntry};
 use crate::composer::structures::{AgdaType};
 
 
@@ -13,57 +19,57 @@ use crate::composer::structures::{AgdaType};
 /// Helper function that prints an AgdaType with awareness of operator precedence.
 /// Lower numbers indicate looser binding; we wrap in parentheses when the inner
 /// expression's binding (my_prec) is less than the context (prec).
-fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
+fn format_agda_type_prec(agda_type: &AgdaExpr, prec: u8) -> String {
     match agda_type {
-        AgdaType::Simple(s) => s.clone(),
-
-        AgdaType::Function(from, to) => {
-            // Function arrow (→) has precedence level 1.
-            let my_prec = 1;
-            // Use a tighter context for the left-hand side.
-            let from_str = format_agda_type_prec(from, my_prec + 1);
-            let to_str = format_agda_type_prec(to, my_prec);
-            let s = format!("{} → {}", from_str, to_str);
-            if my_prec < prec { format!("({})", s) } else { s }
+        AgdaExpr::Term(s) => {s.clone()}
+        AgdaExpr::UnOp(unop) => {
+            match unop.op {
+                Operator::Necessity => {format!("□ {}", format_agda_type_prec(&*unop.expr, prec))}
+                Operator::Possibility => {format!("◇ {}", format_agda_type_prec(&*unop.expr, prec))}
+                _ => panic!("Expected Unary Operator, found {:?}", unop.op)
+            }
         }
-
-        AgdaType::Application(func, arg) => {
+        AgdaExpr::BinOp(binop) => {
+            match binop.symbol {
+                PropEq => {format!("{} ≡ {}", format_agda_type_prec(&*binop.lhs, prec), format_agda_type_prec(&*binop.rhs, prec))}
+                Product => {format!("{} × {}", format_agda_type_prec(&*binop.lhs, prec), format_agda_type_prec(&*binop.rhs, prec))}
+                _ => panic!("Expected Binary Operator, found {:?}", binop.symbol)
+            }
+        }
+        AgdaExpr::App(app) => {
             // Function application binds tighter than the function arrow.
             let my_prec = 2;
-            let func_str = format_agda_type_prec(func, my_prec);
+            let func_str = format_agda_type_prec(&*app.lhs, my_prec);
             // The argument is printed in an even tighter context.
-            let arg_str = format_agda_type_prec(arg, my_prec + 1);
+            let arg_str = format_agda_type_prec(&*app.rhs, my_prec + 1);
             let s = format!("{} {}", func_str, arg_str);
             if my_prec < prec { format!("({})", s) } else { s }
         }
-
-        AgdaType::RecordProj(rec, proj) => {
+        AgdaExpr::FunType(func) => {
+            // Function arrow (→) has precedence level 1.
+            let my_prec = 1;
+            // Use a tighter context for the left-hand side.
+            let from_str = format_agda_type_prec(&*func.lhs, my_prec + 1);
+            let to_str = format_agda_type_prec(&*func.rhs, my_prec);
+            let s = format!("{} → {}", from_str, to_str);
+            if my_prec < prec { format!("({})", s) } else { s }
+        }
+        AgdaExpr::DepFun(dfun) => {
+            let rest_str = format_agda_type_prec(&*dfun.expr, prec);
+            format!("({} : {}) → {}", dfun.bound_var.iden, format_agda_type_prec(&*dfun.bound_var._type, prec), rest_str)
+        }
+        AgdaExpr::RecProj(proj) => {
             // Record projection (.) binds very tightly.
             let my_prec = 3;
-            let rec_str = format_agda_type_prec(rec, my_prec);
+            let rec_str = format_agda_type_prec(&*proj.lhs, my_prec);
 
             // Projection field is usually atomic; use a higher precedence.
-            let proj_str = format_agda_type_prec(proj, 4);
+            let proj_str = format_agda_type_prec(&*proj.rhs, 4);
             let s = format!("{}.{}", rec_str, proj_str);
             if my_prec < prec { format!("({})", s) } else { s }
         }
-
-        AgdaType::DepFunc(var, typ, rest) => {
-            let rest_str = format_agda_type_prec(rest, prec);
-            format!("({} : {}) → {}", var, format_agda_type_prec(typ, prec), rest_str)
-        }
-
-        AgdaType::Product(item1, item2) => {
-            format!("{} × {}", format_agda_type_prec(item1, prec), format_agda_type_prec(item2, prec))
-        }
-
-        AgdaType::PropEq(item1, item2) => {
-            format!("{} ≡ {}", format_agda_type_prec(item1, prec), format_agda_type_prec(item2, prec))
-        }
-
-        AgdaType::ModalNecessity(prop) => {
-            format!("□ {}", format_agda_type_prec(prop, prec))
-        }
+        AgdaExpr::QuestionMark => {format!("?")}
+        _ => unimplemented!()
     }
 }
 
@@ -71,7 +77,7 @@ fn format_agda_type_prec(agda_type: &AgdaType, prec: u8) -> String {
 
 /// The public function that prints an AgdaType.
 /// It starts the printing process with a base precedence of 0.
-pub fn format_agda_type(agda_type: &AgdaType) -> String {
+pub fn format_agda_type(agda_type: &AgdaExpr) -> String {
     format_agda_type_prec(agda_type, 0)
 }
 
@@ -82,16 +88,18 @@ impl Program {
 
     fn get_postulates(&self) -> Vec<Postulate> {
         self.declarations
-            .iter()
+            .into_iter()
             .filter_map(|decl| if let PostulateDecl(inner) = decl { Some(inner) } else { None })
             .collect()
     }
 
-    fn get_definitions(&self) -> Vec<Postulate> {
+
+    fn get_definitions(&self) -> Vec<TDeclaration> {
         self.declarations
-            .iter()
+            .into_iter()
             .filter_map(|decl| match decl {
-                RecordDecl(inner) | TheoremDecl(inner) => Some(inner),
+                RecordDecl(inner) => Some(TDeclaration::RecordDecl(inner)),
+                TheoremDecl(inner) => Some(TDeclaration::TheoremDecl(inner)),
                 _ => None,
             }) // Assuming Postulate is (Vec<VarDecl>, Option<String>), cloning may be required
             .collect()
@@ -139,23 +147,32 @@ postulate
 
         // push postulate, then everything else
 
-        // 1. find the postulate blocks
-        let mut declarations = self.declarations.clone();
-        let postulates = self.get_postulates();
-        let definitions = self.get_definitions();
-
         let mut postulates = self.get_postulates();
         for postulate in postulates {
-            let (propeqs, regular_postulates): (Vec<_>, Vec<_>) =
-                postulate.into_iter().partition(|entry| matches!(entry.1, AgdaType::PropEq(_, _)));
+            let mut propeqs = Vec::new();
+            let mut regular_postulates = Vec::new();
 
-            for VarDecl{ iden: name, _type: agda_type } in regular_postulates {
-                let typ_str = format_agda_type(&agda_type);
+            // Manually partition without using `.iter()`
+            for entry in &postulate.fields {
+                if let AgdaExpr::BinOp(BinOperator { symbol: ref symb, lhs: _, rhs: _ }) = &*entry._type {
+                    if *symb == PropEq {
+                        propeqs.push(entry);
+                    }
+                } else {
+                    regular_postulates.push(entry);
+                }
+            }
+
+            // Process regular postulates
+            for entry in regular_postulates {
+                let VarDecl { iden: name, _type: agda_type } = entry;
+                let typ_str = format_agda_type(agda_type);
                 code.push_str(&format!("  {} : {}\n", name, typ_str));
             }
 
-            // Handle propositional equalities separately afterward
-            for VarDecl{ iden: name, _type: agda_type } in propeqs {
+            // Process propositional equalities separately
+            for entry in propeqs {
+                let VarDecl { iden: name, _type: agda_type } = entry;
                 let typ_str = format_agda_type(&agda_type);
                 code.push_str(&format!("  {} : {}\n", name, typ_str));
             }
@@ -166,6 +183,7 @@ postulate
             match def {
                 RecordDecl(rec) => { code.push_str( &format!("\n{}\n", rec.agdaify())) }
                 TheoremDecl(func) => { code.push_str(&format!("\n{}\n", func.agdaify())) }
+                _ => {}
             }
         }
         code

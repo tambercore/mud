@@ -13,7 +13,7 @@ impl PartialEq for Abstraction {
 
 #[macro_export]
 macro_rules! abstraction {
-    ($($var:expr => $expr:expr),*) => {
-        vec![$(Abstraction { var: $var.to_string(), expr: Box::new($expr) }),*]
+    ($var:expr, $expr:expr) => {
+        Abstraction { var: $var.to_string(), expr: Box::new($expr) }
     };
 }

@@ -6,8 +6,6 @@ use crate::ast::postulate_decl::Postulate;
 use crate::ast::program::Program;
 use crate::ast::top_decl::TDeclaration::PostulateDecl;
 use crate::ast::var_declaration::VarDecl;
-use crate::composer::function_def::FunctionDefinition;
-use crate::composer::record::RecordDefinition;
 use crate::composer::structures::AgdaType;
 use crate::{postulate, term, var_decl};
 use crate::ast::record_decl::Record;
@@ -16,11 +14,11 @@ use crate::ast::top_decl::TDeclaration;
 #[derive(Clone, Debug, PartialEq)]
 pub struct PostulateEntry(pub String, pub AgdaType);
 
-#[derive(Clone, Debug, PartialEq)]
+/* #[derive(Clone, Debug, PartialEq)]
 pub enum AgdaStructure {
     RecordDef(RecordDefinition),
     FunctionDef(FunctionDefinition)
-}
+}*/
 
 
 pub fn initialise_agda_file() -> Program {
@@ -43,7 +41,7 @@ pub fn initialise_agda_file() -> Program {
 
 /* Trait to insert a postulate entry into an AgdaFile */
 pub trait PostulateInserter {
-    fn insert_postulate(&mut self, entry: PostulateEntry);
+    fn insert_postulate(&mut self, entry: VarDecl);
 }
 
 
@@ -53,7 +51,7 @@ impl PostulateInserter for Program {
     fn insert_postulate(&mut self, entry: VarDecl) {
         for decl in &mut self.declarations {
             if let PostulateDecl(p) = decl {
-                if !p.contains(&entry) {
+                if !p.fields.contains(&entry) {
                     p.fields.push(entry);
                 }
                 return
@@ -65,7 +63,7 @@ impl PostulateInserter for Program {
 
 
 pub trait DefinitionInserter {
-    fn insert_definition(&mut self, entry: AgdaStructure);
+    fn insert_definition(&mut self, entry: TDeclaration);
 }
 
 impl DefinitionInserter for Program {

@@ -5,4 +5,6 @@
 pub enum Operator {
     Necessity = 9,
     Possibility = 8,
+    PropEq = 0,
+    Product = 1,
 }

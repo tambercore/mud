@@ -10,6 +10,7 @@ mod server;
 mod resolver;
 mod ast;
 
+use crate::ast::program::Program;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
@@ -33,6 +34,7 @@ use std::sync::Mutex;
 use attohttpc::header::SERVER;
 use colored::Colorize;
 use crossterm::style::Stylize;
+use crate::ast::agda_expr::AgdaExpr;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
@@ -67,7 +69,7 @@ static WORDS_IN_EXISTENCE: Lazy<Mutex<HashSet<String>>> = Lazy::new(|| {
     Mutex::new(HashSet::new())
 });
 
-fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), String) {
+fn sentence_to_agda(sentence: String, f: &mut Program) -> ((String, AgdaExpr), String) {
 
     show_header(&format!("Processing Sentence '{}'", sentence));
     let brill_task_id = create_task(1, "Assigning POS Tags w/ Brill");
@@ -143,7 +145,7 @@ fn sentence_to_agda(sentence: String, f: &mut AgdaFile) -> ((String, AgdaType), 
 
 
 
-fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFile, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
+fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
 
     println!();
     print!("\x1b[38;5;130m[mud]\x1b[0m \x1b[1m{}\x1b[0m", "");
@@ -221,7 +223,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (AgdaFil
     }
 
     /* Handle Conclusions */
-    let mut encoded_conclusions: Vec<(String, AgdaType)> = vec![];
+    let mut encoded_conclusions: Vec<(String, AgdaExpr)> = vec![];
     for derivation in derivations {
         let (encoded_conclusion, ccg_json) = sentence_to_agda(derivation.clone(), &mut f);
         encoded_conclusions.push(encoded_conclusion);
