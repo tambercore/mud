@@ -1,10 +1,10 @@
+use crate::ast::agda_expr::AgdaExpr;
+use crate::ast::program::{DefinitionInserter, PostulateInserter, Program};
 use crate::ast::record_projection::RecordProjection;
 use crate::ast::function_type::FunctionType;
-use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::application::Application;
-use crate::ast::program::{DefinitionInserter, PostulateInserter, Program};
 use crate::ast::record_decl::Record;
 use crate::ast::top_decl::TDeclaration::RecordDecl;
 use crate::ast::var_declaration::VarDecl;
@@ -24,17 +24,10 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     /* Generate Fields */
     let mut predicate_iden = convert_case(format!("is_{}", token).as_str(), CaseStyle::CamelCase);
 
-    let field = VarDecl {
-        iden: "e₁".to_string(),
-        _type: term!("Entity"),
-    };
-    let mut fields: Vec<VarDecl> = vec![field ];
+    let field = var_decl!("e₁", term!("Entity"));
+    let mut fields= vec![field ];
     let app: AgdaExpr = app!(*term!(predicate_iden.clone()), *term!("e₁"));
-    let proj_field = VarDecl {
-        iden: "p₁".to_string(),
-        _type: Box::from(app),
-    };
-
+    let proj_field = var_decl!("p₁", app);
     fields.push(proj_field);
 
     /* Generate each property as a proof */
@@ -43,11 +36,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let mut c_predicate = convert_case(format!("is_{}", p).as_str(), CaseStyle::CamelCase);
         let __type = app!(*term!(c_predicate.clone()), *term!("e₁"));
         types.push(__type);
-
-        let postulate_entry = VarDecl {
-            iden: c_predicate,
-            _type: Box::from(generate_function_header(1))
-        };
+        let postulate_entry = var_decl!(c_predicate.clone(), generate_function_header(1));
         f.insert_postulate(postulate_entry);
     }
 
@@ -55,10 +44,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     if negation_layers == 0 {
         let mut counter: usize = 0;
         for _type in types {
-            let field = VarDecl {
-                iden : format!("p{}", to_unicode_subscript(counter)),
-                _type: Box::from(_type)
-            };
+            let field = var_decl!(format!("p{}", to_unicode_subscript(counter)), _type);
             fields.push(field);
             counter = counter + 1;
         }
@@ -69,10 +55,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let mut inner = generate_predicate_output(types.into_iter().map(|x| {Box::from(x)}).collect());
         for _ in (0..negation_layers) { inner = Box::from(function_type!(*inner, *term!("⊥"))); }
 
-        let field = VarDecl {
-            iden: format!("p{}", to_unicode_subscript(0)),
-            _type: inner,
-        };
+        let field = var_decl!(format!("p{}", to_unicode_subscript(0)), inner);
         fields.push(field);
     }
 

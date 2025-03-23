@@ -1,5 +1,4 @@
-use crate::ast::agda_expr::AgdaExpr;
-use crate::composer::agdaify::format_agda_type;
+use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 
 /// A type to denote Theorems in Agda.
 /// Consists of an identifier, hypothesis (type signature), proof (body), and an optional comment.

@@ -1,6 +1,5 @@
 
 pub mod lambda_to_types;
-pub mod agdaify;
 pub mod case_converter;
 pub mod knowledge_base;
 pub mod conclusions;

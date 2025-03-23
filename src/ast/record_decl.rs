@@ -1,6 +1,5 @@
+use crate::ast::agda_expr::format_agda_type;
 use crate::ast::var_declaration::VarDecl;
-use crate::composer::agdaify::format_agda_type;
-
 /// A type to denote Records in Agda.
 /// Consists of Record name, Constructor name, a list of record fields, and an optional comment.
 ///

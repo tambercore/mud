@@ -1,21 +1,22 @@
-use crate::tToken;
+use crate::ast::top_decl::TDeclaration;
+use crate::{record, tToken, unop};
+use crate::ast::program::{DefinitionInserter, PostulateInserter, Program};
+use crate::ast::agda_expr::AgdaExpr;
+use crate::ast::operator::Operator::{Necessity, Product};
 use crate::ast::record_projection::RecordProjection;
 use crate::ast::dependent_function::DependentFunction;
 use crate::ast::function_type::FunctionType;
 use crate::ast::binary_op::BinOperator;
-use std::collections::HashMap;
-use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{app, bin_op, dependent_function, function_type, record_projection, term, var_decl};
-use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::agda_expr::AgdaExpr::{UnOp};
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::application::Application;
-use crate::ast::operator::Operator::{Necessity, Product};
-use crate::ast::program::{DefinitionInserter, PostulateInserter, Program};
 use crate::ast::record_decl::Record;
 use crate::ast::top_decl::TDeclaration::RecordDecl;
 use crate::ast::unary_op::UnOperator;
 use crate::ast::var_declaration::VarDecl;
+use std::collections::HashMap;
+use crate::monty::fresh_variable::to_unicode_subscript;
+use crate::{app, bin_op, dependent_function, function_type, record_projection, term, var_decl};
 use crate::composer::case_converter::*;
 use crate::composer::compose_variable::compose_variable;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
@@ -145,32 +146,17 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
     let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
     let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
-    let operator = UnOperator { op: Necessity,
-        expr: term!(prop_rec_name.clone())
-    };
-    let mut fields: Vec<VarDecl> = vec![
-        VarDecl {
-            iden: String::from("I"),
-            _type: Box::from(UnOp(operator)),
-        }
-        /* RecordField(String::from("I"),
-                    *τModalNecessity!(τSimp!(String::from(prop_rec_name)))
-        )*/
-    ];
+    let operator = unop!(Necessity, *term!(prop_rec_name.clone()));
+    let mut fields = vec![var_decl!("I", operator)];
 
     let proj_func = replace_innermost_simple(&prop_projection, app!(
         *term!("□-T"),
         *term!("I")
     ));
 
-    let record = Record {
-        record_iden: record_name.clone(),
-        constructor_iden: constructor_name,
-        fields: fields,
-        comment: None,
-    };
+    let record = record!(record_name.clone(), constructor_name, fields, None);
 
-    f.insert_definition(RecordDecl(record));
+    f.insert_definition(record);
 
     (record_name, proj_func)
 }
@@ -197,7 +183,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
     let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
     let mut symbol_table: HashMap<String, (String, AgdaExpr)> = HashMap::new();
-    let mut fields: Vec<VarDecl> = vec![];
+    let mut fields = vec![];
 
 
     /* For each existential quantifier, it needs to be added as an entity (field)
@@ -206,10 +192,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     for (identifier, _type) in equants.clone() {
         let pair = compose(_type.clone(), f, vec![]);
         symbol_table.insert(identifier.clone(), pair.clone());
-        let field = VarDecl {
-            iden: identifier.to_string(),
-            _type: term!(pair.0.clone()),
-        };
+        let field = var_decl!(identifier, term!(pair.0.clone()));
         fields.push(field);
     }
 
@@ -331,10 +314,8 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         });
 
     /* Store this in the record under `p` */
-    let var = VarDecl {
-        iden: String::from("p"),
-        _type: Box::from(inner),
-    };
+
+    let var = var_decl!("p", inner);
     fields.push(var);
 
 
@@ -343,16 +324,10 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     constructor_name = format!("{}꜀", convert_case(&*constructor_name.replace('꜀', "").replace('ᵣ', ""), CaseStyle::PascalCase));
 
 
-    /* Make Record */
-    let record = Record {
-        record_iden: record_name.clone(),
-        constructor_iden: constructor_name,
-        fields: fields.clone(),
-        comment: None,
-    };
 
+    let record = record!(record_name.clone(), constructor_name, fields.clone(), None);
     /* Insert Definition */
-    f.insert_definition(RecordDecl(record));
+    f.insert_definition(record);
 
 
     /* Calculate the Projection Function & Return */
