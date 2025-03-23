@@ -28,7 +28,7 @@ pub enum AgdaExpr {
 #[macro_export]
 macro_rules! term {
     ($iden:expr) => {
-        Box::from(Term(String::from($iden)))
+        Term(String::from($iden))
     };
 }
 

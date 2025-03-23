@@ -16,9 +16,9 @@ use crate::composer::langtree::{Join, SemanticTree, Token};
 
 pub fn generate_function_header(arity: usize) -> AgdaExpr {
     if arity == 0 {
-        *term!("Set")
+        term!("Set")
     } else {
-        function_type!(*term!("Entity"), generate_function_header(arity - 1))
+        function_type!(term!("Entity"), generate_function_header(arity - 1))
     }
 }
 
@@ -61,7 +61,7 @@ let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCa
 let rec = record!(record_name, constructor_name, fields, None);
 
 f.insert_definition(rec);
-(record_name, *term!("Temporary"))
+(record_name, term!("Temporary"))
 }
 
 

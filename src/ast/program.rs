@@ -55,7 +55,7 @@ pub fn initialise_agda_file() -> Program {
     };
 
     let typ = term!("Set");
-    let decl = var_decl!("Entity", *typ);
+    let decl = var_decl!("Entity", typ);
     let postulate = postulate!(vec![decl], None);
 
     /* Add `Entity : Set` as a declaration */

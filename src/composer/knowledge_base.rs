@@ -19,7 +19,7 @@ pub fn compose_kb(kb: KnowledgeBase, f: &mut Program) -> (String, AgdaExpr) {
     for (rec_name, rec_type) in kb {
 
         let var_decl = var_decl!(format!("j{}",
-            to_unicode_subscript(assumtion_index)), *term!(rec_name));
+            to_unicode_subscript(assumtion_index)), term!(rec_name));
         assumptions.push(var_decl);
         assumtion_index = assumtion_index + 1;
     }
@@ -28,5 +28,5 @@ pub fn compose_kb(kb: KnowledgeBase, f: &mut Program) -> (String, AgdaExpr) {
 
 
     f.insert_definition(rec);
-    ("KnowledgeBaseᵣ".parse().unwrap(), *term!("KnowledgeBaseᵣ"))
+    ("KnowledgeBaseᵣ".parse().unwrap(), term!("KnowledgeBaseᵣ"))
 }

@@ -26,7 +26,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
 
     let field = var_decl!("e₁", term!("Entity"));
     let mut fields= vec![field ];
-    let app: AgdaExpr = app!(*term!(predicate_iden.clone()), *term!("e₁"));
+    let app: AgdaExpr = app!(term!(predicate_iden.clone()), term!("e₁"));
     let proj_field = var_decl!("p₁", app);
     fields.push(proj_field);
 
@@ -34,7 +34,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let mut types: Vec<AgdaExpr> = vec![];
     for p in (props.clone()) {
         let mut c_predicate = convert_case(format!("is_{}", p).as_str(), CaseStyle::CamelCase);
-        let __type = app!(*term!(c_predicate.clone()), *term!("e₁"));
+        let __type = app!(term!(c_predicate.clone()), term!("e₁"));
         types.push(__type);
         let postulate_entry = var_decl!(c_predicate.clone(), generate_function_header(1));
         f.insert_postulate(postulate_entry);
@@ -53,7 +53,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     /* Handle cases with negation */
     else {
         let mut inner = generate_predicate_output(types.into_iter().map(|x| {Box::from(x)}).collect());
-        for _ in (0..negation_layers) { inner = Box::from(function_type!(*inner, *term!("⊥"))); }
+        for _ in (0..negation_layers) { inner = Box::from(function_type!(*inner, term!("⊥"))); }
 
         let field = var_decl!(format!("p{}", to_unicode_subscript(0)), inner);
         fields.push(field);
@@ -75,7 +75,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     f.insert_postulate(postulate_entry);
     f.insert_definition(rec);
 
-    let proj = record_projection!(*term!(record_name.clone()), *term!("e₁"));
-    let projection = app!(proj, *term!("e₁"));
+    let proj = record_projection!(term!(record_name.clone()), term!("e₁"));
+    let projection = app!(proj, term!("e₁"));
     (record_name, projection)
 }

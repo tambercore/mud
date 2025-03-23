@@ -146,12 +146,12 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
     let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
     let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
-    let operator = unop!(Necessity, *term!(prop_rec_name.clone()));
+    let operator = unop!(Necessity, term!(prop_rec_name.clone()));
     let mut fields = vec![var_decl!("I", operator)];
 
     let proj_func = replace_innermost_simple(&prop_projection, app!(
-        *term!("□-T"),
-        *term!("I")
+        term!("□-T"),
+        term!("I")
     ));
 
     let record = record!(record_name.clone(), constructor_name, fields, None);
@@ -273,17 +273,17 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
              * (The Function `replace_innermost_simple` handles the conversion of e₁ to a₁ here.)
              */
 
-            let app = app!(*term!(rhs_property.clone()),
+            let app = app!(term!(rhs_property.clone()),
                                replace_innermost_simple(&uquant_projection_function,
-                                                                  *term!(uquant_iden.clone())));
+                                                                  term!(uquant_iden.clone())));
 
             returned_proofs.push(Box::from(app));
         }
 
-        inner = generate_predicate_output(returned_proofs);
+        inner = *generate_predicate_output(returned_proofs);
 
         /* Handle layers of negation e.g. `not not P` / `not P` */
-        for _ in (0..is_negated) { inner = Box::from(function_type!(*inner, *term!("⊥".to_string()))); }
+        for _ in (0..is_negated) { inner = function_type!(inner, term!("⊥".to_string()));}
     }
 
     /* Handles normal predicates */
@@ -296,9 +296,9 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
             term!(iden.clone()),
             |acc, name| {
                 let proj = symbol_table.get(name).unwrap().clone().1;
-                let app_proj = replace_innermost_simple(&proj, *term!(name.clone()));
+                let app_proj = replace_innermost_simple(&proj, term!(name.clone()));
 
-                Box::from(app!(*acc, app_proj))
+                app!(acc, app_proj)
             }
         );
     }
@@ -310,7 +310,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         .fold(inner, |acc, (current, typ)| {
             let rec_name = symbol_table.get(&current).unwrap().0.clone();
             let var_decl = var_decl!(current, term!(rec_name));
-            Box::from(dependent_function!(var_decl, *acc))
+            dependent_function!(var_decl, acc)
         });
 
     /* Store this in the record under `p` */
@@ -334,10 +334,10 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let projection =
         if fields.len() == 2 {
             let outer_projection = symbol_table.get("e₁").unwrap().clone().1;
-            let record_proj = record_projection!(*term!(record_name.clone()), *term!("e₁"));
-            let app = app!(record_proj, *term!("e₁"));
+            let record_proj = record_projection!(term!(record_name.clone()), term!("e₁"));
+            let app = app!(record_proj, term!("e₁"));
             replace_innermost_simple(&outer_projection, app)
-        } else { *term!(record_name.clone()) };
+        } else { term!(record_name.clone()) };
 
 
     (record_name, projection)

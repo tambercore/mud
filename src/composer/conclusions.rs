@@ -15,7 +15,7 @@ pub fn compose_conclusions(conclusions: Vec<(String, AgdaExpr)>, f: &mut Program
     for (conc_name, conc_type) in conclusions {
 
         let iden = format!("thm{}", to_unicode_subscript(assumtion_index));
-        let hypothesis = function_type!(*term!("KnowledgeBaseᵣ"), *term!(conc_name));
+        let hypothesis = function_type!(term!("KnowledgeBaseᵣ"), term!(conc_name));
         let proof = QuestionMark;
 
         let func = theorem!(iden, hypothesis, proof, None);
