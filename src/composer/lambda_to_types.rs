@@ -9,24 +9,28 @@ use crate::lambda::predicate::Predicate;
 use crate::lambda::types::LambdaEntity;
 use crate::lambda::variable::Variable;
 use crate::monty::fresh_variable::to_unicode_subscript;
-use crate::{λPred, λVar, τApp, τDepFunc, τFunc, τProduct, τRecProj, τSimp};
-use crate::brill::utils::TAG_MAPPING;
-use crate::brill::wordclass::Wordclass;
-use crate::lambda::conjunction::Conjunction;
-use crate::lambda::types::LambdaEntity::{App, Var};
+use crate::ast::agda_expr::AgdaExpr::Term;
+use crate::{term};
+use crate::ast::agda_expr::AgdaExpr;
+use crate::ast::agda_expr::AgdaExpr::FunType;
+use crate::ast::function_type::FunctionType;
+use crate::ast::program::Program;
+use crate::ast::record_decl::Record;
+use crate::ast::top_decl::TDeclaration::RecordDecl;
+use crate::ast::var_declaration::VarDecl;
 use crate::composer::case_converter::*;
 use crate::composer::compose_predicate::compose_predicate;
 use crate::composer::compose_variable::compose_variable;
 use crate::composer::langtree::{Join, SemanticTree, Token};
 
-pub fn generate_function_header(arity: usize) -> AgdaType {
+pub fn generate_function_header(arity: usize) -> AgdaExpr {
     if arity == 0 {
-        Simple("Set".to_string())
+        *term!("Set")
     } else {
-        AgdaType::Function(
-            Box::new(Simple("Entity".to_string())),
-            Box::new(generate_function_header(arity - 1)),
-        )
+        FunType(FunctionType{
+            lhs: term!("Entity"),
+            rhs: Box::new(generate_function_header(arity - 1))
+        })
     }
 }
 
@@ -51,7 +55,7 @@ pub fn replace_innermost_simple(expr: AgdaType, new_value: AgdaType) -> AgdaType
     }
 }
 
-pub fn compose_product(c: Join, f: &mut AgdaFile) -> (String, AgdaType) {
+pub fn compose_product(c: Join, f: &mut Program) -> (String, AgdaType) {
 
     /* Extract projections */
     let proj1 = c.0;
@@ -69,27 +73,32 @@ pub fn compose_product(c: Join, f: &mut AgdaFile) -> (String, AgdaType) {
         .collect();
 
     /* Generate Fields */
-    let mut fields: Vec<RecordField> = vec![
-        RecordField("e₁".to_string(), *τSimp!(proj1_iden.clone().0)),
-        RecordField("e₂".to_string(), *τSimp!(proj2_iden.clone().0))
+    let mut fields: Vec<VarDecl> = vec![
+        VarDecl{
+            iden: "e₁".to_string(),
+            _type: term!(proj1_iden.clone().0)},
+        VarDecl{
+            iden: "e₂".to_string(),
+            _type: term!(proj2_iden.clone().0)},
     ];
 
     /* Now, we need to insert the record for it */
     let record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
     let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
-    let rec = RecordDefinition {
-        record_name: record_name.clone(),
-        constructor_name: constructor_name,
+    let rec = Record {
+        record_iden: record_name.clone(),
+        constructor_iden: constructor_name,
         fields: fields,
+        comment: None
     };
 
-    f.insert_definition(AgdaStructure::RecordDef(rec));
-    (record_name, *τSimp!("Temporary".to_string()))
+    f.insert_definition(RecordDecl(rec));
+    (record_name, term!("Temporary"))
 }
 
 
-pub fn compose(e: Box<SemanticTree>, f: &mut AgdaFile, props: Vec<Token>) -> (String, AgdaType) {
+pub fn compose(e: Box<SemanticTree>, f: &mut Program, props: Vec<Token>) -> (String, AgdaType) {
 
     match *e {
         SemanticTree::NonTerminal(relation) => {compose_predicate(relation, f, props)}

@@ -4,3 +4,10 @@
 ///
 #[derive(Clone, Debug, PartialEq)]
 pub struct Literate {pub content : String}
+
+#[macro_export]
+macro_rules! literate {
+    (($tt:tt)) => {
+        Literate { content: $tt }
+    };
+}

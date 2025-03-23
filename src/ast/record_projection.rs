@@ -9,3 +9,12 @@ impl PartialEq for RecordProjection {
         self.lhs == other.lhs && self.rhs == other.rhs
     }
 }
+#[macro_export]
+macro_rules! record_projection {
+    ($lhs:expr, $rhs:expr) => {
+        RecordProjection {
+            lhs: Box::new($lhs),
+            rhs: Box::new($rhs),
+        }
+    };
+}

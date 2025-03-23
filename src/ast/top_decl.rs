@@ -16,3 +16,4 @@ pub enum TDeclaration {
     RecordDecl(Record),
     LiterateProse(Literate)
 }
+

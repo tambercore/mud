@@ -10,6 +10,8 @@ use crate::composer::function_def::FunctionDefinition;
 use crate::composer::record::RecordDefinition;
 use crate::composer::structures::AgdaType;
 use crate::{postulate, term, var_decl};
+use crate::ast::record_decl::Record;
+use crate::ast::top_decl::TDeclaration;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PostulateEntry(pub String, pub AgdaType);
@@ -23,7 +25,7 @@ pub enum AgdaStructure {
 
 pub fn initialise_agda_file() -> Program {
     let mut f = Program{
-        file_name: "test".to_string(),
+        filepath: "test".to_string(),
         declarations: vec!(),
     };
 
@@ -48,7 +50,7 @@ pub trait PostulateInserter {
 
 /* Implement the trait for AgdaFile */
 impl PostulateInserter for Program {
-    fn insert_postulate(&mut self, entry: PostulateEntry) {
+    fn insert_postulate(&mut self, entry: VarDecl) {
         for decl in &mut self.declarations {
             if let PostulateDecl(p) = decl {
                 if !p.contains(&entry) {
@@ -67,7 +69,7 @@ pub trait DefinitionInserter {
 }
 
 impl DefinitionInserter for Program {
-    fn insert_definition(&mut self, entry: AgdaStructure) {
+    fn insert_definition(&mut self, entry: TDeclaration) {
         if !self.declarations.contains(&entry) {
             self.declarations.push(entry);
         }

@@ -10,3 +10,10 @@ impl PartialEq for Abstraction {
         self.var == other.var && self.expr == other.expr
     }
 }
+
+#[macro_export]
+macro_rules! abstraction {
+    ($($var:expr => $expr:expr),*) => {
+        vec![$(Abstraction { var: $var.to_string(), expr: Box::new($expr) }),*]
+    };
+}

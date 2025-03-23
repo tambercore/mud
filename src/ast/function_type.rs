@@ -9,3 +9,13 @@ impl PartialEq for FunctionType {
         self.lhs == other.lhs && self.rhs == other.rhs
     }
 }
+
+#[macro_export]
+macro_rules! function_type {
+    ($lhs:expr, $rhs:expr) => {
+        FunctionType {
+            lhs: Box::new($lhs),
+            rhs: Box::new($rhs)
+        }
+    };
+}

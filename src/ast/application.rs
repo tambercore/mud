@@ -9,3 +9,13 @@ impl PartialEq for Application {
         self.lhs == other.lhs && self.rhs == other.rhs
     }
 }
+
+#[macro_export]
+macro_rules! app {
+    ($lhs:expr, $rhs:expr) => {
+        Application {
+            lhs: Box::new($lhs),
+            rhs: Box::new($rhs),
+        }
+    };
+}

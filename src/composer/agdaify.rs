@@ -1,7 +1,11 @@
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use crate::composer::postulate::{AgdaFile, AgdaStructure, PostulateEntry};
+use crate::ast::postulate_decl::Postulate;
+use crate::ast::program::Program;
+use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, TheoremDecl};
+use crate::ast::var_declaration::VarDecl;
+use crate::composer::postulate::{AgdaStructure, PostulateEntry};
 use crate::composer::structures::{AgdaType};
 
 
@@ -74,7 +78,24 @@ pub fn format_agda_type(agda_type: &AgdaType) -> String {
 
 
 /* Converts the AgdaFile's postulate entries into Agda code. */
-impl AgdaFile {
+impl Program {
+
+    fn get_postulates(&self) -> Vec<Postulate> {
+        self.declarations
+            .iter()
+            .filter_map(|decl| if let PostulateDecl(inner) = decl { Some(inner) } else { None })
+            .collect()
+    }
+
+    fn get_definitions(&self) -> Vec<Postulate> {
+        self.declarations
+            .iter()
+            .filter_map(|decl| match decl {
+                RecordDecl(inner) | TheoremDecl(inner) => Some(inner),
+                _ => None,
+            }) // Assuming Postulate is (Vec<VarDecl>, Option<String>), cloning may be required
+            .collect()
+    }
     pub fn agdaify(&self) -> String {
         let mut code = String::new();
         code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".agda", "")));
@@ -116,26 +137,35 @@ postulate
 
         code.push_str("\n\n-- Now, introduce the relevant language constructions\npostulate\n");
 
+        // push postulate, then everything else
 
-        let mut postulate = self.postulate.clone();
-        let (propeqs, regular_postulates): (Vec<_>, Vec<_>) =
-            postulate.into_iter().partition(|entry| matches!(entry.1, AgdaType::PropEq(_, _)));
+        // 1. find the postulate blocks
+        let mut declarations = self.declarations.clone();
+        let postulates = self.get_postulates();
+        let definitions = self.get_definitions();
 
-        for PostulateEntry(name, agda_type) in regular_postulates {
-            let typ_str = format_agda_type(&agda_type);
-            code.push_str(&format!("  {} : {}\n", name, typ_str));
+        let mut postulates = self.get_postulates();
+        for postulate in postulates {
+            let (propeqs, regular_postulates): (Vec<_>, Vec<_>) =
+                postulate.into_iter().partition(|entry| matches!(entry.1, AgdaType::PropEq(_, _)));
+
+            for VarDecl{ iden: name, _type: agda_type } in regular_postulates {
+                let typ_str = format_agda_type(&agda_type);
+                code.push_str(&format!("  {} : {}\n", name, typ_str));
+            }
+
+            // Handle propositional equalities separately afterward
+            for VarDecl{ iden: name, _type: agda_type } in propeqs {
+                let typ_str = format_agda_type(&agda_type);
+                code.push_str(&format!("  {} : {}\n", name, typ_str));
+            }
         }
 
-        // Handle propositional equalities separately afterward
-        for PostulateEntry(name, agda_type) in propeqs {
-            let typ_str = format_agda_type(&agda_type);
-            code.push_str(&format!("  {} : {}\n", name, typ_str));
-        }
         
-        for def in &self.definitions {
+        for def in &self.get_definitions() {
             match def {
-                AgdaStructure::RecordDef(rec) => { code.push_str( &format!("\n{}\n", rec.agdaify())) }
-                AgdaStructure::FunctionDef(func) => { code.push_str(&format!("\n{}\n", func.agdaify())) }
+                RecordDecl(rec) => { code.push_str( &format!("\n{}\n", rec.agdaify())) }
+                TheoremDecl(func) => { code.push_str(&format!("\n{}\n", func.agdaify())) }
             }
         }
         code

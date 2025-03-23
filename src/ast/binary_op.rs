@@ -10,3 +10,14 @@ impl PartialEq for BinOperator {
         self.symbol == other.symbol && self.lhs == other.lhs && self.rhs == other.rhs
     }
 }
+
+#[macro_export]
+macro_rules! bin_op {
+    ($lhs:expr, $rhs:expr, $op:expr) => {
+        BinOperator {
+            symbol: $op,
+            lhs: Box::new($lhs),
+            rhs: Box::new($rhs),
+        }
+    };
+}

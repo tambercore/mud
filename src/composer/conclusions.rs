@@ -1,20 +1,30 @@
-use crate::composer::ast::AgdaAst;
-use crate::composer::function_def::FunctionDefinition;
-use crate::composer::postulate::{AgdaFile, AgdaStructure, DefinitionInserter};
-use crate::composer::structures::AgdaType;
-use crate::composer::structures::AgdaType::Simple;
+use crate::ast::agda_expr::AgdaExpr::{FunType, QuestionMark};
+use crate::ast::function_type::FunctionType;
+use crate::ast::program::Program;
+use crate::ast::theorem_decl::Theorem;
+use crate::composer::postulate::{DefinitionInserter};
 use crate::monty::fresh_variable::to_unicode_subscript;
+use crate::{term, theorem};
+use crate::ast::agda_expr::AgdaExpr;
+use crate::ast::top_decl::TDeclaration::TheoremDecl;
+use crate::ast::agda_expr::AgdaExpr::Term;
 
-pub fn compose_conclusions(conclusions: Vec<(String, AgdaType)>, f: &mut AgdaFile) -> () {
+pub fn compose_conclusions(conclusions: Vec<(String, AgdaExpr)>, f: &mut Program) -> () {
 
     let mut assumtion_index = 1;
     for (conc_name, conc_type) in conclusions {
-        let func = FunctionDefinition{
-            function_name: format!("thm{}", to_unicode_subscript(assumtion_index)),
-            function_type: AgdaType::Function(Box::from(Simple("KnowledgeBaseᵣ".parse().unwrap())), Box::from(Simple(conc_name))),
-            function_body: AgdaAst::Term(String::from("?"))
-        };
+
+        let iden = format!("thm{}", to_unicode_subscript(assumtion_index));
+
+        let hypothesis = FunType(FunctionType{
+            lhs: term!("KnowledgeBaseᵣ"),
+            rhs: term!(conc_name)
+        });
+
+        let proof = QuestionMark;
+
+        let func = theorem!(iden, hypothesis, proof, None);
         assumtion_index = assumtion_index + 1;
-        f.insert_definition(AgdaStructure::FunctionDef(func));
+        f.insert_definition(TheoremDecl(func));
     }
 }

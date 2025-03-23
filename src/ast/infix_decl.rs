@@ -4,3 +4,10 @@ use crate::ast::operator::Operator;
 /// infix <int> <symbol>.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Infix {pub op : Operator}
+
+#[macro_export]
+macro_rules! infix {
+    ($op:expr) => {
+        Infix { op: $op }
+    };
+}

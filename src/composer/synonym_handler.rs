@@ -1,5 +1,5 @@
 use crate::composer::case_converter::{convert_case, CaseStyle};
-use crate::composer::postulate::{AgdaFile, DefinitionInserter, PostulateEntry, PostulateInserter};
+use crate::composer::postulate::{DefinitionInserter, PostulateEntry, PostulateInserter};
 use crate::wordnet::interface::get_meanings;
 use crate::composer::structures::{AgdaType};
 use crate::composer::structures::AgdaType::{Application, PropEq, Simple};

@@ -22,7 +22,7 @@ use crate::brill::utils::{create_tag_mapping, TAG_MAPPING};
 use crate::monty::ccg_to_lc::*;
 use crate::lambda::reducible::*;
 use crate::lambda::types::{Expandable, LambdaEntity};
-use crate::composer::postulate::{initialise_agda_file, AgdaFile};
+use crate::composer::postulate::{initialise_agda_file};
 use crate::composer::lambda_to_types::compose;
 use crate::command_line::get_arguments::{Config};
 use crate::composer::knowledge_base::{compose_kb, KnowledgeBase};

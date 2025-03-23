@@ -7,7 +7,6 @@ use crate::ast::quantification::Quantification;
 use crate::ast::record_projection::RecordProjection;
 use crate::ast::unary_op::UnOperator;
 
-
 /// An enumeration of possible Expressions in Agda.
 #[derive(PartialEq)]
 pub enum AgdaExpr {
