@@ -26,7 +26,7 @@ impl Infix {
 
         // Start the record declaration with its name and type.
         if self.fix == 1 {
-            code.push_str(&format!("infix {} _{}", self.prec, op));
+            code.push_str(&format!("infix {} {}_", self.prec, op));
         }
         else if self.fix == 2 {
             code.push_str(&format!("infix {} _{}_", self.prec, op));

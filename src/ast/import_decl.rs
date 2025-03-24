@@ -1,4 +1,5 @@
 use crate::ast::agda_expr::format_agda_type;
+use crate::ast::operator::Operator;
 use crate::ast::record_decl::Record;
 use crate::ast::theorem_decl::Theorem;
 use crate::ast::var_declaration::VarDecl;
@@ -21,7 +22,9 @@ macro_rules! import {
 
 impl Import {
     pub fn agdaify(&self) -> String {
-        todo!()
+        let mut code = String::new();
+        code.push_str(&format!("open import {} using ({})\n", self.package, self.components.join(";")));
+        code
     }
 }
 

@@ -110,13 +110,16 @@ impl Program {
         self.insert_definition(import!("Data.Product", vec![]));
         self.insert_definition(import!("Relation.Binary.PropositionalEquality", vec!["_≡_".to_string(), "refl".to_string(), "subst".to_string(), "sym".to_string(), "cong".to_string()]));
 
+        self.insert_definition(infix!(Necessity, 1, 9));
+        self.insert_definition(infix!(Possibility, 1, 10));
+
         /* Initialise Postulate */
         self.insert_definition(postulate!(vec![], None));
 
         /* Define operators */
         self.insert_postulate(CommentSegment("rule in S4 Modal Logic".to_string()));
-        self.insert_postulate(infix!(Necessity, 1, 9));
-        self.insert_postulate(infix!(Possibility, 1, 10));
+        self.insert_postulate(VariableDecl(var_decl!("□_", function_type!(term!("Set"), term!("Set")))));
+        self.insert_postulate(VariableDecl(var_decl!("◇_", function_type!(term!("Set"), term!("Set")))));
 
         /* Define ◇ as a monad */
         self.insert_postulate(CommentSegment("◇ as a monad".to_string()));
@@ -178,25 +181,25 @@ impl Program {
         let necessary_k_hypothesis = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], function_type!(unop!(Necessity, function_type!(term!("A"), term!("B"))), function_type!(unop!(Necessity, term!("A")), unop!(Necessity, term!("B")))));
         let necessary_k_proof = abstraction!("z",abstraction!("z₁",app!(app!(term!("□-fmap"),abstraction!("z₂",app!(term!("z₂"), app!(term!("□-extract"), term!("z₁"))))), term!("z")))) ;
         let necessary_k_decl = theorem!("□-k", necessary_k_hypothesis, necessary_k_proof, None);
-        self.insert_postulate(necessary_k_decl);
+        self.insert_definition(necessary_k_decl);
 
         /* □-t */
         let necessary_t_hypothesis = quant!("∀",vec![var_decl!("A", term!("Set"))],function_type!(unop!(Necessity, term!("A")), term!("A")));
         let necessary_t_proof = term!("□-extract");
         let necessary_t_decl = theorem!("□-t", necessary_t_hypothesis, necessary_t_proof, None);
-        self.insert_postulate(necessary_t_decl);
+        self.insert_definition(necessary_t_decl);
 
         /* □-4 */
         let necessary_4_hypothesis = quant!("∀",vec![var_decl!("A", term!("Set"))],function_type!(unop!(Necessity, term!("A")), unop!(Necessity, unop!(Necessity, term!("A")))));
         let necessary_4_proof = term!("□-duplicate");
         let necessary_4_decl = theorem!("□-4", necessary_4_hypothesis, necessary_4_proof, None);
-        self.insert_postulate(necessary_4_decl);
+        self.insert_definition(necessary_4_decl);
 
         /* □-d */
         let necessary_d_hypothesis = quant!("∀",vec![var_decl!("A", term!("Set"))],function_type!(unop!(Necessity, term!("A")), unop!(Possibility, term!("A"))));
         let necessary_d_proof = abstraction!("z",app!(term!("◇-pure"), app!(term!("□-extract"), term!("z"))));
         let necessary_d_decl = theorem!("□-d", necessary_d_hypothesis, necessary_d_proof, None);
-        self.insert_postulate(necessary_d_decl);
+        self.insert_definition(necessary_d_decl);
 
         /* Add Entity : Set to postulate */
         self.insert_postulate(VariableDecl(var_decl!("Entity", term!("Set"))))
@@ -243,6 +246,7 @@ impl Program {
             match def {
                 RecordDecl(rec) => { code.push_str( &format!("\n{}\n", rec.agdaify())) }
                 TheoremDecl(func) => { code.push_str(&format!("\n{}\n", func.agdaify())) }
+                ImportDecl(imp) => { code.push_str(&format!("\n{}\n", imp.agdaify())) }
                 _ => {}
             }
         }
