@@ -6,7 +6,7 @@ use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::application::Application;
 use crate::ast::record_decl::Record;
-use crate::ast::top_decl::TDeclaration::RecordDecl;
+use crate::ast::top_decl::TDeclaration::{RecordDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
 use crate::composer::compose_predicate::generate_predicate_output;
 use crate::composer::lambda_to_types::generate_function_header;
@@ -37,7 +37,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let __type = app!(term!(c_predicate.clone()), term!("e₁"));
         types.push(__type);
         let postulate_entry = var_decl!(c_predicate.clone(), generate_function_header(1));
-        f.insert_postulate(postulate_entry);
+        f.insert_postulate(VariableDecl(postulate_entry));
     }
 
     /* Handle cases without negation */
@@ -72,7 +72,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let postulate_entry = var_decl!(predicate_iden.clone(), generate_function_header(1));
 
     /* We need to also update the postulate to include the isType function */
-    f.insert_postulate(postulate_entry);
+    f.insert_postulate(VariableDecl(postulate_entry));
     f.insert_definition(rec);
 
     let proj = record_projection!(term!(record_name.clone()), term!("e₁"));

@@ -4,7 +4,7 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum Operator {
     Necessity = 9,
-    Possibility = 8,
+    Possibility = 10,
     PropEq = 0,
     Product = 1,
 }
