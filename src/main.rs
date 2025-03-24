@@ -9,6 +9,7 @@ mod command_line;
 mod server;
 mod resolver;
 mod ast;
+mod parser;
 
 use crate::ast::program::{initialise_agda_file, Program};
 use std::collections::{HashMap, HashSet};
@@ -41,6 +42,7 @@ use crate::command_line::output_handler::{create_task, show_header, update_task}
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::lambda::etalike::Eliminator;
+use crate::parser::parse_agda::parse_agda;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::{create_endpoint, AgdaConclusion, AgdaPremise};
 use crate::wordnet::interface::init_wordnet;
@@ -262,6 +264,9 @@ async fn main() {
         let hole_tsk = create_task(1, "Synthesise Holes with Agsy.");
         fill_holes(config.output_file.clone(), &mut conclusions);
         update_task(hole_tsk);
+
+        /* Parse the agda file into a Program struct. */
+        let program = parse_agda(config.output_file);
 
         // println!("\n\nconclusions: {:?}", conclusions);
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally
