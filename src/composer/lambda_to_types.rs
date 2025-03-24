@@ -34,44 +34,49 @@ pub fn replace_innermost_simple(expr: &AgdaExpr, new_value: AgdaExpr) -> AgdaExp
 
 pub fn compose_product(c: Join, f: &mut Program) -> (String, AgdaExpr) {
 
-/* Extract projections */
-let proj1 = c.0;
-let proj2 = c.1;
+    /* Handle Anaphora */
+    let binding = SemanticTree::Conj(c.clone());
+    let anaphora = binding.search_anaphora();
+    for a in anaphora {
+        println!("anaphora: {a}");
+    }
 
-let proj1_iden = compose(proj1, f, vec![]);
-let proj2_iden = compose(proj2, f, vec![]);
+    /* Extract projections */
+    let proj1 = c.0;
+    let proj2 = c.1;
 
-/* These sometimes have record identifiers in them ᵣ, remove! */
-let iden: String = format!("{}×{}", proj1_iden.0, proj2_iden.0)
-    .chars()
-    .filter(|&c| c != 'ᵣ')
-    .collect();
+    let proj1_iden = compose(proj1, f, vec![]);
+    let proj2_iden = compose(proj2, f, vec![]);
 
-/* Generate Fields */
-let mut fields = vec![
-    var_decl!("e₁", term!(proj1_iden.0)),
-    var_decl!("e₂", term!(proj2_iden.0))
-];
+    /* These sometimes have record identifiers in them ᵣ, remove! */
+    let iden: String = format!("{}×{}", proj1_iden.0, proj2_iden.0)
+        .chars()
+        .filter(|&c| c != 'ᵣ')
+        .collect();
 
-/* Now, we need to insert the record for it */
-let record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
-let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
+    /* Generate Fields */
+    let mut fields = vec![
+        var_decl!("e₁", term!(proj1_iden.0)),
+        var_decl!("e₂", term!(proj2_iden.0))
+    ];
+
+    /* Now, we need to insert the record for it */
+    let record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
+    let constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
 
-let rec = record!(record_name, constructor_name, fields, None);
+    let rec = record!(record_name, constructor_name, fields, None);
 
-f.insert_definition(rec);
-(record_name, term!("Temporary"))
+    f.insert_definition(rec);
+    (record_name, term!("Temporary"))
 }
 
 
 pub fn compose(e: Box<SemanticTree>, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
-
-match *e {
-    SemanticTree::NonTerminal(relation) => {compose_predicate(relation, f, props)}
-    SemanticTree::Terminal(token) => {compose_variable(token, f, props)}
-    SemanticTree::Conj(join) => {compose_product(join, f)}
-}
-
+    match *e {
+        SemanticTree::NonTerminal(relation) => {compose_predicate(relation, f, props)}
+        SemanticTree::Terminal(token) => {compose_variable(token, f, props)}
+        SemanticTree::Conj(join) => {compose_product(join, f)}
+    }
 }
 

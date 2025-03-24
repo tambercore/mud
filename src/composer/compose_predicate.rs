@@ -170,12 +170,15 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     }
 
     /* Handle 'is' cases using unwrapping. */
+    println!("base relation: {:?}", relation);
     let (mut p, props) = unwrap(relation, f, props.clone());
-
+    println!("\tunwraps to:\n\t\tp: {:?}\n\t\tprops:{:?}\n", p, props);
 
     /* Prenex Normal Transformation (derive quantifiers and bind anaphora) */
     let (mut uquants, mut equants): (QVec, QVec) = (vec![], vec![]);
     prenex(&mut p, &mut equants, &mut uquants);
+
+    println!("\tprenexes to:\n\t\tuquants: {:?}\n\t\tequants:{:?}\n", uquants, equants);
 
 
     /* Admin (boring) */

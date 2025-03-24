@@ -55,6 +55,67 @@ impl fmt::Display for SemanticTree {
 }
 
 
+
+impl SemanticTree {
+    /// Recursively search the semantic tree for anaphoric terminal nodes.
+    pub fn search_anaphora(&self) -> Vec<&SemanticTree> {
+        let mut results = Vec::new();
+        match self {
+            SemanticTree::Terminal(word) => {
+                if is_anaphora(word) {
+                    results.push(self);
+                }
+            }
+            SemanticTree::NonTerminal (pred) => {
+                for child in &pred.1 {
+                    results.extend(child.search_anaphora());
+                }
+            }
+            SemanticTree::Conj(c) => {
+                results.extend(c.0.search_anaphora());
+                results.extend(c.1.search_anaphora());
+            }
+        }
+        results
+    }
+
+    /// Recursively collect pointers to all terminal nodes in the semantic tree.
+    pub fn collect_terminals(&self) -> Vec<&SemanticTree> {
+        let mut terminals = Vec::new();
+        match self {
+            SemanticTree::Terminal(_) => {
+                terminals.push(self);
+            }
+            SemanticTree::NonTerminal(pred) => {
+                for child in &pred.1 {
+                    terminals.extend(child.collect_terminals());
+                }
+            }
+            SemanticTree::Conj(c) => {
+                terminals.extend(c.0.collect_terminals());
+                terminals.extend(c.1.collect_terminals());
+            }
+        }
+        terminals
+    }
+}
+
+
+
+/// Helper function to check if a word is anaphoric.
+/// Here, we define a list of pronouns that are considered anaphora.
+fn is_anaphora(word: &str) -> bool {
+    let anaphora_pronouns = [
+        "he", "she", "it", "they", "him", "her", "them",
+        "himself", "herself", "themselves", "itself",
+    ];
+    // Compare in lowercase to make the check case-insensitive.
+    anaphora_pronouns.contains(&word.to_lowercase().as_str())
+}
+
+
+
+
 /* Conversion of LC Expressions to Semantic Trees */
 pub fn lambda_to_semantic(node: Box<LambdaEntity>) -> Result<SemanticTree, String> {
     match *node {
