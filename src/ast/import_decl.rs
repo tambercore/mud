@@ -1,5 +1,7 @@
 use crate::ast::agda_expr::format_agda_type;
+use crate::ast::record_decl::Record;
 use crate::ast::theorem_decl::Theorem;
+use crate::ast::var_declaration::VarDecl;
 
 /// Type denoting Agda imports.
 /// Consists of the package name (String), and the list of components to import.
@@ -14,5 +16,12 @@ macro_rules! import {
             Import {package: $package.to_string(), components: $components}
             )
     };
+}
+
+
+impl Import {
+    pub fn agdaify(&self) -> String {
+        todo!()
+    }
 }
 
