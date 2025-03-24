@@ -94,7 +94,12 @@ pub fn format_agda_type_prec(agda_type: &AgdaExpr, prec: u8) -> String {
             let s = format!("λ {} → {}", abs.var, body_str);
             if _prec < prec { format!("({})", s) } else { s }
         }
-        AgdaExpr::Quant(_) => {unimplemented!()}
+        AgdaExpr::Quant(quant) => {
+            let vars_str = quant.vars.iter().map(|v| format!("{{ {} : {} }}", v.iden, format_agda_type(&*v._type))).collect::<Vec<_>>().join(" ");
+            let expr_str = format_agda_type_prec(&*quant.expr, prec);
+            let s = format!("{} {} → {}", quant.symbol, vars_str, expr_str);
+            if 1 < prec { format!("({})", s) } else { s }
+        }
 
 
     }

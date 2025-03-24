@@ -115,8 +115,8 @@ impl Program {
 
         /* Define operators */
         self.insert_postulate(CommentSegment("rule in S4 Modal Logic".to_string()));
-        self.insert_postulate(infix!(Necessity));
-        self.insert_postulate(infix!(Possibility));
+        self.insert_postulate(infix!(Necessity, 1, 9));
+        self.insert_postulate(infix!(Possibility, 1, 10));
 
         /* Define ◇ as a monad */
         self.insert_postulate(CommentSegment("◇ as a monad".to_string()));
@@ -206,52 +206,37 @@ impl Program {
     }
 
     pub fn agdaify(&self) -> String {
+
+
         let mut code = String::new();
+
+        let module_name = self.filepath.trim_end_matches(".agda");
+        code.push_str(&format!("module {} where\n", module_name));
 
         // push postulate, then everything else
 
         let mut postulates = self.get_postulates();
         for postulate in postulates {
-
-
-            let mut propeqs = Vec::new();
-            let mut regular_postulates = Vec::new();
+            let mut propeqs = Postulate {fields : vec![], comment : None};
+            let mut regular_postulates = Postulate {fields : vec![], comment : None};
 
             // Manually partition without using `.iter()`
             for entry in &postulate.fields {
                 if let VariableDecl(var) = entry {
                     if let AgdaExpr::BinOp(BinOperator { symbol: ref symb, lhs: _, rhs: _ }) = &*var._type {
                         if *symb == PropEq {
-                            propeqs.push(entry);
+                            propeqs.fields.push(entry.clone());
                         }
                     }
-                }
-
-                else {
-                    regular_postulates.push(entry);
+                } else {
+                    regular_postulates.fields.push(entry.clone());
                 }
             }
 
-            // Process regular postulates
-            for entry in regular_postulates {
-                match entry {
-                    ImportDecl(import) => code.push_str( &format!("\n{}\n", import.agdaify())),
-                    InfixDecl(infix) => code.push_str( &format!("\n{}\n", infix.agdaify())),
-                    TheoremDecl(theorem) => code.push_str( &format!("\n{}\n", theorem.agdaify())),
-                    VariableDecl(var) => code.push_str( &format!("\n{}\n", var.agdaify())),
-                    CommentSegment(comment) => code.push_str( &format!("-- \n{}\n", comment)),
-                    _ => panic!("Unexpected entry in postulate.")
-                };
-            }
-
-            // Process propositional equalities separately
-            for entry in propeqs {
-                match entry {
-                    VariableDecl(var) => code.push_str( &format!("\n{}\n", var.agdaify())),
-                    _ => panic!("Unexpected entry in propositional equalities postulate.")
-                };
-            }
+            code.push_str( &format!("\n{}\n", regular_postulates.agdaify()));
+            code.push_str( &format!("\n{}\n", propeqs.agdaify()));
         }
+
 
 
         for def in &self.get_definitions() {
