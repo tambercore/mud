@@ -1,3 +1,4 @@
+use crate::ast::import_decl::Import;
 use crate::ast::operator::Operator;
 
 /// A type to denote infix declarations of the form:
@@ -11,3 +12,10 @@ macro_rules! infix {
         TDeclaration::InfixDecl(Infix { op: $op })
     };
 }
+
+impl Infix {
+    pub fn agdaify(&self) -> String {
+        todo!()
+    }
+}
+
