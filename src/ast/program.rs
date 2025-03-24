@@ -129,19 +129,19 @@ impl Program {
 
         /* ◇-pure */
         let possible_pure_signature = function_type!(term!("A"), unop!(Possibility, term!("A")));
-        let possible_pure_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], possible_pure_signature);
+        let possible_pure_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], possible_pure_signature.clone());
         let possible_pure_theorem = theorem!("◇-pure", possible_pure_signature.clone(), possible_pure_decl, None);
         self.insert_postulate(possible_pure_theorem);
 
         /* ◇-lift */
         let possible_lift_signature = function_type!(unop!(Possibility, function_type!(term!("A"), term!("B"))),function_type!(unop!(Possibility, term!("A")), unop!(Possibility, term!("B"))));
-        let possible_lift_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_lift_signature);
+        let possible_lift_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_lift_signature.clone());
         let possible_lift_theorem = theorem!("◇-lift", possible_lift_signature.clone(), possible_lift_decl, None);
         self.insert_postulate(possible_lift_theorem);
 
         /* ◇-bind */
         let possible_bind_signature = function_type!(function_type!(unop!(Possibility, term!("A")) , function_type!(term!("A"), unop!(Possibility, term!("B")))) ,unop!(Possibility, term!("B")));
-        let possible_bind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_bind_signature);
+        let possible_bind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_bind_signature.clone());
         let possible_bind_theorem = theorem!("◇-bind", possible_bind_signature.clone(), possible_bind_decl, None);
         self.insert_postulate(possible_bind_theorem);
 
@@ -150,25 +150,25 @@ impl Program {
 
         /* □-fmap */
         let necessary_fmap_signature = function_type!(function_type!(term!("A"), term!("B")),function_type!(unop!(Necessity, term!("A")), unop!(Necessity, term!("B"))));
-        let necessary_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_fmap_signature);
+        let necessary_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_fmap_signature.clone());
         let necessary_fmap_theorem = theorem!("□-fmap", necessary_fmap_signature.clone(), necessary_fmap_decl, None);
         self.insert_postulate(necessary_fmap_theorem);
 
         /* □-extract */
         let necessary_extract_signature = function_type!(unop!(Necessity, term!("A")),term!("A"));
-        let necessary_extract_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_extract_signature);
+        let necessary_extract_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_extract_signature.clone());
         let necessary_extract_theorem = theorem!("□-extract", necessary_extract_signature.clone(), necessary_extract_decl, None);
         self.insert_postulate(necessary_extract_theorem);
 
         /* □-duplicate */
         let necessary_duplicate_signature = function_type!(unop!(Necessity, term!("A")),unop!(Necessity, unop!(Necessity, term!("A"))));
-        let necessary_duplicate_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_duplicate_signature);
+        let necessary_duplicate_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_duplicate_signature.clone());
         let necessary_duplicate_theorem = theorem!("□-duplicate", necessary_duplicate_signature.clone(), necessary_duplicate_decl, None);
         self.insert_postulate(necessary_duplicate_theorem);
 
         /* □-cobind */
         let necessary_cobind_signature = function_type!(function_type!(unop!(Necessity, term!("B")),function_type!(unop!(Necessity, term!("B")), term!("A"))),unop!(Necessity, term!("A")));
-        let necessary_cobind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_cobind_signature);
+        let necessary_cobind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_cobind_signature.clone());
         let necessary_cobind_theorem = theorem!("□-cobind", necessary_cobind_signature.clone(), necessary_cobind_decl, None);
         self.insert_postulate(necessary_cobind_theorem);
 
@@ -239,8 +239,8 @@ impl Program {
                     InfixDecl(infix) => code.push_str( &format!("\n{}\n", infix.agdaify())),
                     TheoremDecl(theorem) => code.push_str( &format!("\n{}\n", theorem.agdaify())),
                     VariableDecl(var) => code.push_str( &format!("\n{}\n", var.agdaify())),
-                    CommentSegment(comment) => code.push_str( &format!("\n{}\n", comment.agdaify())),
-                    _ => panic!("Unexpected entry in postulate: {:?}", entry)
+                    CommentSegment(comment) => code.push_str( &format!("-- \n{}\n", comment)),
+                    _ => panic!("Unexpected entry in postulate.")
                 };
             }
 
@@ -248,7 +248,7 @@ impl Program {
             for entry in propeqs {
                 match entry {
                     VariableDecl(var) => code.push_str( &format!("\n{}\n", var.agdaify())),
-                    _ => panic!("Unexpected entry in propositional equalities postulate: {:?}", entry)
+                    _ => panic!("Unexpected entry in propositional equalities postulate.")
                 };
             }
         }
