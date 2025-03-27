@@ -10,6 +10,7 @@ mod server;
 mod resolver;
 mod ast;
 mod parser;
+mod interpreter;
 
 use crate::ast::program::{initialise_agda_file, Program};
 use std::collections::{HashMap, HashSet};
