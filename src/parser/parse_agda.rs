@@ -12,6 +12,8 @@ use crate::ast::{abstraction::Abstraction, application::Application, agda_expr::
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::term;
 
+
+
 /// Function to parse an Agda expression from a string.
 pub fn parse_agda(expr: String) -> AgdaExpr {
     match parse_agda_expr(&expr) {
@@ -20,11 +22,15 @@ pub fn parse_agda(expr: String) -> AgdaExpr {
     }
 }
 
+
+
 /// Function to parse a term, accepting any non-whitespace and non-lambda characters.
 fn parse_term(input: &str) -> IResult<&str, String> {
     take_while1(|c: char| !c.is_whitespace() && c != 'λ' && c != '.' && c != '→' && c != '(' && c != ')')(input)
         .map(|(next_input, term)| (next_input, term.to_string()))
 }
+
+
 
 /// Function to parse a record projection.
 fn parse_proj(input: &str) -> IResult<&str, RecordProjection> {
@@ -41,6 +47,8 @@ fn parse_proj(input: &str) -> IResult<&str, RecordProjection> {
         rhs: Box::from(field)
     }))
 }
+
+
 
 /// Function to parse a lambda abstraction.
 fn parse_abstraction(input: &str) -> IResult<&str, Abstraction> {
@@ -66,6 +74,8 @@ fn parse_abstraction(input: &str) -> IResult<&str, Abstraction> {
     }
 }
 
+
+
 /// Function to parse an expression within parentheses.
 fn parse_parentheses_expr(input: &str) -> IResult<&str, AgdaExpr> {
     let (input, _) = opt(multispace0)(input)?;
@@ -76,6 +86,8 @@ fn parse_parentheses_expr(input: &str) -> IResult<&str, AgdaExpr> {
     let (input, _) = char(')')(input)?;
     Ok((input, expr))
 }
+
+
 
 /// Function to parse an application of expressions.
 fn parse_application(input: &str) -> IResult<&str, AgdaExpr> {
@@ -94,6 +106,8 @@ fn parse_application(input: &str) -> IResult<&str, AgdaExpr> {
     Ok((input, application))
 }
 
+
+
 /// Function to parse a base-level expression.
 fn parse_base_expr(input: &str) -> IResult<&str, AgdaExpr> {
     alt((
@@ -104,10 +118,14 @@ fn parse_base_expr(input: &str) -> IResult<&str, AgdaExpr> {
     ))(input)
 }
 
+
+
 /// Function to parse an Agda expression, handling applications and base expressions.
 fn parse_agda_expr(input: &str) -> IResult<&str, AgdaExpr> {
     alt((parse_application, parse_base_expr))(input)
 }
+
+
 
 #[cfg(test)]
 mod tests {
@@ -161,4 +179,18 @@ mod tests {
             );
         assert_eq!(parsed, expected);
     }
+
+    #[test]
+    fn test_sample2() {
+        let input = "λ z →
+          AmberAmber꜀ (z .KnowledgeBaseᵣ.j₁ .TobyAmberᵣ.e₁)
+          (z .KnowledgeBaseᵣ.j₁ .TobyAmberᵣ.p₁)
+          (z .KnowledgeBaseᵣ.j₁ .TobyAmberᵣ.p₁)".to_string();
+
+        let parsed = parse_agda(input);
+
+        println!("{:?}", parsed);
+    }
+
+
 }
