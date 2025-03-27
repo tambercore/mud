@@ -90,7 +90,7 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
 pub fn handle_synonyms(property: &str, f: &mut Program) {
 
     /* todo: Extend these to the CLI interface. */
-    let SYNSTRAT: SynsetStrategy = SynsetStrategy::Ignore;
+    let SYNSTRAT: SynsetStrategy = SynsetStrategy::AllMeanings;
     let SYNRELEVANT: SynsetRelevancyStrategy = SynsetRelevancyStrategy::Relevant;
     if let SynsetStrategy::Ignore = SYNSTRAT { return; }
 
