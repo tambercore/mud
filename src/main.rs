@@ -42,7 +42,6 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::command_line::output_handler::{create_task, show_header, update_task};
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
-use crate::interpreter::structure::print_interpretations;
 use crate::lambda::etalike::Eliminator;
 use crate::parser::parse_agda::parse_agda;
 use crate::resolver::fill_holes::fill_holes;
@@ -269,8 +268,6 @@ async fn main() {
 
         /* Parse the agda file into a Program struct. */
         let program = parse_agda(config.output_file);
-
-        print_interpretations();
 
         // println!("\n\nconclusions: {:?}", conclusions);
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally

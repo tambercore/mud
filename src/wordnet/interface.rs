@@ -9,12 +9,11 @@ use std::sync::Mutex;
 use crate::wordnet::postag::WordnetTag;
 use crate::wordnet::wordnode::Wordnode;
 use std::io::{BufRead};
+use crate::ast::agda_expr::AgdaExpr;
 
 /// Static singleton to store word meanings.
 /// This is initialized lazily and is protected by a Mutex for thread safety.
 static WORD_MEANINGS: Lazy<Mutex<HashMap<String, Vec<Wordnode>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
-
-
 
 /// Function to initialize the wordnet by reading from the `wordnet.json` file.
 /// This function loads the data, processes it, and populates the WORD_MEANINGS singleton.

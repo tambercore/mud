@@ -15,6 +15,7 @@ use crate::ast::top_decl::TDeclaration;
 use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::wordnet::interface::get_meanings;
 use crate::{abstraction, app, bin_op, dependent_function, function_type, term, theorem, var_decl, WORDS_IN_EXISTENCE};
+use crate::interpreter::structure::insert_interpretation;
 /* todo: move these to a higher level when integrating with CLI */
 pub enum SynsetStrategy {
     Ignore, BestMatch, AllMeanings
@@ -40,7 +41,9 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
 
     let _type = bin_op!(term!(is_property.clone()), term!(is_synonym.clone()), Operator::PropEq);
     let entry = var_decl!(equality_identifier.clone(), _type);
-    f.insert_postulate(entry);
+    f.insert_postulate(entry.clone());
+
+    insert_interpretation(TDeclaration::VariableDecl(entry), format!("{} is synonymous with {}", property, synonym));
 
     /*
      * The following code dervies a pointwise equality function from the above declared

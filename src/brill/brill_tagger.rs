@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
-use crate::interpreter::structure::{insert_interpretation, Interpretation};
 use super::contextual_rulespec::{contextual_rule_apply, ContextualRulespec};
 use super::wordclass::Wordclass;
 use super::init_tagger::{initialize_tagger, WordclassMap};
