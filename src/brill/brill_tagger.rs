@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use crate::brill::contextual_ruleset::parse_contextual_ruleset;
 use crate::brill::lexical_ruleset::parse_lexical_ruleset;
+use crate::interpreter::structure::{insert_interpretation, Interpretation};
 use super::contextual_rulespec::{contextual_rule_apply, ContextualRulespec};
 use super::wordclass::Wordclass;
 use super::init_tagger::{initialize_tagger, WordclassMap};
@@ -20,6 +21,22 @@ pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, cont
     let tokenised_sentence = tokenize_sentence(sentence);
     let words_to_tags: Vec<(String, Vec<Wordclass>)> = get_possible_tags(tokenised_sentence, wc_mapping);
 
+    /* Add possible tags to interpretations */
+    /*for (word, tags) in words_to_tags.clone() {
+
+        /* Join the tags with " or " */
+        let tags_str = tags.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", or ");
+
+        /* Format the statement */
+        let statement = format!("'{}' may be {}", word, tags_str);
+
+        /* Insert the interpretation */
+        insert_interpretation(Interpretation {
+            statement: statement.clone(),
+            source: "Brill Tagger".to_string(),
+        });
+    }*/
+
     //println!("possible tags: {:?}", words_to_tags);
     let mut sentence_to_tag: Vec<(String, Wordclass)> = retrieve_sentence_to_tag(words_to_tags.clone());
 
@@ -36,6 +53,20 @@ pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, cont
             *tag = Wordclass::NNP;
         }
     });
+
+    /* Add tags to interpretations */
+    /*for (word, tag) in sentence_to_tag.clone() {
+
+        /* Format the statement */
+        let statement = format!("'{}' is a {}", word, tag);
+
+        /* Insert the interpretation */
+        insert_interpretation(Interpretation {
+            statement: statement.clone(),
+            source: "Brill Tagger".to_string(),
+        });
+    }*/
+
 
     return sentence_to_tag;
 }
