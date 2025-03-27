@@ -134,6 +134,8 @@ pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) {
         .map(|&hole_id| fill_hole(stdin, stdout, filepath.clone(), hole_id.0))
         .collect();
 
+    println!("filled holes: {:?}", filled_holes);
+
     /* Update AgdaConclusion based on filled holes */
     for (i, filled) in filled_holes.iter().enumerate() {
         if let Some(_) = filled {
