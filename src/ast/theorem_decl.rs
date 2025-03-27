@@ -32,6 +32,6 @@ impl PartialEq for Theorem {
 macro_rules! theorem {
     ($iden:expr, $hypothesis:expr, $proof:expr, $comment:expr) => {
         TDeclaration::TheoremDecl(
-        Theorem {iden: $iden, hypothesis: Box::new($hypothesis), proof: Box::new($proof), comment: $comment})
+        Theorem {iden: String::from($iden), hypothesis: Box::new($hypothesis), proof: Box::new($proof), comment: $comment})
     };
 }

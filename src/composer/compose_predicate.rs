@@ -11,7 +11,7 @@ use crate::ast::agda_expr::AgdaExpr::{UnOp};
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::application::Application;
 use crate::ast::record_decl::Record;
-use crate::ast::top_decl::TDeclaration::RecordDecl;
+use crate::ast::top_decl::TDeclaration::{RecordDecl, VariableDecl};
 use crate::ast::unary_op::UnOperator;
 use crate::ast::var_declaration::VarDecl;
 use std::collections::HashMap;
@@ -31,7 +31,7 @@ pub fn add_describer(current_prop: Token, f: &mut Program) {
     /* Add the describer as an Adjective */
     let mut property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
     let entry = var_decl!(property.clone(), generate_function_header(1));
-    f.insert_postulate(entry);
+    f.insert_postulate(VariableDecl(entry));
     handle_synonyms(current_prop.as_str(), f);
 }
 
@@ -289,7 +289,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     /* Handles normal predicates */
     else {
         /* Postulate the predicate as a function to Set. */
-        f.insert_postulate(var_decl!(iden.clone(), generate_function_header(p.1.len())));
+        f.insert_postulate(VariableDecl(var_decl!(iden.clone(), generate_function_header(p.1.len()))));
 
         /* Then, `inner` becomes the application of that function to the arguments */
         inner = var_idens.iter().fold(

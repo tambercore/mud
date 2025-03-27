@@ -4,6 +4,7 @@ use crate::ast::literate_prose::Literate;
 use crate::ast::postulate_decl::Postulate;
 use crate::ast::record_decl::Record;
 use crate::ast::theorem_decl::Theorem;
+use crate::ast::var_declaration::VarDecl;
 
 /// Enum to describe a top-level declaration in an AgdaFile.
 /// These can be literate (tex segments), or programmatic.
@@ -13,7 +14,8 @@ pub enum TDeclaration {
     InfixDecl(Infix),
     PostulateDecl(Postulate),
     TheoremDecl(Theorem),
+    VariableDecl(VarDecl),
     RecordDecl(Record),
-    LiterateProse(Literate)
+    LiterateProse(Literate),
+    CommentSegment(String)
 }
-

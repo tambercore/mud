@@ -1,5 +1,5 @@
 use warp::multipart::Part;
-use crate::ast::agda_expr::AgdaExpr;
+use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 
 /// A type to denote variable declarations in Agda.
 /// These take the form e : t where e is an identifier and t is an AgdaExpr.
@@ -13,6 +13,15 @@ impl PartialEq for VarDecl {
     }
 }
 
+impl VarDecl {
+
+    pub fn agdaify(&self) -> String  {
+        let mut code = String::new();
+        let typ_str = format_agda_type(&*self._type);
+        code.push_str(&format!("  {} : {}\n", self.iden, typ_str));
+        code
+    }
+}
 #[macro_export]
 macro_rules! var_decl {
     ($iden:expr, $type:expr) => {
