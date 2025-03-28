@@ -107,7 +107,7 @@ impl fmt::Display for Wordclass {
             Wordclass::WRB => "Wh-adverb",
             Wordclass::PUNC => "Punctuation",
             Wordclass::NUM => "Numeric",
-            Wordclass::ANY => "Any!",
+            Wordclass::ANY => "Any Type",
 
         };
         write!(f, "{}", wordclass_str)
