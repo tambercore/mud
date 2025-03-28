@@ -116,26 +116,22 @@ impl Program {
 
         /* ◇-fmap */
         let possible_fmap_signature = function_type!(function_type!(function_type!(term!("A"), term!("B")), unop!(Possibility, term!("A"))), unop!(Possibility, term!("B")));
-        let possible_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_fmap_signature.clone());
-        let possible_fmap_theorem = theorem!("◇-fmap", possible_fmap_signature.clone(), possible_fmap_decl, None);
+        let possible_fmap_theorem = theorem!("◇-fmap", possible_fmap_signature.clone(), None, None);
         fields.push(possible_fmap_theorem);
 
         /* ◇-pure */
         let possible_pure_signature = function_type!(term!("A"), unop!(Possibility, term!("A")));
-        let possible_pure_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], possible_pure_signature.clone());
-        let possible_pure_theorem = theorem!("◇-pure", possible_pure_signature.clone(), possible_pure_decl, None);
+        let possible_pure_theorem = theorem!("◇-pure", possible_pure_signature.clone(), None, None);
         fields.push(possible_pure_theorem);
 
         /* ◇-lift */
         let possible_lift_signature = function_type!(unop!(Possibility, function_type!(term!("A"), term!("B"))),function_type!(unop!(Possibility, term!("A")), unop!(Possibility, term!("B"))));
-        let possible_lift_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_lift_signature.clone());
-        let possible_lift_theorem = theorem!("◇-lift", possible_lift_signature.clone(), possible_lift_decl, None);
+        let possible_lift_theorem = theorem!("◇-lift", possible_lift_signature.clone(), None, None);
         fields.push(possible_lift_theorem);
 
         /* ◇-bind */
         let possible_bind_signature = function_type!(function_type!(unop!(Possibility, term!("A")) , function_type!(term!("A"), unop!(Possibility, term!("B")))) ,unop!(Possibility, term!("B")));
-        let possible_bind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_bind_signature.clone());
-        let possible_bind_theorem = theorem!("◇-bind", possible_bind_signature.clone(), possible_bind_decl, None);
+        let possible_bind_theorem = theorem!("◇-bind", possible_bind_signature.clone(), None, None);
         fields.push(possible_bind_theorem);
 
         /* Define □ as a comonad */
@@ -143,26 +139,22 @@ impl Program {
 
         /* □-fmap */
         let necessary_fmap_signature = function_type!(function_type!(term!("A"), term!("B")),function_type!(unop!(Necessity, term!("A")), unop!(Necessity, term!("B"))));
-        let necessary_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_fmap_signature.clone());
-        let necessary_fmap_theorem = theorem!("□-fmap", necessary_fmap_signature.clone(), necessary_fmap_decl, None);
+        let necessary_fmap_theorem = theorem!("□-fmap", necessary_fmap_signature.clone(), None, None);
         fields.push(necessary_fmap_theorem);
 
         /* □-extract */
         let necessary_extract_signature = function_type!(unop!(Necessity, term!("A")),term!("A"));
-        let necessary_extract_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_extract_signature.clone());
-        let necessary_extract_theorem = theorem!("□-extract", necessary_extract_signature.clone(), necessary_extract_decl, None);
+        let necessary_extract_theorem = theorem!("□-extract", necessary_extract_signature.clone(), None, None);
         fields.push(necessary_extract_theorem);
 
         /* □-duplicate */
         let necessary_duplicate_signature = function_type!(unop!(Necessity, term!("A")),unop!(Necessity, unop!(Necessity, term!("A"))));
-        let necessary_duplicate_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_duplicate_signature.clone());
-        let necessary_duplicate_theorem = theorem!("□-duplicate", necessary_duplicate_signature.clone(), necessary_duplicate_decl, None);
+        let necessary_duplicate_theorem = theorem!("□-duplicate", necessary_duplicate_signature.clone(), None, None);
         fields.push(necessary_duplicate_theorem);
 
         /* □-cobind */
         let necessary_cobind_signature = function_type!(function_type!(unop!(Necessity, term!("B")),function_type!(unop!(Necessity, term!("B")), term!("A"))),unop!(Necessity, term!("A")));
-        let necessary_cobind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_cobind_signature.clone());
-        let necessary_cobind_theorem = theorem!("□-cobind", necessary_cobind_signature.clone(), necessary_cobind_decl, None);
+        let necessary_cobind_theorem = theorem!("□-cobind", necessary_cobind_signature.clone(), None, None);
         fields.push(necessary_cobind_theorem);
 
         fields.push(CommentSegment("Define the S4 Modal Logic".to_string()));

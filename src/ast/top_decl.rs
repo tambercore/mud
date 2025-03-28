@@ -18,7 +18,7 @@ pub enum TDeclaration {
     VariableDecl(VarDecl),
     RecordDecl(Record),
     LiterateProse(Literate),
-    CommentSegment(String)
+    CommentSegment(String),
 }
 
 impl TDeclaration {

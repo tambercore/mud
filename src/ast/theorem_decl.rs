@@ -7,7 +7,7 @@ use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 pub struct Theorem {
     pub iden : String,
     pub hypothesis : Box<AgdaExpr>,
-    pub proof : Box<AgdaExpr>,
+    pub proof : Option<Box<AgdaExpr>>,
     pub comment : Option<String>}
 
 pub trait Agdaify {
@@ -19,7 +19,9 @@ impl Agdaify for Theorem {
      fn agdaify(&self) -> String {
         let mut code = String::new();
         code.push_str(&(format!("{} : {}\n", self.iden, format_agda_type(&self.hypothesis))));
-        code.push_str(&(format!("{} = {}\n", self.iden, format_agda_type(&self.proof))));
+        if let Some(proof) = &self.proof {
+            code.push_str(&(format!("{} = {}\n", self.iden, format_agda_type(proof))));
+        }
         code
     }
 }
@@ -32,6 +34,6 @@ impl PartialEq for Theorem {
 macro_rules! theorem {
     ($iden:expr, $hypothesis:expr, $proof:expr, $comment:expr) => {
         TDeclaration::TheoremDecl(
-        Theorem {iden: String::from($iden), hypothesis: Box::new($hypothesis), proof: Box::new($proof), comment: $comment})
+        Theorem {iden: String::from($iden), hypothesis: Box::new($hypothesis), proof: $proof, comment: $comment})
     };
 }
