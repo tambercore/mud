@@ -1,15 +1,19 @@
+use crate::ast::theorem_decl::Theorem;
+use crate::ast::quantification::Quantification;
+use crate::ast::unary_op::UnOperator;
+use crate::ast::function_type::FunctionType;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use crate::ast::postulate_decl::Postulate;
 use crate::AgdaExpr::Term;
 use crate::ast::top_decl::TDeclaration;
-use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, TheoremDecl};
+use crate::ast::top_decl::TDeclaration::{CommentSegment, PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
-use crate::{postulate, term, var_decl};
+use crate::{function_type, postulate, quant, term, theorem, unop, var_decl};
 use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 use crate::ast::binary_op::BinOperator;
-use crate::ast::operator::Operator::PropEq;
+use crate::ast::operator::Operator::{Necessity, Possibility, PropEq};
 use crate::ast::theorem_decl::Agdaify;
 
 /// Type to describe an Agda Program. Consists of a file name (String),
@@ -29,16 +33,16 @@ macro_rules! program {
 
 /* Trait to insert a postulate entry into an AgdaFile */
 pub trait PostulateInserter {
-    fn insert_postulate(&mut self, entry: VarDecl);
+    fn insert_postulate(&mut self, entry: TDeclaration);
 }
 
 
 
 /* Implement the trait for AgdaFile */
 impl PostulateInserter for Program {
-    fn insert_postulate(&mut self, entry: VarDecl) {
-        for decl in &mut self.declarations {
-            if let PostulateDecl(p) = decl {
+    fn insert_postulate(&mut self, entry: TDeclaration) {
+        for decl in &mut self.declarations.iter_mut().rev() {
+            if let PostulateDecl(ref mut p) = decl {
                 if !p.fields.contains(&entry) {
                     p.fields.push(entry);
                 }
@@ -55,7 +59,7 @@ pub fn initialise_agda_file() -> Program {
     };
 
     let typ = term!("Set");
-    let decl = var_decl!("Entity", typ);
+    let decl = VariableDecl(var_decl!("Entity", typ));
     let postulate = postulate!(vec![decl], None);
 
     /* Add `Entity : Set` as a declaration */
@@ -98,44 +102,115 @@ impl Program {
             }) // Assuming Postulate is (Vec<VarDecl>, Option<String>), cloning may be required
             .collect()
     }
+
+    pub fn create_postulate(&self) -> TDeclaration {
+        let mut fields: Vec<TDeclaration> = Vec::new();
+
+        /* Define operators */
+        fields.push(CommentSegment("rule in S4 Modal Logic".to_string()));
+        fields.push(VariableDecl(var_decl!("□_", function_type!(term!("Set"), term!("Set")))));
+        fields.push(VariableDecl(var_decl!("◇_", function_type!(term!("Set"), term!("Set")))));
+
+        /* Define ◇ as a monad */
+        fields.push(CommentSegment("◇ as a monad".to_string()));
+
+        /* ◇-fmap */
+        let possible_fmap_signature = function_type!(function_type!(function_type!(term!("A"), term!("B")), unop!(Possibility, term!("A"))), unop!(Possibility, term!("B")));
+        let possible_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_fmap_signature.clone());
+        let possible_fmap_theorem = theorem!("◇-fmap", possible_fmap_decl.clone(), None, None);
+        fields.push(possible_fmap_theorem);
+
+        /* ◇-pure */
+        let possible_pure_signature = function_type!(term!("A"), unop!(Possibility, term!("A")));
+        let possible_pure_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], possible_pure_signature.clone());
+        let possible_pure_theorem = theorem!("◇-pure", possible_pure_decl.clone(), None, None);
+        fields.push(possible_pure_theorem);
+
+        /* ◇-lift */
+        let possible_lift_signature = function_type!(unop!(Possibility, function_type!(term!("A"), term!("B"))),function_type!(unop!(Possibility, term!("A")), unop!(Possibility, term!("B"))));
+        let possible_lift_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_lift_signature.clone());
+        let possible_lift_theorem = theorem!("◇-lift", possible_lift_decl.clone(), None, None);
+        fields.push(possible_lift_theorem);
+
+        /* ◇-bind */
+        let possible_bind_signature = function_type!(function_type!(unop!(Possibility, term!("A")) , function_type!(term!("A"), unop!(Possibility, term!("B")))) ,unop!(Possibility, term!("B")));
+        let possible_bind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_bind_signature.clone());
+        let possible_bind_theorem = theorem!("◇-bind", possible_bind_decl.clone(), None, None);
+        fields.push(possible_bind_theorem);
+
+        /* Define □ as a comonad */
+        fields.push(CommentSegment("□ as a comonad".to_string()));
+
+        /* □-fmap */
+        let necessary_fmap_signature = function_type!(function_type!(term!("A"), term!("B")),function_type!(unop!(Necessity, term!("A")), unop!(Necessity, term!("B"))));
+        let necessary_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_fmap_signature.clone());
+        let necessary_fmap_theorem = theorem!("□-fmap", necessary_fmap_decl.clone(), None, None);
+        fields.push(necessary_fmap_theorem);
+
+        /* □-extract */
+        let necessary_extract_signature = function_type!(unop!(Necessity, term!("A")),term!("A"));
+        let necessary_extract_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_extract_signature.clone());
+        let necessary_extract_theorem = theorem!("□-extract", necessary_extract_decl.clone(), None, None);
+        fields.push(necessary_extract_theorem);
+
+        /* □-duplicate */
+        let necessary_duplicate_signature = function_type!(unop!(Necessity, term!("A")),unop!(Necessity, unop!(Necessity, term!("A"))));
+        let necessary_duplicate_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_duplicate_signature.clone());
+        let necessary_duplicate_theorem = theorem!("□-duplicate", necessary_duplicate_decl.clone(), None, None);
+        fields.push(necessary_duplicate_theorem);
+
+        /* □-cobind */
+        let necessary_cobind_signature = function_type!(function_type!(unop!(Necessity, term!("B")),function_type!(unop!(Necessity, term!("B")), term!("A"))),unop!(Necessity, term!("A")));
+        let necessary_cobind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_cobind_signature.clone());
+        let necessary_cobind_theorem = theorem!("□-cobind", necessary_cobind_decl.clone(), None, None);
+        fields.push(necessary_cobind_theorem);
+
+
+        postulate!(fields, None)
+    }
     pub fn agdaify(&self) -> String {
         let mut code = String::new();
         code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".agda", "")));
         code.push_str( &format!("open import Data.Product\n\n"));
         code.push_str(&format!("open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)\n\n"));
-        code.push_str("infix 9 □_
-infix 10 ◇_
 
-postulate
-    -- rule in S4 Modal Logic
-    □_   : Set → Set
-    ◇_   : Set → Set
+        code.push_str("infix 9 □_ \ninfix 10 ◇_ \n\n");
 
-    -- ◇ as a monad
-    ◇-fmap : ∀ {A B : Set}   → (A → B) → ◇ A → ◇ B
-    ◇-pure : ∀ {A : Set}     → A → ◇ A
-    ◇-lift : ∀ {A B : Set}   → ◇ (A → B) → ◇ A → ◇ B
-    ◇-bind : ∀ {A B : Set}   → (◇ A) → (A → ◇ B) → ◇ B
+        /* let postulate = "postulate
+        -- rule in S4 Modal Logic
+        □_   : Set → Set
+        ◇_   : Set → Set
 
-    -- □ as a comonad
-    □-fmap : ∀ {A B : Set} → (A → B) → □ A → □ B
-    □-extract : ∀ {A : Set} → □ A → A
-    □-duplicate : ∀ {A : Set} → □ A → □ □ A
-    □-cobind : ∀ {A B : Set} → □ B → (□ B → A) → □ A
+        -- ◇ as a monad
+        ◇-fmap : ∀ {A B : Set}   → (A → B) → ◇ A → ◇ B
+        ◇-pure : ∀ {A : Set}     → A → ◇ A
+        ◇-lift : ∀ {A B : Set}   → ◇ (A → B) → ◇ A → ◇ B
+        ◇-bind : ∀ {A B : Set}   → (◇ A) → (A → ◇ B) → ◇ B
 
--- Derive S4 Modal Logic (as follows)
-□-k : ∀ {A B : Set} → □ (A → B) → (□ A → □ B)
-□-k = λ z z₁ → □-fmap (λ z₂ → z₂ (□-extract z₁)) z
+        -- □ as a comonad
+        □-fmap : ∀ {A B : Set} → (A → B) → □ A → □ B
+        □-extract : ∀ {A : Set} → □ A → A
+        □-duplicate : ∀ {A : Set} → □ A → □ □ A
+        □-cobind : ∀ {A B : Set} → □ B → (□ B → A) → □ A ";
 
-□-t : ∀ {A : Set} → □ A → A
-□-t = □-extract
+        code.push_str(postulate);*/
 
-□-4 : ∀ {A : Set} → □ A → □ □ A
-□-4 = □-duplicate
+        let postulate = self.create_postulate().agdaify();
+        code.push_str(&postulate);
 
--- □-d says that if □ A then it is possible that A
-□-d : ∀ {A : Set} → □ A → ◇ A
-□-d = λ z → ◇-pure (□-extract z)");
+        code.push_str("\n\n -- Derive S4 Modal Logic (as follows)\n");
+        code.push_str("□-k : ∀ {A B : Set} → □ (A → B) → (□ A → □ B)\n");
+        code.push_str("□-k = λ z z₁ → □-fmap (λ z₂ → z₂ (□-extract z₁)) z\n");
+
+        code.push_str("□-t : ∀ {A : Set} → □ A → A\n");
+        code.push_str("□-t = □-extract\n");
+
+        code.push_str("□-4 : ∀ {A : Set} → □ A → □ □ A\n");
+        code.push_str("□-4 = □-duplicate\n");
+
+        code.push_str("-- □-d says that if □ A then it is possible that A\n");
+        code.push_str("□-d : ∀ {A : Set} → □ A → ◇ A\n");
+        code.push_str("□-d = λ z → ◇-pure (□-extract z)\n");
 
         code.push_str("\n\n-- Now, introduce the relevant language constructions\npostulate\n");
 
@@ -148,27 +223,29 @@ postulate
 
             // Manually partition without using `.iter()`
             for entry in &postulate.fields {
-                if let AgdaExpr::BinOp(BinOperator { symbol: ref symb, lhs: _, rhs: _ }) = &*entry._type {
-                    if *symb == PropEq {
-                        propeqs.push(entry);
+                if let VariableDecl(vardecl) = entry {
+                    if let AgdaExpr::BinOp(BinOperator { symbol: ref symb, lhs: _, rhs: _ }) = &*vardecl._type {
+                        if *symb == PropEq {
+                            propeqs.push(entry);
+                        }
                     }
-                } else {
+                    else {
+                        regular_postulates.push(entry);
+                    }
+                }
+                else {
                     regular_postulates.push(entry);
                 }
             }
 
             // Process regular postulates
             for entry in regular_postulates {
-                let VarDecl { iden: name, _type: agda_type } = entry;
-                let typ_str = format_agda_type(agda_type);
-                code.push_str(&format!("  {} : {}\n", name, typ_str));
+                code.push_str( &format!("    {}", entry.agdaify()));
             }
 
             // Process propositional equalities separately
             for entry in propeqs {
-                let VarDecl { iden: name, _type: agda_type } = entry;
-                let typ_str = format_agda_type(&agda_type);
-                code.push_str(&format!("  {} : {}\n", name, typ_str));
+                code.push_str( &format!("    {}", entry.agdaify()));
             }
         }
 

@@ -15,6 +15,7 @@ use crate::ast::top_decl::TDeclaration;
 use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::wordnet::interface::get_meanings;
 use crate::{abstraction, app, bin_op, dependent_function, function_type, term, theorem, var_decl, WORDS_IN_EXISTENCE};
+use crate::ast::top_decl::TDeclaration::VariableDecl;
 /* todo: move these to a higher level when integrating with CLI */
 pub enum SynsetStrategy {
     Ignore, BestMatch, AllMeanings
@@ -40,7 +41,7 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
 
     let _type = bin_op!(term!(is_property.clone()), term!(is_synonym.clone()), Operator::PropEq);
     let entry = var_decl!(equality_identifier.clone(), _type);
-    f.insert_postulate(entry);
+    f.insert_postulate(VariableDecl(entry));
 
     /*
      * The following code dervies a pointwise equality function from the above declared
@@ -48,7 +49,7 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
      *
      * `λ (e) → λ (m) → subst (λ (X) → X e) identity_proof m`
      */
-    let ast = abstraction!(
+    let ast = Box::from(abstraction!(
         "e",
         abstraction!(
             "m",
@@ -69,13 +70,13 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
                 )
             )
         )
-    );
+    ));
 
     /* Next, the type header for this, following `(e : Entity) → is_p1 e → is_p2 e` */
     let type_header = dependent_function!(var_decl!("e", term!("Entity")),
         function_type!(app!(term!(is_synonym.clone()), term!("e")), app!(term!(is_property.clone()), term!("e"))));
 
-    let theorem = theorem!(format!("{}_syn_{}_pointwise", property, synonym), type_header, ast, None);
+    let theorem = theorem!(format!("{}_syn_{}_pointwise", property, synonym), type_header, Some(ast), None);
     let function_def = theorem;
 
     /* These definitions are bundled as the full function, and inserted into the file */

@@ -16,9 +16,9 @@ pub fn compose_conclusions(conclusions: Vec<(String, AgdaExpr)>, f: &mut Program
 
         let iden = format!("thm{}", to_unicode_subscript(assumtion_index));
         let hypothesis = function_type!(term!("KnowledgeBaseᵣ"), term!(conc_name));
-        let proof = QuestionMark;
+        let proof = Box::from(QuestionMark);
 
-        let func = theorem!(iden, hypothesis, proof, None);
+        let func = theorem!(iden, hypothesis, Some(proof), None);
         assumtion_index = assumtion_index + 1;
         f.insert_definition(func);
     }
