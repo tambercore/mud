@@ -15,7 +15,6 @@ use crate::composer::langtree::Token;
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::{app, function_type, record, record_projection, term, var_decl};
-use crate::interpreter::structure::insert_interpretation;
 
 pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 
@@ -76,8 +75,6 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     /* We need to also update the postulate to include the isType function */
     f.insert_postulate(VariableDecl(postulate_entry));
     f.insert_definition(rec.clone());
-
-    insert_interpretation(rec.clone(), token);
 
     let proj = record_projection!(term!(record_name.clone()), term!("e₁"));
     let projection = app!(proj, term!("e₁"));
