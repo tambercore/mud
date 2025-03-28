@@ -9,7 +9,7 @@ use crate::ast::var_declaration::VarDecl;
 
 /// Enum to describe a top-level declaration in an AgdaFile.
 /// These can be literate (tex segments), or programmatic.
-#[derive(Eq, Hash, PartialEq, Clone)]
+#[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub enum TDeclaration {
     ImportDecl(Import),
     InfixDecl(Infix),

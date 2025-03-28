@@ -1,5 +1,6 @@
+use crate::ast::theorem_decl::Theorem;
 use crate::ast::top_decl::TDeclaration;
-use crate::{record, tToken, unop};
+use crate::{infix, record, tToken, theorem, unop};
 use crate::ast::program::{DefinitionInserter, PostulateInserter, Program};
 use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::operator::Operator::{Necessity, Product};
@@ -11,7 +12,7 @@ use crate::ast::agda_expr::AgdaExpr::{UnOp};
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::application::Application;
 use crate::ast::record_decl::Record;
-use crate::ast::top_decl::TDeclaration::{RecordDecl, VariableDecl};
+use crate::ast::top_decl::TDeclaration::{RecordDecl, TheoremDecl, VariableDecl};
 use crate::ast::unary_op::UnOperator;
 use crate::ast::var_declaration::VarDecl;
 use std::collections::HashMap;
@@ -23,8 +24,7 @@ use crate::composer::lambda_to_types::{compose, generate_function_header, replac
 use crate::composer::langtree::{Relation, SemanticTree, Token};
 use crate::composer::langtree::SemanticTree::Terminal;
 use crate::composer::synonym_handler::handle_synonyms;
-
-
+use crate::interpreter::structure::insert_interpretation;
 
 pub fn add_describer(current_prop: Token, f: &mut Program) {
 
@@ -170,7 +170,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     }
 
     /* Handle 'is' cases using unwrapping. */
-    let (mut p, props) = unwrap(relation, f, props.clone());
+    let (mut p, props) = unwrap(relation.clone(), f, props.clone());
 
 
     /* Prenex Normal Transformation (derive quantifiers and bind anaphora) */
@@ -327,7 +327,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
 
     let record = record!(record_name.clone(), constructor_name, fields.clone(), None);
     /* Insert Definition */
-    f.insert_definition(record);
+    f.insert_definition(record.clone());
 
 
     /* Calculate the Projection Function & Return */
@@ -340,5 +340,38 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         } else { term!(record_name.clone()) };
 
 
+    insert_interpretation_map(relation.clone(), record.clone());
+
     (record_name, projection)
+}
+
+
+/// Convert the relation to infix form and add this to the interpretation map.
+pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration) {
+    /* Convert the relation to an infix string. */
+    // e.g. relation.args[0] relation.iden relation.args[1] for args len 2
+    // relation.args[0] relation.iden for args len 1
+
+    let infix_str = match relation.1.len() {
+            2 => {
+                if let (Terminal(a), Terminal(b)) =
+                    (*relation.1[0].clone(), *relation.1[1].clone())
+                {
+                    format!("{} {} {}", a, relation.0, b)
+                } else {
+                    unimplemented!("Non-Terminal expressions are not supported in infix form")
+                }
+            }
+            1 => {
+                if let Terminal(a) = *relation.1[0].clone() {
+                    format!("{} {}", a, relation.0)
+                } else {
+                    unimplemented!("Non-Terminal expressions are not supported in infix form")
+                }
+            }
+            _ => relation.0.clone(),
+        };
+
+
+    insert_interpretation(expr, infix_str);
 }

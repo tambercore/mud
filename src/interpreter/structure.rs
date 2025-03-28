@@ -14,3 +14,12 @@ pub fn insert_interpretation(agda_expr: TDeclaration, interpretation: String) {
     // Insert the new interpretation into the HashMap
     map.insert(agda_expr, interpretation);
 }
+
+pub fn print_interpretations() {
+    // Lock the Mutex for safe, mutable access
+    let map = INTERPRETATIONS.lock().unwrap();
+
+    for (key, value) in map.iter() {
+        println!("{:?} : {}\n\n", key, value);
+    }
+}

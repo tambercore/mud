@@ -42,6 +42,7 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::command_line::output_handler::{create_task, show_header, update_task};
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
+use crate::interpreter::structure::print_interpretations;
 use crate::lambda::etalike::Eliminator;
 use crate::parser::parse_agda::parse_agda;
 use crate::resolver::fill_holes::fill_holes;
@@ -95,7 +96,6 @@ fn sentence_to_agda(sentence: String, f: &mut Program) -> ((String, AgdaExpr), S
     } else {
         english_to_ccg(&sentence, vec_of_word_tag_tuples.clone())
     };
-    println!("CCG: {}", ccg);
 
     let lambda_expression = ccg_to_lambda(&mut ccg);
     //println!("Result: \n{}", lambda_expression);
@@ -265,6 +265,8 @@ async fn main() {
         let hole_tsk = create_task(1, "Synthesise Holes with Agsy.");
         fill_holes(config.output_file.clone(), &mut conclusions);
         update_task(hole_tsk);
+
+        print_interpretations();
 
         /* Parse the agda file into a Program struct. */
         let program = parse_agda(config.output_file);
