@@ -22,7 +22,7 @@ use crate::composer::case_converter::*;
 use crate::composer::compose_variable::compose_variable;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
 use crate::composer::langtree::{Relation, SemanticTree, Token};
-use crate::composer::langtree::SemanticTree::Terminal;
+use crate::composer::langtree::SemanticTree::{NonTerminal, Terminal};
 use crate::composer::synonym_handler::handle_synonyms;
 use crate::interpreter::structure::insert_interpretation;
 
@@ -352,26 +352,40 @@ pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration) {
     // e.g. relation.args[0] relation.iden relation.args[1] for args len 2
     // relation.args[0] relation.iden for args len 1
 
-    let infix_str = match relation.1.len() {
+    // Helper function to convert a relation to infix form recursively
+    fn to_infix_string(relation: &Relation) -> String {
+        match relation.1.len() {
             2 => {
-                if let (Terminal(a), Terminal(b)) =
-                    (*relation.1[0].clone(), *relation.1[1].clone())
-                {
-                    format!("{} {} {}", a, relation.0, b)
-                } else {
-                    unimplemented!("Non-Terminal expressions are not supported in infix form")
-                }
+                // Handle both terminal and non-terminal combinations
+                let left = match &*relation.1[0] {
+                    Terminal(a) => a.clone(),
+                    NonTerminal(a) => to_infix_string(a),  // no parentheses needed for non-terminals
+                    _ => unimplemented!(),
+                };
+
+                let right = match &*relation.1[1] {
+                    Terminal(b) => b.clone(),
+                    NonTerminal(b) => to_infix_string(b),  // recursive call for non-terminals
+                    _ => unimplemented!(),
+                };
+
+                format!("{} {} {}", left, relation.0, right)
             }
             1 => {
-                if let Terminal(a) = *relation.1[0].clone() {
-                    format!("{} {}", a, relation.0)
-                } else {
-                    unimplemented!("Non-Terminal expressions are not supported in infix form")
+                // Handle the case where only one argument is present
+                match &*relation.1[0] {
+                    Terminal(a) => format!("{} {}", relation.0, a),
+                    NonTerminal(a) => format!("{} {}", relation.0, to_infix_string(a)),
+                    _ => unimplemented!(),
                 }
             }
             _ => relation.0.clone(),
-        };
+        }
+    }
 
+    // Convert the relation into infix notation
+    let infix_str = to_infix_string(&relation);
 
+    // Insert the interpretation into the map
     insert_interpretation(expr, infix_str);
 }

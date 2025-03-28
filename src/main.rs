@@ -249,7 +249,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("amber is toby & toby likes cheese & amber is fast -> amber is amber & amber likes cheese & amber is rapid & necessarily toby likes cheese");
+    let config = Config::from_args("socrates is a man & every man is mortal -> socrates is mortal & socrates is perishable");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
