@@ -15,6 +15,7 @@ use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 use crate::ast::binary_op::BinOperator;
 use crate::ast::operator::Operator::{Necessity, Possibility, PropEq};
 use crate::ast::theorem_decl::Agdaify;
+use crate::interpreter::structure::insert_interpretation;
 
 /// Type to describe an Agda Program. Consists of a file name (String),
 /// and a list of Declarations.
@@ -118,25 +119,30 @@ impl Program {
         let possible_fmap_signature = function_type!(function_type!(function_type!(term!("A"), term!("B")), unop!(Possibility, term!("A"))), unop!(Possibility, term!("B")));
         let possible_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_fmap_signature.clone());
         let possible_fmap_theorem = theorem!("◇-fmap", possible_fmap_decl.clone(), None, None);
-        fields.push(possible_fmap_theorem);
+        fields.push(possible_fmap_theorem.clone());
+        insert_interpretation(possible_fmap_theorem, format!("If A implies B, then Possibly A implies Possibly B"));
+
 
         /* ◇-pure */
         let possible_pure_signature = function_type!(term!("A"), unop!(Possibility, term!("A")));
         let possible_pure_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], possible_pure_signature.clone());
         let possible_pure_theorem = theorem!("◇-pure", possible_pure_decl.clone(), None, None);
-        fields.push(possible_pure_theorem);
+        fields.push(possible_pure_theorem.clone());
+        insert_interpretation(possible_pure_theorem, format!("If something is true, it is also possible"));
 
         /* ◇-lift */
         let possible_lift_signature = function_type!(unop!(Possibility, function_type!(term!("A"), term!("B"))),function_type!(unop!(Possibility, term!("A")), unop!(Possibility, term!("B"))));
         let possible_lift_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_lift_signature.clone());
         let possible_lift_theorem = theorem!("◇-lift", possible_lift_decl.clone(), None, None);
-        fields.push(possible_lift_theorem);
+        fields.push(possible_lift_theorem.clone());
+        insert_interpretation(possible_lift_theorem, format!("If A implies B is possible, then both A and B are possible"));
 
         /* ◇-bind */
         let possible_bind_signature = function_type!(function_type!(unop!(Possibility, term!("A")) , function_type!(term!("A"), unop!(Possibility, term!("B")))) ,unop!(Possibility, term!("B")));
         let possible_bind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_bind_signature.clone());
         let possible_bind_theorem = theorem!("◇-bind", possible_bind_decl.clone(), None, None);
-        fields.push(possible_bind_theorem);
+        fields.push(possible_bind_theorem.clone());
+        insert_interpretation(possible_bind_theorem, format!("If A is true, and A implies B is possible, then B is possible"));
 
         /* Define □ as a comonad */
         fields.push(CommentSegment("□ as a comonad".to_string()));
@@ -145,25 +151,29 @@ impl Program {
         let necessary_fmap_signature = function_type!(function_type!(term!("A"), term!("B")),function_type!(unop!(Necessity, term!("A")), unop!(Necessity, term!("B"))));
         let necessary_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_fmap_signature.clone());
         let necessary_fmap_theorem = theorem!("□-fmap", necessary_fmap_decl.clone(), None, None);
-        fields.push(necessary_fmap_theorem);
+        fields.push(necessary_fmap_theorem.clone());
+        insert_interpretation(necessary_fmap_theorem, format!("If A implies B, then Necessarily A implies Necessarily B"));
 
         /* □-extract */
         let necessary_extract_signature = function_type!(unop!(Necessity, term!("A")),term!("A"));
         let necessary_extract_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_extract_signature.clone());
         let necessary_extract_theorem = theorem!("□-extract", necessary_extract_decl.clone(), None, None);
-        fields.push(necessary_extract_theorem);
+        fields.push(necessary_extract_theorem.clone());
+        insert_interpretation(necessary_extract_theorem, format!("If something is necessary, it is true"));
 
         /* □-duplicate */
         let necessary_duplicate_signature = function_type!(unop!(Necessity, term!("A")),unop!(Necessity, unop!(Necessity, term!("A"))));
         let necessary_duplicate_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_duplicate_signature.clone());
         let necessary_duplicate_theorem = theorem!("□-duplicate", necessary_duplicate_decl.clone(), None, None);
-        fields.push(necessary_duplicate_theorem);
+        fields.push(necessary_duplicate_theorem.clone());
+        insert_interpretation(necessary_duplicate_theorem, format!("If something is necessary, it is necessarily necessary."));
 
         /* □-cobind */
         let necessary_cobind_signature = function_type!(function_type!(unop!(Necessity, term!("B")),function_type!(unop!(Necessity, term!("B")), term!("A"))),unop!(Necessity, term!("A")));
         let necessary_cobind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_cobind_signature.clone());
         let necessary_cobind_theorem = theorem!("□-cobind", necessary_cobind_decl.clone(), None, None);
-        fields.push(necessary_cobind_theorem);
+        fields.push(necessary_cobind_theorem.clone());
+        insert_interpretation(necessary_cobind_theorem, format!("Temporary cobind interpretation"));
 
 
         postulate!(fields, None)
