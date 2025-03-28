@@ -12,3 +12,19 @@ macro_rules! postulate {
         TDeclaration::PostulateDecl(Postulate {fields: $fields, comment: $comment})
     };
 }
+
+impl Postulate {
+    pub fn agdaify(self) -> String {
+        let mut code = String::new();
+        code.push_str("postulate\n");
+
+        for field in self.fields {
+            let field_code = field.agdaify();
+            for line in field_code.lines() {
+                code.push_str(&format!("    {}\n", line));
+            }
+        }
+
+        code
+    }
+}

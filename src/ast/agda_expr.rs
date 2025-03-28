@@ -1,4 +1,5 @@
 use crate::ast::abstraction::Abstraction;
+use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::application::Application;
 use crate::ast::binary_op::BinOperator;
 use crate::ast::dependent_function::DependentFunction;
@@ -23,7 +24,6 @@ pub enum AgdaExpr {
     RecProj(RecordProjection),
     QuestionMark
 }
-
 
 #[macro_export]
 macro_rules! term {
@@ -94,7 +94,22 @@ pub fn format_agda_type_prec(agda_type: &AgdaExpr, prec: u8) -> String {
             let s = format!("λ {} → {}", abs.var, body_str);
             if _prec < prec { format!("({})", s) } else { s }
         }
-        AgdaExpr::Quant(_) => {unimplemented!()}
+        AgdaExpr::Quant(quant) => {
+
+            let my_prec = 3;
+
+            let mut vars = String::new();
+            for var in quant.vars.clone() {
+                if let Term(t) = *var._type {
+                    vars.push_str(format!("{{ {} : {} }}", var.iden, t).as_str());
+                }
+            }
+
+            let body_str = format_agda_type_prec(&*quant.expr, my_prec);
+            let s = format!("{} {} → {}", quant.symbol, vars, body_str);
+            if my_prec < prec { format!("({})", s) } else { s }
+
+        }
 
 
     }

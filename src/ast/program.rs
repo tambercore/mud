@@ -179,7 +179,7 @@ impl Program {
 
         code.push_str("infix 9 □_ \ninfix 10 ◇_ \n\n");
 
-        let postulate = "postulate
+        /* let postulate = "postulate
         -- rule in S4 Modal Logic
         □_   : Set → Set
         ◇_   : Set → Set
@@ -196,7 +196,10 @@ impl Program {
         □-duplicate : ∀ {A : Set} → □ A → □ □ A
         □-cobind : ∀ {A B : Set} → □ B → (□ B → A) → □ A ";
 
-        code.push_str(postulate);
+        code.push_str(postulate);*/
+
+        let postulate = self.create_postulate().agdaify();
+        code.push_str(&postulate);
 
         code.push_str("\n\n -- Derive S4 Modal Logic (as follows)\n");
         code.push_str("□-k : ∀ {A B : Set} → □ (A → B) → (□ A → □ B)\n");
@@ -240,25 +243,12 @@ impl Program {
 
             // Process regular postulates
             for entry in regular_postulates {
-
-                match entry {
-                    TheoremDecl(theorem) => {code.push_str( &format!("\n{}\n", theorem.agdaify()))}
-                    VariableDecl(variable) => {code.push_str( &format!("\n{}\n", variable.agdaify()))}
-                    RecordDecl(record) => {code.push_str( &format!("\n{}\n", record.agdaify()))}
-                    CommentSegment(comment) => {code.push_str( &format!("\n-- {}\n", comment))}
-                    _ => unimplemented!()
-                }
+                code.push_str( &format!("\n{}\n", entry.agdaify()));
             }
 
             // Process propositional equalities separately
             for entry in propeqs {
-                match entry {
-                    TheoremDecl(theorem) => {code.push_str( &format!("\n{}\n", theorem.agdaify()))}
-                    VariableDecl(variable) => {code.push_str( &format!("\n{}\n", variable.agdaify()))}
-                    RecordDecl(record) => {code.push_str( &format!("\n{}\n", record.agdaify()))}
-                    CommentSegment(comment) => {code.push_str( &format!("\n-- {}\n", comment))}
-                    _ => unimplemented!()
-                }
+                code.push_str( &format!("\n{}\n", entry.agdaify()));
             }
         }
 
