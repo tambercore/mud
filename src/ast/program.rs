@@ -120,7 +120,7 @@ impl Program {
         let possible_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_fmap_signature.clone());
         let possible_fmap_theorem = theorem!("◇-fmap", possible_fmap_decl.clone(), None, None);
         fields.push(possible_fmap_theorem.clone());
-        insert_interpretation(possible_fmap_theorem, format!("If A implies B, then Possibly A implies Possibly B"));
+        insert_interpretation(possible_fmap_theorem, format!("If one truth is possibly linked to another, then their possibility carries over."));
 
 
         /* ◇-pure */
@@ -128,21 +128,21 @@ impl Program {
         let possible_pure_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], possible_pure_signature.clone());
         let possible_pure_theorem = theorem!("◇-pure", possible_pure_decl.clone(), None, None);
         fields.push(possible_pure_theorem.clone());
-        insert_interpretation(possible_pure_theorem, format!("If something is true, it is also possible"));
+        insert_interpretation(possible_pure_theorem, format!("If a proposition is true, it is also possible"));
 
         /* ◇-lift */
         let possible_lift_signature = function_type!(unop!(Possibility, function_type!(term!("A"), term!("B"))),function_type!(unop!(Possibility, term!("A")), unop!(Possibility, term!("B"))));
         let possible_lift_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_lift_signature.clone());
         let possible_lift_theorem = theorem!("◇-lift", possible_lift_decl.clone(), None, None);
         fields.push(possible_lift_theorem.clone());
-        insert_interpretation(possible_lift_theorem, format!("If A implies B is possible, then both A and B are possible"));
+        insert_interpretation(possible_lift_theorem, format!("If a possible rule exists, applying it to a possible truth gives a possible result."));
 
         /* ◇-bind */
         let possible_bind_signature = function_type!(function_type!(unop!(Possibility, term!("A")) , function_type!(term!("A"), unop!(Possibility, term!("B")))) ,unop!(Possibility, term!("B")));
         let possible_bind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_bind_signature.clone());
         let possible_bind_theorem = theorem!("◇-bind", possible_bind_decl.clone(), None, None);
         fields.push(possible_bind_theorem.clone());
-        insert_interpretation(possible_bind_theorem, format!("If A is true, and A implies B is possible, then B is possible"));
+        insert_interpretation(possible_bind_theorem, format!("If a truth is possible and always leads to another possible truth, then the second truth is possible."));
 
         /* Define □ as a comonad */
         fields.push(CommentSegment("□ as a comonad".to_string()));
@@ -152,28 +152,28 @@ impl Program {
         let necessary_fmap_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_fmap_signature.clone());
         let necessary_fmap_theorem = theorem!("□-fmap", necessary_fmap_decl.clone(), None, None);
         fields.push(necessary_fmap_theorem.clone());
-        insert_interpretation(necessary_fmap_theorem, format!("If A implies B, then Necessarily A implies Necessarily B"));
+        insert_interpretation(necessary_fmap_theorem, format!("A necessary truth preserves necessity when applied to another truth."));
 
         /* □-extract */
         let necessary_extract_signature = function_type!(unop!(Necessity, term!("A")),term!("A"));
         let necessary_extract_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_extract_signature.clone());
         let necessary_extract_theorem = theorem!("□-extract", necessary_extract_decl.clone(), None, None);
         fields.push(necessary_extract_theorem.clone());
-        insert_interpretation(necessary_extract_theorem, format!("If something is necessary, it is true"));
+        insert_interpretation(necessary_extract_theorem, format!("If a proposition is necessary, it is true"));
 
         /* □-duplicate */
         let necessary_duplicate_signature = function_type!(unop!(Necessity, term!("A")),unop!(Necessity, unop!(Necessity, term!("A"))));
         let necessary_duplicate_decl = quant!("∀", vec![var_decl!("A", term!("Set"))], necessary_duplicate_signature.clone());
         let necessary_duplicate_theorem = theorem!("□-duplicate", necessary_duplicate_decl.clone(), None, None);
         fields.push(necessary_duplicate_theorem.clone());
-        insert_interpretation(necessary_duplicate_theorem, format!("If something is necessary, it is necessarily necessary."));
+        insert_interpretation(necessary_duplicate_theorem, format!("If a proposition is necessary, it is necessarily necessary."));
 
         /* □-cobind */
         let necessary_cobind_signature = function_type!(function_type!(unop!(Necessity, term!("B")),function_type!(unop!(Necessity, term!("B")), term!("A"))),unop!(Necessity, term!("A")));
         let necessary_cobind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_cobind_signature.clone());
         let necessary_cobind_theorem = theorem!("□-cobind", necessary_cobind_decl.clone(), None, None);
         fields.push(necessary_cobind_theorem.clone());
-        insert_interpretation(necessary_cobind_theorem, format!("Temporary cobind interpretation"));
+        insert_interpretation(necessary_cobind_theorem, format!("If a truth necessarily depends on a necessary condition, then it is also necessary."));
 
 
         postulate!(fields, None)
