@@ -18,7 +18,7 @@ impl VarDecl {
     pub fn agdaify(&self) -> String  {
         let mut code = String::new();
         let typ_str = format_agda_type(&*self._type);
-        code.push_str(&format!("  {} : {}\n", self.iden, typ_str));
+        code.push_str(&format!("{} : {}\n", self.iden, typ_str));
         code
     }
 }
