@@ -2,7 +2,7 @@ use crate::ast::operator::Operator;
 
 /// A type to denote infix declarations of the form:
 /// infix <int> <symbol>.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Infix {pub op : Operator}
 
 #[macro_export]

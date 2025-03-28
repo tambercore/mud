@@ -11,7 +11,7 @@ use crate::ast::record_projection::RecordProjection;
 use crate::ast::unary_op::UnOperator;
 
 /// An enumeration of possible Expressions in Agda.
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub enum AgdaExpr {
     Term(String),
     UnOp(UnOperator),

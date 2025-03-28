@@ -3,7 +3,7 @@ use crate::ast::var_declaration::VarDecl;
 
 /// A type to denote postulate in Agda.
 /// Consists of a list of fields and an optional Comment.
-#[derive(PartialEq, Clone)]
+#[derive(Eq, Hash, PartialEq, Clone)]
 pub struct Postulate {pub fields : Vec<TDeclaration>, pub comment : Option<String>}
 
 #[macro_export]

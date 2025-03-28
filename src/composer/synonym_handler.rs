@@ -42,7 +42,7 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
 
     let _type = bin_op!(term!(is_property.clone()), term!(is_synonym.clone()), Operator::PropEq);
     let entry = var_decl!(equality_identifier.clone(), _type);
-    f.insert_postulate(VariableDecl(entry));
+    f.insert_postulate(VariableDecl(entry.clone()));
 
     insert_interpretation(TDeclaration::VariableDecl(entry), format!("{} is synonymous with {}", property, synonym));
 

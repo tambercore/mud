@@ -3,7 +3,7 @@ use crate::ast::operator::Operator;
 
 /// A type to denote Binary Operations in Agda.
 /// Consists of the operator, and the lhs and rhs of the expression.
-#[derive(Debug, Clone)]
+#[derive(Eq, Hash, Debug, Clone)]
 pub struct BinOperator {pub symbol : Operator, pub lhs : Box<AgdaExpr>, pub rhs : Box<AgdaExpr>}
 
 impl PartialEq for BinOperator {
