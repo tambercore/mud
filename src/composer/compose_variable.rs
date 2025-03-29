@@ -26,12 +26,12 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     /* Generate Fields */
     let mut predicate_iden = convert_case(format!("is_{}", token).as_str(), CaseStyle::CamelCase);
 
-    let field =VariableDecl(var_decl!("e₁", term!("Entity")));
-    insert_interpretation(field.clone(), String::from("there is an entity who"));
+    let field =var_decl!("e₁", term!("Entity"));
+    insert_interpretation(VariableDecl(field.clone()), String::from("there is an entity who"));
     let mut fields= vec![field ];
     let app: AgdaExpr = app!(term!(predicate_iden.clone()), term!("e₁"));
-    let proj_field = VariableDecl(var_decl!("p₁", app));
-    insert_interpretation(proj_field.clone(), format!("is {}", token));
+    let proj_field = var_decl!("p₁", app);
+    insert_interpretation(VariableDecl(proj_field.clone()), format!("is {}", token));
     fields.push(proj_field);
 
     /* Generate each property as a proof */
@@ -42,14 +42,14 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let mut c_predicate = convert_case(format!("is_{}", p).as_str(), CaseStyle::CamelCase);
         let __type = app!(term!(c_predicate.clone()), term!("e₁"));
         types.push(__type.clone());
-        let postulate_entry = VariableDecl(var_decl!(c_predicate.clone(), generate_function_header(1)));
-        insert_interpretation(postulate_entry.clone(), format!("is {}", p));
-        f.insert_postulate(postulate_entry);
+        let postulate_entry = var_decl!(c_predicate.clone(), generate_function_header(1));
+        insert_interpretation(VariableDecl(postulate_entry.clone()), format!("is {}", p));
+        f.insert_postulate(VariableDecl(postulate_entry));
 
         /* Handle cases without negation */
         if negation_layers == 0 {
-            let field = VariableDecl(var_decl!(format!("p{}", to_unicode_subscript(counter)), __type));
-            insert_interpretation(field.clone(), format!("is {}", c_predicate.get(2..).unwrap_or("")));
+            let field = var_decl!(format!("p{}", to_unicode_subscript(counter)), __type);
+            insert_interpretation(VariableDecl(field.clone()), format!("is {}", c_predicate.get(2..).unwrap_or("")));
             fields.push(field);
             counter = counter + 1;
         }
@@ -61,7 +61,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let mut inner = generate_predicate_output(types.into_iter().map(|x| {Box::from(x)}).collect());
         for _ in (0..negation_layers) { inner = Box::from(function_type!(*inner, term!("⊥"))); }
 
-        let field = VariableDecl(var_decl!(format!("p{}", to_unicode_subscript(0)), inner));
+        let field = var_decl!(format!("p{}", to_unicode_subscript(0)), inner);
         fields.push(field);
     }
 

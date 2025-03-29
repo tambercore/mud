@@ -49,8 +49,8 @@ let iden: String = format!("{}×{}", proj1_iden.0, proj2_iden.0)
 
 /* Generate Fields */
 let mut fields = vec![
-    VariableDecl(var_decl!("e₁", term!(proj1_iden.0))),
-    VariableDecl(var_decl!("e₂", term!(proj2_iden.0)))
+    var_decl!("e₁", term!(proj1_iden.0)),
+    var_decl!("e₂", term!(proj2_iden.0))
 ];
 
 /* Now, we need to insert the record for it */

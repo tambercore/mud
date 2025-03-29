@@ -9,7 +9,7 @@ use crate::ast::var_declaration::VarDecl;
 pub struct Record {
     pub record_iden : String,
     pub constructor_iden : String,
-    pub fields : Vec<TDeclaration>,
+    pub fields : Vec<VarDecl>,
     pub comment : Option<String>}
 
 impl Record {
@@ -23,10 +23,9 @@ impl Record {
         code.push_str("  field\n");
         // Iterate over each field and add it to the code.
         for field in &self.fields {
-            if let VariableDecl(VarDecl{iden: field_name, _type: field_type}) = field {
-                let type_str = format_agda_type(field_type);
-                code.push_str(&format!("    {} : {}\n", field_name, type_str));
-            } else {unimplemented!()}
+            let type_str = format_agda_type(&field._type);
+            code.push_str(&format!("    {} : {}\n", field.iden, type_str));
+
         }
         code
     }

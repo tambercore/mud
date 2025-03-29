@@ -19,8 +19,8 @@ pub fn compose_kb(kb: KnowledgeBase, f: &mut Program) -> TDeclaration {
 
     for (rec_name, rec_type) in kb {
 
-        let var_decl = VariableDecl(var_decl!(format!("j{}",
-            to_unicode_subscript(assumtion_index)), term!(rec_name)));
+        let var_decl = var_decl!(format!("j{}",
+            to_unicode_subscript(assumtion_index)), term!(rec_name));
         assumptions.push(var_decl);
         assumtion_index = assumtion_index + 1;
     }

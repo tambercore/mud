@@ -150,7 +150,7 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
     let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
     let operator = unop!(Necessity, term!(prop_rec_name.clone()));
-    let mut fields = vec![VariableDecl(var_decl!("I", operator))];
+    let mut fields = vec![var_decl!("I", operator)];
 
     let proj_func = replace_innermost_simple(&prop_projection, app!(
         term!("□-T"),
@@ -199,7 +199,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     for (identifier, _type) in equants.clone() {
         let pair = compose(_type.clone(), f, vec![]);
         symbol_table.insert(identifier.clone(), pair.clone());
-        let field = VariableDecl(var_decl!(identifier, term!(pair.0.clone())));
+        let field = var_decl!(identifier, term!(pair.0.clone()));
         fields.push(field);
     }
 
@@ -239,7 +239,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
                 let (rec_iden, proj)= compose_variable(v_name, f, props);
 
                 /* Insert the natural language interpretation. */
-                let record = RecordDecl(find_record(rec_iden.clone(), f));
+                let record = RecordDecl(find_record(rec_iden.clone(), f).expect("Expected record."));
                 insert_interpretation_map(relation, record);
                 return (rec_iden, proj);
             }
@@ -329,7 +329,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
 
     /* Store this in the record under `p` */
 
-    let var = VariableDecl(var_decl!("p", inner));
+    let var = var_decl!("p", inner);
     fields.push(var);
 
 
