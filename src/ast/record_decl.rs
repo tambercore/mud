@@ -1,4 +1,6 @@
 use crate::ast::agda_expr::format_agda_type;
+use crate::ast::top_decl::TDeclaration;
+use crate::ast::top_decl::TDeclaration::VariableDecl;
 use crate::ast::var_declaration::VarDecl;
 /// A type to denote Records in Agda.
 /// Consists of Record name, Constructor name, a list of record fields, and an optional comment.
@@ -7,7 +9,7 @@ use crate::ast::var_declaration::VarDecl;
 pub struct Record {
     pub record_iden : String,
     pub constructor_iden : String,
-    pub fields : Vec<VarDecl>,
+    pub fields : Vec<TDeclaration>,
     pub comment : Option<String>}
 
 impl Record {
@@ -20,10 +22,11 @@ impl Record {
         // Begin the field section.
         code.push_str("  field\n");
         // Iterate over each field and add it to the code.
-
-        for VarDecl{iden: field_name, _type: field_type} in &self.fields {
-            let type_str = format_agda_type(field_type);
-            code.push_str(&format!("    {} : {}\n", field_name, type_str));
+        for field in &self.fields {
+            if let VariableDecl(VarDecl{iden: field_name, _type: field_type}) = field {
+                let type_str = format_agda_type(field_type);
+                code.push_str(&format!("    {} : {}\n", field_name, type_str));
+            } else {unimplemented!()}
         }
         code
     }

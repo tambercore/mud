@@ -7,6 +7,12 @@ lazy_static::lazy_static! {
     pub static ref INTERPRETATIONS: Mutex<HashMap<TDeclaration, String>> = Mutex::new(HashMap::new());
 }
 
+pub fn get_interpretation(agda_expr: &TDeclaration) -> Option<String> {
+    let map = INTERPRETATIONS.lock().unwrap();
+    map.get(agda_expr).cloned()
+}
+
+
 pub fn insert_interpretation(agda_expr: TDeclaration, interpretation: String) {
     // Lock the Mutex for safe, mutable access
     let mut map = INTERPRETATIONS.lock().unwrap();

@@ -48,7 +48,7 @@ pub async fn create_endpoint(output_location: String) {
         .map(move |input: SentenceInput| {
             let output_loc = output_location_clone.clone();
 
-            let (mut agda_file, premises, mut conclusions, conclusion_records) = english_to_agda(input.knowledge, input.conclusions);
+            let (mut agda_file, premises, mut conclusions, knowledge_base, conclusion_records) = english_to_agda(input.knowledge, input.conclusions);
 
             /* Write to file to fill in the hole. */
             let _ = agda_file.write_to_file(output_loc.clone());

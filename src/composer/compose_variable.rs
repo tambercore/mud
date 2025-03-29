@@ -26,10 +26,10 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     /* Generate Fields */
     let mut predicate_iden = convert_case(format!("is_{}", token).as_str(), CaseStyle::CamelCase);
 
-    let field = var_decl!("e₁", term!("Entity"));
+    let field =VariableDecl(var_decl!("e₁", term!("Entity")));
     let mut fields= vec![field ];
     let app: AgdaExpr = app!(term!(predicate_iden.clone()), term!("e₁"));
-    let proj_field = var_decl!("p₁", app);
+    let proj_field = VariableDecl(var_decl!("p₁", app));
     fields.push(proj_field);
 
     /* Generate each property as a proof */
@@ -46,7 +46,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     if negation_layers == 0 {
         let mut counter: usize = 0;
         for _type in types {
-            let field = var_decl!(format!("p{}", to_unicode_subscript(counter)), _type);
+            let field = VariableDecl(var_decl!(format!("p{}", to_unicode_subscript(counter)), _type));
             fields.push(field);
             counter = counter + 1;
         }
@@ -57,7 +57,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let mut inner = generate_predicate_output(types.into_iter().map(|x| {Box::from(x)}).collect());
         for _ in (0..negation_layers) { inner = Box::from(function_type!(*inner, term!("⊥"))); }
 
-        let field = var_decl!(format!("p{}", to_unicode_subscript(0)), inner);
+        let field = VariableDecl(var_decl!(format!("p{}", to_unicode_subscript(0)), inner));
         fields.push(field);
     }
 

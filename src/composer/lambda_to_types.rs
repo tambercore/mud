@@ -7,6 +7,7 @@ use crate::ast::function_type::FunctionType;
 use crate::ast::record_decl::Record;
 use crate::ast::var_declaration::VarDecl;
 use crate::{app, function_type, record, term, var_decl};
+use crate::ast::top_decl::TDeclaration::VariableDecl;
 use crate::composer::case_converter::*;
 use crate::composer::compose_predicate::compose_predicate;
 use crate::composer::compose_variable::compose_variable;
@@ -47,8 +48,8 @@ let iden: String = format!("{}×{}", proj1_iden.0, proj2_iden.0)
 
 /* Generate Fields */
 let mut fields = vec![
-    var_decl!("e₁", term!(proj1_iden.0)),
-    var_decl!("e₂", term!(proj2_iden.0))
+    VariableDecl(var_decl!("e₁", term!(proj1_iden.0))),
+    VariableDecl(var_decl!("e₂", term!(proj2_iden.0)))
 ];
 
 /* Now, we need to insert the record for it */
