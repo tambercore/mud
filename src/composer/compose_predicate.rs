@@ -24,14 +24,17 @@ use crate::composer::lambda_to_types::{compose, generate_function_header, replac
 use crate::composer::langtree::{Relation, SemanticTree, Token};
 use crate::composer::langtree::SemanticTree::{NonTerminal, Terminal};
 use crate::composer::synonym_handler::handle_synonyms;
+use crate::interpreter::interpret::find_record;
 use crate::interpreter::structure::insert_interpretation;
 
 pub fn add_describer(current_prop: Token, f: &mut Program) {
 
     /* Add the describer as an Adjective */
     let mut property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
-    let entry = var_decl!(property.clone(), generate_function_header(1));
-    f.insert_postulate(VariableDecl(entry));
+    let entry = VariableDecl(var_decl!(property.clone(), generate_function_header(1)));
+    f.insert_postulate(entry.clone());
+    insert_interpretation(entry, format!("is {}", current_prop));
+
     handle_synonyms(current_prop.as_str(), f);
 }
 
@@ -175,8 +178,10 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let (mut p, props) = unwrap(relation.clone(), f, props.clone());
 
 
+
     /* Prenex Normal Transformation (derive quantifiers and bind anaphora) */
     let (mut uquants, mut equants): (QVec, QVec) = (vec![], vec![]);
+
     prenex(&mut p, &mut equants, &mut uquants);
 
 
@@ -231,7 +236,12 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         match *p.1.get(0).unwrap().clone() {
             Terminal(v) => {
                 let v_name = symbol_table.get(v.as_str()).unwrap().clone().0.replace('ᵣ', "");
-                return compose_variable(v_name, f, props)
+                let (rec_iden, proj)= compose_variable(v_name, f, props);
+
+                /* Insert the natural language interpretation. */
+                let record = RecordDecl(find_record(rec_iden.clone(), f));
+                insert_interpretation_map(relation, record);
+                return (rec_iden, proj);
             }
             _ => { panic!("Invalid!") }
         }
@@ -291,7 +301,9 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     /* Handles normal predicates */
     else {
         /* Postulate the predicate as a function to Set. */
-        f.insert_postulate(VariableDecl(var_decl!(iden.clone(), generate_function_header(p.1.len()))));
+        let expr = VariableDecl(var_decl!(iden.clone(), generate_function_header(p.1.len())));
+        insert_interpretation_map(p, expr.clone());
+        f.insert_postulate(expr);
 
         /* Then, `inner` becomes the application of that function to the arguments */
         inner = var_idens.iter().fold(
@@ -331,6 +343,8 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     /* Insert Definition */
     f.insert_definition(record.clone());
 
+    insert_interpretation_map(relation.clone(), record.clone());
+
 
     /* Calculate the Projection Function & Return */
     let projection =
@@ -340,9 +354,6 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
             let app = app!(record_proj, term!("e₁"));
             replace_innermost_simple(&outer_projection, app)
         } else { term!(record_name.clone()) };
-
-
-    insert_interpretation_map(relation.clone(), record.clone());
 
     (record_name, projection)
 }

@@ -12,6 +12,7 @@ use crate::composer::case_converter::*;
 use crate::composer::compose_predicate::compose_predicate;
 use crate::composer::compose_variable::compose_variable;
 use crate::composer::langtree::{Join, SemanticTree, Token};
+use crate::interpreter::structure::insert_interpretation;
 
 pub fn generate_function_header(arity: usize) -> AgdaExpr {
     if arity == 0 {
@@ -66,11 +67,11 @@ f.insert_definition(rec);
 
 pub fn compose(e: Box<SemanticTree>, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 
-match *e {
-    SemanticTree::NonTerminal(relation) => {compose_predicate(relation, f, props)}
-    SemanticTree::Terminal(token) => {compose_variable(token, f, props)}
-    SemanticTree::Conj(join) => {compose_product(join, f)}
-}
+    match *e {
+        SemanticTree::NonTerminal(relation) => {compose_predicate(relation, f, props)}
+        SemanticTree::Terminal(token) => {compose_variable(token, f, props)}
+        SemanticTree::Conj(join) => {compose_product(join, f)}
+    }
 
 }
 
