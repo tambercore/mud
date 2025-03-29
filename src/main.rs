@@ -34,6 +34,7 @@ use attohttpc::header::SERVER;
 use colored::Colorize;
 use crossterm::style::Stylize;
 use crate::ast::agda_expr::AgdaExpr;
+use crate::ast::top_decl::TDeclaration;
 use crate::brill::contextual_rulespec::ContextualRulespec;
 use crate::brill::lex_rulespec_id::LexicalRulespec;
 use crate::brill::wordclass::Wordclass;
@@ -43,6 +44,7 @@ use crate::command_line::output_handler::{create_task, show_header, update_task}
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::interpreter::structure::print_interpretations;
+use crate::interpreter::interpret::interpret_proof;
 use crate::lambda::etalike::Eliminator;
 use crate::parser::parse_agda::parse_agda;
 use crate::resolver::fill_holes::fill_holes;
@@ -145,7 +147,7 @@ fn sentence_to_agda(sentence: String, f: &mut Program) -> ((String, AgdaExpr), S
 
 
 
-fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
+fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program, Vec<AgdaPremise>, Vec<AgdaConclusion>, Vec<TDeclaration>) {
 
     println!();
     print!("\x1b[38;5;130m[mud]\x1b[0m \x1b[1m{}\x1b[0m", "");
@@ -209,7 +211,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
     /* Initialise an empty vector to hold each premise and conclusion in JSON form. */
     let mut premises : Vec<AgdaPremise> = Vec::new();
-    let mut conclusions: Vec<AgdaConclusion> = Vec::new();
+    let mut conclusion_trees: Vec<AgdaConclusion> = Vec::new();
 
     /* Handle Assumptions */
     let mut encoded_knowledge: KnowledgeBase = vec![];
@@ -230,7 +232,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
         /* Collect information about conclusions into a struct. */
         let conclusion = AgdaConclusion {text : derivation.clone(), ccg_tree : ccg_json, filled : false};
-        conclusions.push(conclusion);
+        conclusion_trees.push(conclusion);
     }
 
     show_header("Generating Agda Code & Writing File");
@@ -239,10 +241,10 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
     update_task(kb_task);
 
     let cc_task = create_task(1, "Composing Conclusions to Agda.");
-    compose_conclusions(encoded_conclusions, &mut f);
+    let conclusion_records = compose_conclusions(encoded_conclusions, &mut f);
     update_task(cc_task);
 
-    (f, premises, conclusions)
+    (f, premises, conclusion_trees, conclusion_records)
 }
 
 
@@ -256,22 +258,47 @@ async fn main() {
     if config.server {
         create_endpoint(config.output_file).await;
     } else {
-        let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge.clone(), conclusions.clone());
+        let (mut agda_file, premises, mut conclusions, conclusion_records) = english_to_agda(knowledge.clone(), conclusions.clone());
 
         let write_tsk = create_task(1, "Writing to Agda File.");
         agda_file.write_to_file(config.output_file.clone());
         update_task(write_tsk);
 
         let hole_tsk = create_task(1, "Synthesise Holes with Agsy.");
-        fill_holes(config.output_file.clone(), &mut conclusions);
+        let hole_contents = fill_holes(config.output_file.clone(), &mut conclusions);
         update_task(hole_tsk);
 
         print_interpretations();
 
-        /* Parse the agda file into a Program struct. */
-        let program = parse_agda(config.output_file);
+        interpret_holes(hole_contents.clone(), conclusion_records.clone());
+
 
         // println!("\n\nconclusions: {:?}", conclusions);
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally
     }
+}
+
+
+/// Parse each hole filled in by Agsy and generate a natural language derivation.
+pub fn interpret_holes(hole_contents: Vec<Option<String>>, conclusion_records: Vec<TDeclaration>) {
+    let mut interpretations = vec![vec![]];
+
+    /* For each hole, If it has not been filled (None), continue
+    Else, parse it. pass in the corresponding conclusion record to interpret_proof. */
+    for (idx, contents) in hole_contents.iter().enumerate() {
+        match contents {
+            None => continue,
+            Some(hole) => {
+                /* Parse the agda file into a Program struct. */
+                let program = parse_agda(hole.clone());
+
+                println!("PARSED HOLE: {:?}", program);
+
+                /* Create a natural language interpretation of Agsy's proof. */
+                let interpretation = interpret_proof(program, conclusion_records[idx].clone());
+                interpretations.push(interpretation);
+            }
+        }
+    }
+
 }

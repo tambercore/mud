@@ -169,7 +169,14 @@ impl Program {
         insert_interpretation(necessary_duplicate_theorem, format!("If a proposition is necessary, it is necessarily necessary."));
 
         /* □-cobind */
-        let necessary_cobind_signature = function_type!(function_type!(unop!(Necessity, term!("B")),function_type!(unop!(Necessity, term!("B")), term!("A"))),unop!(Necessity, term!("A")));
+        let necessary_cobind_signature = function_type!(
+            unop!(Necessity, term!("B")),
+            function_type!(
+                function_type!(unop!(Necessity, term!("B")), term!("A")),
+                unop!(Necessity, term!("A"))
+            )
+        );
+
         let necessary_cobind_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_cobind_signature.clone());
         let necessary_cobind_theorem = theorem!("□-cobind", necessary_cobind_decl.clone(), None, None);
         fields.push(necessary_cobind_theorem.clone());

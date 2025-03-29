@@ -114,7 +114,7 @@ fn replace_holes_in_file(filepath: &str, filled_holes: &Vec<Option<String>>) -> 
 }
 
 /* Main function to fill holes in the Agda file. */
-pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) {
+pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) -> Vec<Option<String>> {
     let mut agda = start_agda();
     let stdin = agda.stdin.as_mut().expect("Failed to get stdin");
     let stdout = agda.stdout.as_mut().expect("Failed to get stdout");
@@ -126,7 +126,7 @@ pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) {
 
     if hole_info.is_empty() {
         println!("No holes found in {}", filepath);
-        return;
+        return vec![];
     }
 
     /* Attempt to fill in each hole */
@@ -147,5 +147,9 @@ pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) {
     // println!("Updated file with filled holes");
 
     agda.kill().expect("Failed to terminate Agda");
+
+    filled_holes
+
+
 }
 
