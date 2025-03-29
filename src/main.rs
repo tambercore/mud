@@ -144,7 +144,7 @@ fn sentence_to_agda(sentence: String, f: &mut Program) -> ((String, AgdaExpr), S
 
 
 
-fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program, Vec<AgdaPremise>, Vec<AgdaConclusion>, TDeclaration, Vec<TDeclaration>) {
+fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
 
     println!();
     print!("\x1b[38;5;130m[mud]\x1b[0m \x1b[1m{}\x1b[0m", "");
@@ -238,10 +238,10 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
     update_task(kb_task);
 
     let cc_task = create_task(1, "Composing Conclusions to Agda.");
-    let conclusion_records = compose_conclusions(encoded_conclusions, &mut f);
+    compose_conclusions(encoded_conclusions, &mut f);
     update_task(cc_task);
 
-    (f, premises, conclusion_trees, knowledge_base, conclusion_records)
+    (f, premises, conclusion_trees)
 }
 
 
@@ -255,7 +255,7 @@ async fn main() {
     if config.server {
         create_endpoint(config.output_file).await;
     } else {
-        let (mut agda_file, premises, mut conclusions, knowledge_base, conclusion_records) = english_to_agda(knowledge.clone(), conclusions.clone());
+        let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge.clone(), conclusions.clone());
 
         let write_tsk = create_task(1, "Writing to Agda File.");
         agda_file.write_to_file(config.output_file.clone());
@@ -267,7 +267,7 @@ async fn main() {
 
         print_interpretations();
 
-        interpret_holes(hole_contents.clone(), knowledge_base.clone(), conclusion_records.clone());
+        interpret_holes(hole_contents.clone(), &agda_file);
 
 
         // println!("\n\nconclusions: {:?}", conclusions);
@@ -277,7 +277,7 @@ async fn main() {
 
 
 /// Parse each hole filled in by Agsy and generate a natural language derivation.
-pub fn interpret_holes(hole_contents: Vec<Option<String>>, knowledge_base: TDeclaration, conclusion_records: Vec<TDeclaration>) {
+pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program) {
     let mut interpretations = vec![vec![]];
 
     /* For each hole, If it has not been filled (None), continue
@@ -287,12 +287,12 @@ pub fn interpret_holes(hole_contents: Vec<Option<String>>, knowledge_base: TDecl
             None => continue,
             Some(hole) => {
                 /* Parse the agda file into a Program struct. */
-                let program = parse_agda(hole.clone());
+                let hole = parse_agda(hole.clone());
 
-                println!("PARSED HOLE: {:?}", program);
+                println!("PARSED HOLE: {:?}", hole);
 
                 /* Create a natural language interpretation of Agsy's proof. */
-                let interpretation = interpret_proof(program, knowledge_base.clone(), conclusion_records[idx].clone());
+                let interpretation = interpret_proof(hole, program);
                 interpretations.push(interpretation);
             }
         }
