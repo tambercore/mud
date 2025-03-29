@@ -80,6 +80,7 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec
                     .map(|f| interpret_record_field(f, program))
                     .collect();
 
+                /* Add a summary of the fields. */
                 let interpreted_string = format!("To know that {}, it must be known that {}", interpretable_record, interpretable_fields.join(", "));
                 derivations.push(interpreted_string);
 
@@ -103,6 +104,7 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec
 
         }
         AgdaExpr::RecProj(rec_proj) => {
+
 
 
         }

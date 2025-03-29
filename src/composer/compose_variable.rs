@@ -81,7 +81,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     f.insert_postulate(VariableDecl(postulate_entry));
     f.insert_definition(rec.clone());
 
-    let proj = record_projection!(term!(record_name.clone()), term!("e₁"));
+    let proj = record_projection!(record_name.clone(), "e₁");
     let projection = app!(proj, term!("e₁"));
     (record_name, projection)
 }
