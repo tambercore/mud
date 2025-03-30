@@ -293,7 +293,7 @@ pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program) {
 
                 /* Create a natural language interpretation of Agsy's proof. */
                 let interpretation = interpret_proof(hole, program);
-                interpretations.push(interpretation);
+                interpretations.push(interpretation.contents);
             }
         }
     }
