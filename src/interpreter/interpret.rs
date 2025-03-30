@@ -94,6 +94,7 @@ pub fn interpret_term(term: String, program: &Program, derivations: &mut Derivat
 
         let formatted_fields = interpretable_fields.join(", who ");
 
+
         let interpreted_string = format!(
             "To know that {}, it must be known that {}",
             interpretable_record, formatted_fields
@@ -157,19 +158,20 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, deri
     for field in record.fields {
         if field.iden == rhs {
             let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect("Expecting interpretation.");
+            let proof_lhs_id = derivations.find_id_by_contents(proof_lhs.clone().as_str()).expect("Expecting proof to have an ID.");
             let derivation = match *field._type.clone() {
                 Term(term) => {
                     if term == "Entity" {
-                        format!("Given that {}, it is known that there is an entity.", proof_lhs.clone())
+                        format!("Given from {} that {}, it is known that there is an entity.", proof_lhs_id, proof_lhs.clone())
                     } else {
-                        format!("Given that {}, it is known that this entity {}.", proof_lhs.clone(), proof_rhs.clone())
+                        format!("Given from {} that {}, it is known that this entity {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                     }
                 }
                 AgdaExpr::App(_) => {
-                    format!("Given that {}, it is known that this entity {}.", proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given from {} that {}, it is known that this entity {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                 }
                 _ => {
-                    format!("Given that {}, {}.", proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given from {} that {}, {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                 }
             };
             derivations.contents.push(Derivation { contents: derivation, Id: (*counter.to_string()).to_owned()  });
