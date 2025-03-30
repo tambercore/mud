@@ -39,12 +39,12 @@ fn parse_proj(input: &str) -> IResult<&str, RecordProjection> {
         parse_term,
         opt(multispace0),
         char('.'),
-        parse_term
+        parse_agda_expr
     ))(input)?;
 
     Ok((input, RecordProjection {
         lhs: obj,
-        rhs: field
+        rhs: Box::from(field)
     }))
 }
 

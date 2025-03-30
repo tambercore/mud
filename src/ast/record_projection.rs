@@ -3,7 +3,7 @@ use crate::ast::agda_expr::AgdaExpr;
 /// A type to denote record projection in Agda.
 /// These are of the form a.b, with a and b being Agda Expressions.
 #[derive(Eq, Hash, Debug, Clone)]
-pub struct RecordProjection {pub lhs : String, pub rhs : String}
+pub struct RecordProjection {pub lhs : String, pub rhs : Box<AgdaExpr>}
 
 impl PartialEq for RecordProjection {
     fn eq(&self, other: &Self) -> bool {
@@ -16,7 +16,7 @@ macro_rules! record_projection {
         AgdaExpr::RecProj(
         RecordProjection {
             lhs: String::from($lhs),
-            rhs: String::from($rhs),
+            rhs: Box::from($rhs),
         })
     };
 }

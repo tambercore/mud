@@ -82,7 +82,7 @@ pub fn format_agda_type_prec(agda_type: &AgdaExpr, prec: u8) -> String {
             let rec_str = format_agda_type_prec(&Term(proj.clone().lhs), my_prec);
 
             // Projection field is usually atomic; use a higher precedence.
-            let proj_str = format_agda_type_prec(&Term(proj.clone().rhs), 4);
+            let proj_str = format_agda_type_prec(&proj.clone().rhs, 4);
             let s = format!("{}.{}", rec_str, proj_str);
             if my_prec < prec { format!("({})", s) } else { s }
         }

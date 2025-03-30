@@ -330,6 +330,8 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     /* Store this in the record under `p` */
 
     let var = var_decl!("p", inner);
+    insert_interpretation_map(relation.clone(), VariableDecl(var.clone()));
+
     fields.push(var);
 
 
@@ -350,7 +352,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let projection =
         if fields.len() == 2 {
             let outer_projection = symbol_table.get("e₁").unwrap().clone().1;
-            let record_proj = record_projection!(record_name.clone(), "e₁");
+            let record_proj = record_projection!(record_name.clone(), term!("e₁"));
             let app = app!(record_proj, term!("e₁"));
             replace_innermost_simple(&outer_projection, app)
         } else { term!(record_name.clone()) };

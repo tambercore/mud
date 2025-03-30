@@ -74,6 +74,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let constructor_name = format!("{}꜀", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
 
     let rec = record!(record_name.clone(), constructor_name, fields, None);
+    insert_interpretation(rec.clone(), props_iden.clone());
 
     let postulate_entry = var_decl!(predicate_iden.clone(), generate_function_header(1));
 
@@ -81,7 +82,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     f.insert_postulate(VariableDecl(postulate_entry));
     f.insert_definition(rec.clone());
 
-    let proj = record_projection!(record_name.clone(), "e₁");
+    let proj = record_projection!(record_name.clone(), term!("e₁"));
     let projection = app!(proj, term!("e₁"));
     (record_name, projection)
 }
