@@ -75,6 +75,7 @@ pub fn interpret_record_field(field: &VarDecl) -> String {
 pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec<String>) {
     match expr {
         AgdaExpr::Term(term) => {
+
             /* Handle record constructions. */
             if term.ends_with("꜀") {
                 /* Find the corresponding record. */
@@ -89,8 +90,18 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec
                     .map(interpret_record_field)
                     .collect();
 
+
                 /* Add a summary of the fields. */
-                let interpreted_string = format!("To know that {}, it must be known that {}", interpretable_record, interpretable_fields.join(", "));
+                let formatted_fields = interpretable_fields
+                    .split_first()
+                    .map(|(first, rest)| format!("{}", std::iter::once(first).chain(rest).map(|s| s.to_string()).collect::<Vec<_>>().join(", who ")))
+                    .unwrap_or_default();
+
+                let interpreted_string = format!(
+                    "To know that {}, it must be known that {}",
+                    interpretable_record, formatted_fields
+                );
+
                 derivations.push(interpreted_string);
 
             }

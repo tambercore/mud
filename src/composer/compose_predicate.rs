@@ -336,7 +336,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         .collect::<Vec<_>>()
         .join(", ");
 
-    let interpreted_expr = format!("{}, they are {}", uquant_expr, props.join(","));
+    let interpreted_expr = format!("{}, it is known that they are {}", uquant_expr, props.join(","));
 
     let var = var_decl!("p", inner);
     insert_interpretation(VariableDecl(var.clone()), interpreted_expr);

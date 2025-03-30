@@ -27,7 +27,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let mut predicate_iden = convert_case(format!("is_{}", token).as_str(), CaseStyle::CamelCase);
 
     let field =var_decl!("e₁", term!("Entity"));
-    insert_interpretation(VariableDecl(field.clone()), String::from("there is an entity who"));
+    insert_interpretation(VariableDecl(field.clone()), String::from("there is an entity"));
     let mut fields= vec![field ];
     let app: AgdaExpr = app!(term!(predicate_iden.clone()), term!("e₁"));
     let proj_field = var_decl!("p₁", app);
