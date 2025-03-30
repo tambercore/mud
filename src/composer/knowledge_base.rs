@@ -7,7 +7,7 @@ use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::top_decl::TDeclaration::{RecordDecl, VariableDecl};
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::{record, term, var_decl};
-use crate::interpreter::structure::insert_interpretation;
+use crate::interpreter::interpretation_map::insert_interpretation;
 
 pub type KnowledgeBase = Vec<(String, AgdaExpr)>;
 

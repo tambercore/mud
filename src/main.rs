@@ -43,7 +43,7 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::command_line::output_handler::{create_task, show_header, update_task};
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
-use crate::interpreter::structure::print_interpretations;
+use crate::interpreter::interpretation_map::print_interpretations;
 use crate::interpreter::interpret::interpret_proof;
 use crate::lambda::etalike::Eliminator;
 use crate::parser::parse_agda::parse_agda;

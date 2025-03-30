@@ -15,7 +15,7 @@ use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 use crate::ast::binary_op::BinOperator;
 use crate::ast::operator::Operator::{Necessity, Possibility, PropEq};
 use crate::ast::theorem_decl::Agdaify;
-use crate::interpreter::structure::insert_interpretation;
+use crate::interpreter::interpretation_map::insert_interpretation;
 
 /// Type to describe an Agda Program. Consists of a file name (String),
 /// and a list of Declarations.

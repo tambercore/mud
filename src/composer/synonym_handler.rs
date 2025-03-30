@@ -16,7 +16,7 @@ use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::wordnet::interface::get_meanings;
 use crate::{abstraction, app, bin_op, dependent_function, function_type, term, theorem, var_decl, WORDS_IN_EXISTENCE};
 use crate::ast::top_decl::TDeclaration::VariableDecl;
-use crate::interpreter::structure::insert_interpretation;
+use crate::interpreter::interpretation_map::insert_interpretation;
 /* todo: move these to a higher level when integrating with CLI */
 pub enum SynsetStrategy {
     Ignore, BestMatch, AllMeanings

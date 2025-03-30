@@ -12,7 +12,7 @@ use crate::composer::case_converter::*;
 use crate::composer::compose_predicate::compose_predicate;
 use crate::composer::compose_variable::compose_variable;
 use crate::composer::langtree::{Join, SemanticTree, Token};
-use crate::interpreter::structure::insert_interpretation;
+use crate::interpreter::interpretation_map::insert_interpretation;
 
 pub fn generate_function_header(arity: usize) -> AgdaExpr {
     if arity == 0 {

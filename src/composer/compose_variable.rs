@@ -15,7 +15,7 @@ use crate::composer::langtree::Token;
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::{app, function_type, record, record_projection, term, var_decl};
-use crate::interpreter::structure::insert_interpretation;
+use crate::interpreter::interpretation_map::insert_interpretation;
 
 pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 

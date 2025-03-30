@@ -8,45 +8,40 @@ use crate::ast::record_projection::RecordProjection;
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
-use crate::interpreter::structure::{get_interpretation, INTERPRETATIONS};
+use crate::interpreter::derivation::{print_derivations, Derivation};
+use crate::interpreter::interpretation_map::{get_interpretation, INTERPRETATIONS};
 use crate::lambda::variable::Variable;
 use crate::term;
 
 /// Function to interpret Agsy's proof of a conclusion in natural language.
-pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> Vec<String> {
+pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> Vec<Derivation> {
     let mut derivations = vec![];
     let mut counter = 1;
 
     _interpret_proof(expr, program, &mut derivations, &mut counter);
-
 
     print_derivations(&derivations);
 
     derivations
 }
 
-fn print_derivations(lines: &Vec<String>) {
-    println!("Derivations: ");
-    for line in lines {
-        println!("{}", line);
-    }
-}
-
-
 /// Function to gather assumptions from the knowledge base and
 /// add them as natural language assumptions.
-pub fn add_assumptions(program: &Program, derivations: &mut Vec<String>) {
+
+pub fn add_assumptions(program: &Program, derivations: &mut Vec<Derivation>) {
     let kb = find_record(String::from("KnowledgeBaseᵣ"), program).expect("Expected record.");
     for (idx, field) in kb.fields.iter().enumerate() {
         if let Term(field_iden) = *field.clone()._type {
             let field_record = RecordDecl(find_record(field_iden, program).expect("Expected record."));
-            let interpretation = get_interpretation(&field_record).expect(format!("Expected record to have interpretation: {:?}", field_record.clone()).as_str());
-            derivations.push(format!("A{} : {}", idx, interpretation));
-        } else {panic!("Expected KB field to contain a term.")}
+            let interpretation = get_interpretation(&field_record).expect(
+                format!("Expected record to have interpretation: {:?}", field_record.clone()).as_str()
+            );
 
+            let id = format!("A{}", idx);
+            derivations.push(Derivation { contents: format!("{}", interpretation), Id: id });
+        } else { panic!("Expected KB field to contain a term.") }
     }
 }
-
 pub fn find_record(iden: String, program: &Program) -> Option<Record> {
     for decl in &program.declarations {
         if let RecordDecl(record) = decl {
@@ -76,7 +71,7 @@ pub fn find_variable(iden: String, program: &Program) -> VarDecl {
 pub fn interpret_record_field(field: &VarDecl) -> String {
     get_interpretation(&VariableDecl(field.clone())).expect(format!("Missing interpretation: {:?}", field).as_str())
 }
-pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec<String>, counter: &mut i32) {
+pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec<Derivation>, counter: &mut i32) {
     match expr {
         AgdaExpr::Term(term) => interpret_term(term.clone(), program, derivations, counter),
         AgdaExpr::App(app) => interpret_application(app.clone(), program, derivations, counter),
@@ -86,55 +81,43 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec
     }
 }
 
-pub fn interpret_term(term: String, program: &Program, derivations: &mut Vec<String>, counter : &mut i32) {
-    /* Handle record constructions. */
+
+pub fn interpret_term(term: String, program: &Program, derivations: &mut Vec<Derivation>, counter: &mut i32) {
     if term.ends_with("꜀") {
-        /* Find the corresponding record. */
         let record = find_record(term.replace("꜀", "ᵣ"), program).expect("Expected record.");
-        let interpretable_record = get_interpretation(&RecordDecl(record.clone())).expect(format!("Expected record to be interpretable: {:?}", record.clone()).as_str());
-
-        /* Count the number of fields. */
-        let num_fields = record.fields.len();
-
-        /* Interpret the fields. */
+        let interpretable_record = get_interpretation(&RecordDecl(record.clone())).expect(
+            format!("Expected record to be interpretable: {:?}", record.clone()).as_str()
+        );
         let interpretable_fields: Vec<String> = record.fields.iter()
             .map(interpret_record_field)
             .collect();
 
-
-        /* Add a summary of the fields. */
-        let formatted_fields = interpretable_fields
-            .split_first()
-            .map(|(first, rest)| format!("{}", std::iter::once(first).chain(rest).map(|s| s.to_string()).collect::<Vec<_>>().join(", who ")))
-            .unwrap_or_default();
+        let formatted_fields = interpretable_fields.join(", who ");
 
         let interpreted_string = format!(
-            "{} : To know that {}, it must be known that {}",
-            counter, interpretable_record, formatted_fields
+            "To know that {}, it must be known that {}",
+            interpretable_record, formatted_fields
         );
 
-        derivations.push(interpreted_string);
+        derivations.push(Derivation { contents: interpreted_string, Id: (*counter.to_string()).to_owned() });
         *counter += 1;
-
-    }
-    /* Handle normal terms. */
-    else {
+    } else {
         todo!()
     }
 }
 
-pub fn interpret_application(app: Application, program: &Program, derivations: &mut Vec<String>, counter: &mut i32) {
+pub fn interpret_application(app: Application, program: &Program, derivations: &mut Vec<Derivation>, counter: &mut i32) {
     _interpret_proof(*app.lhs.clone(), program, derivations, counter);
     _interpret_proof(*app.rhs.clone(), program, derivations, counter);
 }
 
-pub fn interpret_abstraction(abs: Abstraction, program: &Program, derivations: &mut Vec<String>, counter: &mut i32) {
+pub fn interpret_abstraction(abs: Abstraction, program: &Program, derivations: &mut Vec<Derivation>, counter: &mut i32) {
     /* For now, assume this is KB. */
     add_assumptions(program, derivations);
     _interpret_proof(*abs.expr, program, derivations, counter);
 }
 
-pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program, derivations: &mut Vec<String>, counter: &mut i32) {
+pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program, derivations: &mut Vec<Derivation>, counter: &mut i32) {
     /* Only consider records (terms come as a result). */
     if let Some(record) = find_record(rec_proj.lhs.clone(), program) {
         /* Ignore the knowledge base (for now?). */
@@ -170,34 +153,27 @@ pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program
     _interpret_proof(*rec_proj.rhs, program, derivations, counter);
 }
 
-pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, derivations: &mut Vec<String>, counter: &mut i32) {
+pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, derivations: &mut Vec<Derivation>, counter: &mut i32) {
     for field in record.fields {
         if field.iden == rhs {
             let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect("Expecting interpretation.");
-
-            /* End of the proof */
-            let derivation = {
-                match *field._type.clone() {
-                    Term(term) => {
-                        if term == String::from("Entity") {
-                            format!("{} : Given that {}, it is known that there is an entity.", counter, proof_lhs.clone())
-                        } else {
-                            format!("{} : Given that {}, it is known that this entity {}.", counter, proof_lhs.clone(), proof_rhs.clone())
-                        }
-                    }
-                    AgdaExpr::App(fun) => {
-                        format!("{} : Given that {}, it is known that this entity {}.", counter, proof_lhs.clone(), proof_rhs.clone())
-                    }
-                    _ => {
-                        format!("{} : Given that {}, {}.", counter, proof_lhs.clone(), proof_rhs.clone())
+            let derivation = match *field._type.clone() {
+                Term(term) => {
+                    if term == "Entity" {
+                        format!("Given that {}, it is known that there is an entity.", proof_lhs.clone())
+                    } else {
+                        format!("Given that {}, it is known that this entity {}.", proof_lhs.clone(), proof_rhs.clone())
                     }
                 }
+                AgdaExpr::App(_) => {
+                    format!("Given that {}, it is known that this entity {}.", proof_lhs.clone(), proof_rhs.clone())
+                }
+                _ => {
+                    format!("Given that {}, {}.", proof_lhs.clone(), proof_rhs.clone())
+                }
             };
-            println!("Derivation: {}", derivation);
-            derivations.push(derivation);
+            derivations.push(Derivation { contents: derivation, Id: (*counter.to_string()).to_owned()  });
             *counter += 1;
-
-            /* todo: should this return or keep going */
             return;
         }
     }

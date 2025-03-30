@@ -25,7 +25,7 @@ use crate::composer::langtree::{Relation, SemanticTree, Token};
 use crate::composer::langtree::SemanticTree::{NonTerminal, Terminal};
 use crate::composer::synonym_handler::handle_synonyms;
 use crate::interpreter::interpret::find_record;
-use crate::interpreter::structure::insert_interpretation;
+use crate::interpreter::interpretation_map::insert_interpretation;
 
 pub fn add_describer(current_prop: Token, f: &mut Program) {
 
