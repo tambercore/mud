@@ -1,7 +1,10 @@
+use crate::ast::abstraction::Abstraction;
 use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::agda_expr::AgdaExpr::{App, Term};
+use crate::ast::application::Application;
 use crate::ast::program::Program;
 use crate::ast::record_decl::Record;
+use crate::ast::record_projection::RecordProjection;
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
@@ -74,91 +77,95 @@ pub fn interpret_record_field(field: &VarDecl) -> String {
 }
 pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec<String>) {
     match expr {
-        AgdaExpr::Term(term) => {
-
-            /* Handle record constructions. */
-            if term.ends_with("꜀") {
-                /* Find the corresponding record. */
-                let record = find_record(term.replace("꜀", "ᵣ"), program).expect("Expected record.");
-                let interpretable_record = get_interpretation(&RecordDecl(record.clone())).expect(format!("Expected record to be interpretable: {:?}", record.clone()).as_str());
-
-                /* Count the number of fields. */
-                let num_fields = record.fields.len();
-
-                /* Interpret the fields. */
-                let interpretable_fields: Vec<String> = record.fields.iter()
-                    .map(interpret_record_field)
-                    .collect();
-
-
-                /* Add a summary of the fields. */
-                let formatted_fields = interpretable_fields
-                    .split_first()
-                    .map(|(first, rest)| format!("{}", std::iter::once(first).chain(rest).map(|s| s.to_string()).collect::<Vec<_>>().join(", who ")))
-                    .unwrap_or_default();
-
-                let interpreted_string = format!(
-                    "To know that {}, it must be known that {}",
-                    interpretable_record, formatted_fields
-                );
-
-                derivations.push(interpreted_string);
-
-            }
-            /* Handle normal terms. */
-            else {
-                todo!()
-            }
-        }
-        AgdaExpr::App(app) => {
-            _interpret_proof(*app.lhs.clone(), program, derivations);
-            _interpret_proof(*app.rhs.clone(), program, derivations);
-
-        }
-        AgdaExpr::Abs(abs) => {
-            /* For now, assume this is KB. */
-            add_assumptions(program, derivations);
-            _interpret_proof(*abs.expr, program, derivations);
-
-        }
-        AgdaExpr::RecProj(rec_proj) => {
-            /* Only consider records (terms come as a result). */
-            if let Some(record) = find_record(rec_proj.lhs.clone(), program) {
-                /* Ignore the knowledge base (for now?). */
-
-                if rec_proj.lhs.clone() != "KnowledgeBaseᵣ" {
-                    /* Find the record field whose name is rec_proj.rhs */
-
-                    /* From _, it is known that ... */
-                    let proof_lhs = get_interpretation(&RecordDecl(record.clone())).expect("Expecting interpretation.");
-
-                    /* If rhs is a term, look for it directly */
-                    /* If rhs is an application, look for its lhs, and then _interpret_proof on its rhs */
-
-                    match *rec_proj.rhs.clone() {
-                        Term(rec_rhs) => {
-                            construct_projection(record, rec_rhs, proof_lhs.clone(), derivations);
-                            return;
-                        }
-                        App(app_rhs) => {
-                            if let Term(app_lhs) = *app_rhs.lhs {
-                                _interpret_proof(*app_rhs.rhs, program, derivations);
-                                construct_projection(record, app_lhs, proof_lhs.clone(), derivations);
-                                return;
-                            } else {unimplemented!()}
-                        }
-                        _ => unimplemented!()
-                    }
-
-                }
-            }
-
-            /* Continue with the rest of the expression. */
-            _interpret_proof(*rec_proj.rhs, program, derivations);
-
-        }
+        AgdaExpr::Term(term) => interpret_term(term.clone(), program, derivations),
+        AgdaExpr::App(app) => interpret_application(app.clone(), program, derivations),
+        AgdaExpr::Abs(abs) => interpret_abstraction(abs.clone(), program, derivations),
+        AgdaExpr::RecProj(rec_proj) => interpret_record_projection(rec_proj.clone(), program, derivations),
         _ => unimplemented!()
     }
+}
+
+pub fn interpret_term(term: String, program: &Program, derivations: &mut Vec<String>) {
+    /* Handle record constructions. */
+    if term.ends_with("꜀") {
+        /* Find the corresponding record. */
+        let record = find_record(term.replace("꜀", "ᵣ"), program).expect("Expected record.");
+        let interpretable_record = get_interpretation(&RecordDecl(record.clone())).expect(format!("Expected record to be interpretable: {:?}", record.clone()).as_str());
+
+        /* Count the number of fields. */
+        let num_fields = record.fields.len();
+
+        /* Interpret the fields. */
+        let interpretable_fields: Vec<String> = record.fields.iter()
+            .map(interpret_record_field)
+            .collect();
+
+
+        /* Add a summary of the fields. */
+        let formatted_fields = interpretable_fields
+            .split_first()
+            .map(|(first, rest)| format!("{}", std::iter::once(first).chain(rest).map(|s| s.to_string()).collect::<Vec<_>>().join(", who ")))
+            .unwrap_or_default();
+
+        let interpreted_string = format!(
+            "To know that {}, it must be known that {}",
+            interpretable_record, formatted_fields
+        );
+
+        derivations.push(interpreted_string);
+
+    }
+    /* Handle normal terms. */
+    else {
+        todo!()
+    }
+}
+
+pub fn interpret_application(app: Application, program: &Program, derivations: &mut Vec<String>) {
+    _interpret_proof(*app.lhs.clone(), program, derivations);
+    _interpret_proof(*app.rhs.clone(), program, derivations);
+}
+
+pub fn interpret_abstraction(abs: Abstraction, program: &Program, derivations: &mut Vec<String>) {
+    /* For now, assume this is KB. */
+    add_assumptions(program, derivations);
+    _interpret_proof(*abs.expr, program, derivations);
+}
+
+pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program, derivations: &mut Vec<String>) {
+    /* Only consider records (terms come as a result). */
+    if let Some(record) = find_record(rec_proj.lhs.clone(), program) {
+        /* Ignore the knowledge base (for now?). */
+
+        if rec_proj.lhs.clone() != "KnowledgeBaseᵣ" {
+            /* Find the record field whose name is rec_proj.rhs */
+
+            /* From _, it is known that ... */
+            let proof_lhs = get_interpretation(&RecordDecl(record.clone())).expect("Expecting interpretation.");
+
+            /* If rhs is a term, look for it directly */
+            /* If rhs is an application, look for its lhs, and then _interpret_proof on its rhs */
+
+            match *rec_proj.rhs.clone() {
+                Term(rec_rhs) => {
+                    construct_projection(record, rec_rhs, proof_lhs.clone(), derivations);
+                    return;
+                }
+                App(app_rhs) => {
+                    if let Term(app_lhs) = *app_rhs.lhs {
+                        _interpret_proof(*app_rhs.rhs, program, derivations);
+                        construct_projection(record, app_lhs, proof_lhs.clone(), derivations);
+                        return;
+                    } else {unimplemented!()}
+                }
+                _ => unimplemented!()
+            }
+
+        }
+    }
+
+    /* Continue with the rest of the expression. */
+    _interpret_proof(*rec_proj.rhs, program, derivations);
 }
 
 pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, derivations: &mut Vec<String>) {
