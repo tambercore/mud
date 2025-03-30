@@ -8,7 +8,7 @@ use crate::ast::record_projection::RecordProjection;
 use crate::ast::dependent_function::DependentFunction;
 use crate::ast::function_type::FunctionType;
 use crate::ast::binary_op::BinOperator;
-use crate::ast::agda_expr::AgdaExpr::{UnOp};
+use crate::ast::agda_expr::AgdaExpr::{App, UnOp};
 use crate::ast::agda_expr::AgdaExpr::Term;
 use crate::ast::application::Application;
 use crate::ast::record_decl::Record;
@@ -302,10 +302,11 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     else {
         /* Postulate the predicate as a function to Set. */
         let expr = VariableDecl(var_decl!(iden.clone(), generate_function_header(p.1.len())));
-        insert_interpretation_map(p, expr.clone());
+        insert_interpretation_map(p.clone(), expr.clone());
         f.insert_postulate(expr);
 
         /* Then, `inner` becomes the application of that function to the arguments */
+
         inner = var_idens.iter().fold(
             term!(iden.clone()),
             |acc, name| {
@@ -320,7 +321,8 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     /* If there are universal quantifiers, we need to bind these outside using Π-types. This
      * is accomplished by folding `uquants` into `inner` e.g. (a₁ : T₁) -> inner ...
      */
-    inner = uquants.into_iter().rev()
+    let inner_orig = inner.clone();
+    inner = uquants.clone().into_iter().rev()
         .fold(inner, |acc, (current, typ)| {
             let rec_name = symbol_table.get(&current).unwrap().0.clone();
             let var_decl = var_decl!(current, term!(rec_name));
@@ -328,9 +330,16 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         });
 
     /* Store this in the record under `p` */
+    /* For interpretation, every uquant is "this {}, ", with expr being at the end */
+    let uquant_expr: String = uquants.iter()
+        .map(|uquant| format!("given a {}", to_infix_string(*uquant.1.clone())))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let interpreted_expr = format!("{}, they are {}", uquant_expr, props.join(","));
 
     let var = var_decl!("p", inner);
-    insert_interpretation_map(relation.clone(), VariableDecl(var.clone()));
+    insert_interpretation(VariableDecl(var.clone()), interpreted_expr);
 
     fields.push(var);
 
@@ -361,45 +370,37 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
 }
 
 
+// Helper function to convert a relation to infix form recursively
+fn to_infix_string(term: SemanticTree) -> String {
+
+    match term {
+        NonTerminal(relation) => {
+            match relation.1.len() {
+                2 => {
+                    // Handle both terminal and non-terminal combinations
+                    let left = to_infix_string(*relation.1[0].clone());
+
+                    let right = to_infix_string(*relation.1[1].clone());
+
+                    format!("{} {} {}", left, relation.0, right)
+                }
+                1 => format!("{} {}", relation.0, to_infix_string(*relation.1[0].clone())),
+                _ => relation.0.clone(),
+            }
+        },
+        Terminal(t) => return t,
+        _ => unimplemented!(),
+    }
+}
+
 /// Convert the relation to infix form and add this to the interpretation map.
 pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration) {
     /* Convert the relation to an infix string. */
     // e.g. relation.args[0] relation.iden relation.args[1] for args len 2
     // relation.args[0] relation.iden for args len 1
 
-    // Helper function to convert a relation to infix form recursively
-    fn to_infix_string(relation: &Relation) -> String {
-        match relation.1.len() {
-            2 => {
-                // Handle both terminal and non-terminal combinations
-                let left = match &*relation.1[0] {
-                    Terminal(a) => a.clone(),
-                    NonTerminal(a) => to_infix_string(a),  // no parentheses needed for non-terminals
-                    _ => unimplemented!(),
-                };
-
-                let right = match &*relation.1[1] {
-                    Terminal(b) => b.clone(),
-                    NonTerminal(b) => to_infix_string(b),  // recursive call for non-terminals
-                    _ => unimplemented!(),
-                };
-
-                format!("{} {} {}", left, relation.0, right)
-            }
-            1 => {
-                // Handle the case where only one argument is present
-                match &*relation.1[0] {
-                    Terminal(a) => format!("{} {}", relation.0, a),
-                    NonTerminal(a) => format!("{} {}", relation.0, to_infix_string(a)),
-                    _ => unimplemented!(),
-                }
-            }
-            _ => relation.0.clone(),
-        }
-    }
-
     // Convert the relation into infix notation
-    let infix_str = to_infix_string(&relation);
+    let infix_str = to_infix_string(NonTerminal(relation));
 
     // Insert the interpretation into the map
     insert_interpretation(expr, infix_str);

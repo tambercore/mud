@@ -15,6 +15,7 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> Vec<String> {
 
     _interpret_proof(expr, program, &mut derivations);
 
+
     print_derivations(&derivations);
 
     derivations
@@ -90,12 +91,11 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec
 
                 /* Add a summary of the fields. */
                 let interpreted_string = format!("To know that {}, it must be known that {}", interpretable_record, interpretable_fields.join(", "));
-                derivations.push(interpreted_string)
+                derivations.push(interpreted_string);
 
             }
             /* Handle normal terms. */
             else {
-                println!("Stuck processing: {}", term);
                 todo!()
             }
         }
@@ -131,8 +131,8 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec
                         }
                         App(app_rhs) => {
                             if let Term(app_lhs) = *app_rhs.lhs {
-                                construct_projection(record, app_lhs, proof_lhs.clone(), derivations);
                                 _interpret_proof(*app_rhs.rhs, program, derivations);
+                                construct_projection(record, app_lhs, proof_lhs.clone(), derivations);
                                 return;
                             } else {unimplemented!()}
                         }
@@ -152,19 +152,25 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Vec
 
 pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, derivations: &mut Vec<String>) {
     for field in record.fields {
-
-        println!("looking at {:?}", field.clone());
         if field.iden == rhs {
-
-            println!("MATCH");
+            let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect("Expecting interpretation.");
 
             /* End of the proof */
             let derivation = {
-                if *field._type == term!("Entity") {
-                    format!("Given that {}, it is known that there is an entity.", proof_lhs.clone())
-                } else {
-                    let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect("Expecting interpretation.");
-                    format!("Given that {}, it is known that there is an entity who {}.", proof_lhs.clone(), proof_rhs.clone())
+                match *field._type.clone() {
+                    Term(term) => {
+                        if term == String::from("Entity") {
+                            format!("   Given that {}, it is known that there is an entity.", proof_lhs.clone())
+                        } else {
+                            format!("   Given that {}, it is known that this entity {}.", proof_lhs.clone(), proof_rhs.clone())
+                        }
+                    }
+                    AgdaExpr::App(fun) => {
+                        format!("   Given that {}, it is known that this entity {}.", proof_lhs.clone(), proof_rhs.clone())
+                    }
+                    _ => {
+                        format!("   Given that {}, {}.", proof_lhs.clone(), proof_rhs.clone())
+                    }
                 }
             };
             println!("Derivation: {}", derivation);
@@ -173,6 +179,5 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, deri
             /* todo: should this return or keep going */
             return;
         }
-
     }
 }
