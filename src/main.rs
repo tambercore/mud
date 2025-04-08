@@ -265,7 +265,7 @@ async fn main() {
         let hole_contents = fill_holes(config.output_file.clone(), &mut conclusions);
         update_task(hole_tsk);
 
-        print_interpretations();
+        // print_interpretations();
 
         interpret_holes(hole_contents.clone(), &agda_file);
 

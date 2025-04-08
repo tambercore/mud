@@ -18,10 +18,15 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> Derivations {
     let mut derivations = Derivations {contents: vec![]} ;
     let mut counter = 1;
 
-    _interpret_proof(expr, program, &mut derivations, &mut counter);
+    if let AgdaExpr::Abs(abs) = expr {
+        add_assumptions(program, &mut derivations);
+        _interpret_proof(*abs.expr, program, &mut derivations, &mut counter);
+    }
+    else {
+        panic!("Expected proof to start with abstraction.");
+    }
 
     print_derivations(&derivations);
-
     derivations
 }
 
@@ -106,7 +111,7 @@ pub fn interpret_term(term: String, program: &Program, derivations: &mut Derivat
         derivations.contents.push(Derivation { contents: interpreted_string, expr: RecordDecl(record), Id: (*counter.to_string()).to_owned() });
         *counter += 1;
     } else {
-        todo!()
+        // todo: handle this properly
     }
 }
 
@@ -116,15 +121,14 @@ pub fn interpret_application(app: Application, program: &Program, derivations: &
 }
 
 pub fn interpret_abstraction(abs: Abstraction, program: &Program, derivations: &mut Derivations, counter: &mut i32) {
-    /* For now, assume this is KB. */
-    add_assumptions(program, derivations);
-    _interpret_proof(*abs.expr, program, derivations, counter);
+    // todo: do this properly
+    _interpret_proof(*abs.expr.clone(), program, derivations, counter);
 }
 
 pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program, derivations: &mut Derivations, counter: &mut i32) {
     /* Only consider records (terms come as a result). */
     if let Some(record) = find_record(rec_proj.lhs.clone(), program) {
-        /* todo : Ignore the knowledge base (for now?). */
+        /* todo : use the knowledge base?. */
 
         if rec_proj.lhs.clone() != "KnowledgeBaseᵣ" {
             /* Find the record field whose name is rec_proj.rhs */

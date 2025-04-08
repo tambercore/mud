@@ -26,6 +26,7 @@ use crate::composer::langtree::SemanticTree::{NonTerminal, Terminal};
 use crate::composer::synonym_handler::handle_synonyms;
 use crate::interpreter::interpret::find_record;
 use crate::interpreter::interpretation_map::insert_interpretation;
+use crate::lambda::predicate::Predicate;
 
 pub fn add_describer(current_prop: Token, f: &mut Program) {
 
@@ -183,6 +184,8 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     /* Prenex Normal Transformation (derive quantifiers and bind anaphora) */
     let (mut uquants, mut equants): (QVec, QVec) = (vec![], vec![]);
 
+    let p_before = p.clone();
+
     prenex(&mut p, &mut equants, &mut uquants);
 
 
@@ -238,6 +241,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         format!("_{}", symbol_table.get(v).unwrap().0.clone()) }));
 
     let mut inner = term!("Temporary");
+    let mut inner_str = "";
 
     /* If there are no Universal Quantifiers, we compose is as a variable using props.
      * This handles cases such as `x is a adj noun`, `x is adj`, `x is noun`.
@@ -261,7 +265,6 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
      * This is handled as a Pi Type.
      */
     else if(p.0 == "is") {
-
         /* Append record fields to the name and constructor name of the record. */
         /* Admin */
         record_name.extend(props.iter().map(|v| { format!("_{}", v) }));
@@ -312,8 +315,8 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     else {
         /* Postulate the predicate as a function to Set. */
         let expr = VariableDecl(var_decl!(iden.clone(), generate_function_header(p.1.len())));
-        insert_interpretation_map(p.clone(), expr.clone());
         f.insert_postulate(expr);
+
 
         /* Then, `inner` becomes the application of that function to the arguments */
 
@@ -331,7 +334,6 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     /* If there are universal quantifiers, we need to bind these outside using Π-types. This
      * is accomplished by folding `uquants` into `inner` e.g. (a₁ : T₁) -> inner ...
      */
-    let inner_orig = inner.clone();
     inner = uquants.clone().into_iter().rev()
         .fold(inner, |acc, (current, typ)| {
             let rec_name = symbol_table.get(&current).unwrap().0.clone();
@@ -339,19 +341,14 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
             dependent_function!(var_decl, acc)
         });
 
-    /* Store this in the record under `p` */
-    /* For interpretation, every uquant is "this {}, ", with expr being at the end */
-    let uquant_expr: String = uquants.iter()
-        .map(|uquant| format!("given that this entity is {}", to_infix_string(*uquant.1.clone())))
-        .collect::<Vec<_>>()
-        .join(", ");
-
-    let interpreted_expr = format!("{}, it is known that this entity is {}", uquant_expr, props.join(","));
 
     let var = var_decl!("p", inner);
-    insert_interpretation(VariableDecl(var.clone()), interpreted_expr);
+    fields.push(var.clone());
 
-    fields.push(var);
+    println!("interpreting {:?}", p_before.clone());
+    println!("");
+
+    insert_interpretation_map(p_before.clone(), VariableDecl(var));
 
 
     /* Format record and constructor names correctly. */
@@ -404,7 +401,7 @@ fn to_infix_string(term: SemanticTree) -> String {
 }
 
 /// Convert the relation to infix form and add this to the interpretation map.
-pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration){
+pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration) {
     /* Convert the relation to an infix string. */
     // e.g. relation.args[0] relation.iden relation.args[1] for args len 2
     // relation.args[0] relation.iden for args len 1
