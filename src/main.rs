@@ -248,7 +248,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("socrates is a man & every man is mortal -> socrates is mortal & socrates is perishable");
+    let config = Config::from_args("every man is mortal & socrates is a man -> socrates is mortal");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
@@ -265,10 +265,9 @@ async fn main() {
         let hole_contents = fill_holes(config.output_file.clone(), &mut conclusions);
         update_task(hole_tsk);
 
-        print_interpretations();
+        // print_interpretations();
 
-        interpret_holes(hole_contents.clone(), &agda_file);
-
+        // interpret_holes(hole_contents.clone(), &agda_file);
 
         // println!("\n\nconclusions: {:?}", conclusions);
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally

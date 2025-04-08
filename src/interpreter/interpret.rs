@@ -38,7 +38,7 @@ pub fn add_assumptions(program: &Program, derivations: &mut Derivations) {
             );
 
             let id = format!("A{}", idx);
-            derivations.contents.push(Derivation { contents: format!("{}", interpretation), Id: id });
+            derivations.contents.push(Derivation { contents: format!("{}", interpretation), expr: field_record, Id: id });
         } else { panic!("Expected KB field to contain a term.") }
     }
 }
@@ -71,6 +71,9 @@ pub fn find_variable(iden: String, program: &Program) -> VarDecl {
 pub fn interpret_record_field(field: &VarDecl) -> String {
     get_interpretation(&VariableDecl(field.clone())).expect(format!("Missing interpretation: {:?}", field).as_str())
 }
+
+
+
 pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Derivations, counter: &mut i32) {
     match expr {
         AgdaExpr::Term(term) => interpret_term(term.clone(), program, derivations, counter),
@@ -100,7 +103,7 @@ pub fn interpret_term(term: String, program: &Program, derivations: &mut Derivat
             interpretable_record, formatted_fields
         );
 
-        derivations.contents.push(Derivation { contents: interpreted_string, Id: (*counter.to_string()).to_owned() });
+        derivations.contents.push(Derivation { contents: interpreted_string, expr: RecordDecl(record), Id: (*counter.to_string()).to_owned() });
         *counter += 1;
     } else {
         todo!()
@@ -155,7 +158,7 @@ pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program
 }
 
 pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, derivations: &mut Derivations, counter: &mut i32) {
-    for field in record.fields {
+    for field in record.clone().fields {
         if field.iden == rhs {
             let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect("Expecting interpretation.");
             let proof_lhs_id = derivations.find_id_by_contents(proof_lhs.clone().as_str()).expect("Expecting proof to have an ID.");
@@ -167,16 +170,22 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, deri
                         format!("Given from {} that {}, it is known that this entity {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                     }
                 }
-                AgdaExpr::App(_) => {
+                AgdaExpr::App(app) => {
                     format!("Given from {} that {}, it is known that this entity {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                 }
-                _ => {
+                // VarDecl { iden: "p", _type: DepFun(DependentFunction { bound_var: VarDecl { iden: "a₁", _type: Term("Manᵣ") },
+                // expr: App(Application { lhs: Term("isMortal"), rhs: App(Application { lhs: RecProj(RecordProjection { lhs: "Manᵣ", rhs: Term("e₁") }), rhs: Term("a₁") }) }) }) }
+
+                AgdaExpr::DepFun(function) => {
                     format!("Given from {} that {}, {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                 }
+                _ => unimplemented!("{:?}", field)
             };
-            derivations.contents.push(Derivation { contents: derivation, Id: (*counter.to_string()).to_owned()  });
+            derivations.contents.push(Derivation { contents: derivation, expr: RecordDecl(record), Id: (*counter.to_string()).to_owned()  });
             *counter += 1;
             return;
         }
     }
 }
+
+

@@ -11,7 +11,7 @@ use crate::ast::top_decl::TDeclaration::{RecordDecl};
 use crate::ast::var_declaration::VarDecl;
 use crate::composer::compose_predicate::{generate_predicate_output, insert_interpretation_map};
 use crate::composer::lambda_to_types::generate_function_header;
-use crate::composer::langtree::Token;
+use crate::composer::langtree::{Relation, Token};
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::{app, function_type, record, record_projection, term, var_decl};
@@ -73,7 +73,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let record_name = format!("{}ᵣ", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
     let constructor_name = format!("{}꜀", convert_case(props_iden.clone().as_str(), CaseStyle::PascalCase));
 
-    let rec = record!(record_name.clone(), constructor_name, fields, None);
+    let rec = record!(record_name.clone(), constructor_name, fields, Some(tokens_to_str(token.clone(), props.clone())));
     insert_interpretation(rec.clone(), props_iden.clone());
 
     let postulate_entry = var_decl!(predicate_iden.clone(), generate_function_header(1));
@@ -85,4 +85,18 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let proj = record_projection!(record_name.clone(), term!("e₁"));
     let projection = app!(proj, term!("e₁"));
     (record_name, projection)
+}
+
+/// Function to convert the variable to a string.
+pub fn tokens_to_str(subject: Token, modifiers: Vec<Token>) -> String {
+    if modifiers.len() == 0 {
+        subject
+    } else {
+        /* Join modifiers into a string with " and " separator */
+        let modifier_strs: Vec<String> = modifiers.iter().map(|m| m.to_string()).collect();
+        let modifiers_combined = modifier_strs.join(" and ");
+
+        /* Format the string as "subject is modifiers[0] and modifiers[1] and ... and modifiers[n]" */
+        format!("{} is {}", subject.to_string(), modifiers_combined)
+    }
 }

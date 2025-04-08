@@ -15,6 +15,9 @@ pub struct Record {
 impl Record {
     pub fn agdaify(&self) -> String {
         let mut code = String::new();
+        if let Some(comment) = &self.comment {
+            code.push_str(&format!("-- Record declaration for '{}'\n", comment));
+        }
         // Start the record declaration with its name and type.
         code.push_str(&format!("record {} : Set where\n", self.record_iden));
         // Specify the constructor.
@@ -39,7 +42,7 @@ macro_rules! record {
             record_iden: $record_iden.to_string(),
             constructor_iden: $constructor_iden.to_string(),
             fields: $field,
-            comment: None
+            comment: $comment
         })
     };
 }
