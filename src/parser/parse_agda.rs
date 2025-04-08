@@ -39,7 +39,7 @@ fn parse_proj(input: &str) -> IResult<&str, RecordProjection> {
         parse_term,
         opt(multispace0),
         char('.'),
-        parse_agda_expr
+        parse_base_expr
     ))(input)?;
 
     Ok((input, RecordProjection {
@@ -156,23 +156,23 @@ mod tests {
                 app!(
                     term!("Man꜀"),
                     record_projection!(
-                        term!("z"),
+                        "z",
                         record_projection!(
-                            term!("KnowledgeBaseᵣ"),
+                            "KnowledgeBaseᵣ",
                             record_projection!(
-                                term!("j₁"),
-                                record_projection!(term!("ManSocratesᵣ"), term!("e₁"))
+                                "j₁",
+                                record_projection!("ManSocratesᵣ", term!("e₁"))
                             )
                         )
                     )
                 ),
                 record_projection!(
-                    term!("z"),
+                    "z",
                     record_projection!(
-                        term!("KnowledgeBaseᵣ"),
+                        "KnowledgeBaseᵣ",
                         record_projection!(
-                            term!("j₁"),
-                            record_projection!(term!("ManSocratesᵣ"), term!("p₀"))
+                            "j₁",
+                            record_projection!("ManSocratesᵣ", term!("p₀"))
                         )
                     )
                 )
@@ -189,6 +189,13 @@ mod tests {
 
         let parsed = parse_agda(input);
 
+        println!("{:?}", parsed);
+    }
+
+    #[test]
+    fn test_assoc2() {
+        let input = "z .KnowledgeBaseᵣ.j₁ .LikesManWomanᵣ.p a₁".to_string();
+        let parsed = parse_agda(input);
         println!("{:?}", parsed);
     }
 

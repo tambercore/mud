@@ -201,6 +201,15 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         let pair = compose(_type.clone(), f, vec![]);
         symbol_table.insert(identifier.clone(), pair.clone());
         let field = var_decl!(identifier, term!(pair.0.clone()));
+
+        // todo: cover everything
+        match *_type.clone() {
+            Terminal(var) => insert_interpretation(VariableDecl(field.clone()), var),
+            NonTerminal(rel) => insert_interpretation_map(rel, VariableDecl(field.clone())),
+            _ => panic!("Expecting a terminal or non terminal.")
+        }
+
+
         fields.push(field);
     }
 
@@ -395,7 +404,7 @@ fn to_infix_string(term: SemanticTree) -> String {
 }
 
 /// Convert the relation to infix form and add this to the interpretation map.
-pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration) -> String {
+pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration){
     /* Convert the relation to an infix string. */
     // e.g. relation.args[0] relation.iden relation.args[1] for args len 2
     // relation.args[0] relation.iden for args len 1
@@ -405,6 +414,4 @@ pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration) -> Stri
 
     // Insert the interpretation into the map
     insert_interpretation(expr, infix_str.clone());
-
-    infix_str
 }

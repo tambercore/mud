@@ -124,7 +124,7 @@ pub fn interpret_abstraction(abs: Abstraction, program: &Program, derivations: &
 pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program, derivations: &mut Derivations, counter: &mut i32) {
     /* Only consider records (terms come as a result). */
     if let Some(record) = find_record(rec_proj.lhs.clone(), program) {
-        /* Ignore the knowledge base (for now?). */
+        /* todo : Ignore the knowledge base (for now?). */
 
         if rec_proj.lhs.clone() != "KnowledgeBaseᵣ" {
             /* Find the record field whose name is rec_proj.rhs */
@@ -145,7 +145,7 @@ pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program
                         _interpret_proof(*app_rhs.rhs, program, derivations, counter);
                         construct_projection(record, app_lhs, proof_lhs.clone(), derivations, counter);
                         return;
-                    } else {unimplemented!()}
+                    } else {panic!("Failed to parse: {:?}", app_rhs)}
                 }
                 _ => unimplemented!()
             }
