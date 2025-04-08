@@ -100,7 +100,7 @@ pub fn interpret_term(term: String, program: &Program, derivations: &mut Derivat
             .map(interpret_record_field)
             .collect();
 
-        let formatted_fields = interpretable_fields.join(", who ");
+        let formatted_fields = interpretable_fields.join(", and ");
 
 
         let interpreted_string = format!(
@@ -168,17 +168,11 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, deri
             let proof_lhs_id = derivations.find_id_by_contents(proof_lhs.clone().as_str()).expect("Expecting proof to have an ID.");
             let derivation = match *field._type.clone() {
                 Term(term) => {
-                    if term == "Entity" {
-                        format!("Given from {} that {}, it is known that there is an entity.", proof_lhs_id, proof_lhs.clone())
-                    } else {
-                        format!("Given from {} that {}, it is known that this entity {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
-                    }
+                    format!("Given from {} that {}, it is known that {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                 }
                 AgdaExpr::App(app) => {
-                    format!("Given from {} that {}, it is known that this entity {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given from {} that {}, it is known that {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                 }
-                // VarDecl { iden: "p", _type: DepFun(DependentFunction { bound_var: VarDecl { iden: "a₁", _type: Term("Manᵣ") },
-                // expr: App(Application { lhs: Term("isMortal"), rhs: App(Application { lhs: RecProj(RecordProjection { lhs: "Manᵣ", rhs: Term("e₁") }), rhs: Term("a₁") }) }) }) }
 
                 AgdaExpr::DepFun(function) => {
                     format!("Given from {} that {}, {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())

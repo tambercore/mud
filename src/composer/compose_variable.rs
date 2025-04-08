@@ -27,11 +27,11 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let mut predicate_iden = convert_case(format!("is_{}", token).as_str(), CaseStyle::CamelCase);
 
     let field =var_decl!("e₁", term!("Entity"));
-    insert_interpretation(VariableDecl(field.clone()), String::from("there is an entity"));
+    insert_interpretation(VariableDecl(field.clone()), String::from("entity"));
     let mut fields= vec![field ];
     let app: AgdaExpr = app!(term!(predicate_iden.clone()), term!("e₁"));
     let proj_field = var_decl!("p₁", app);
-    insert_interpretation(VariableDecl(proj_field.clone()), format!("is {}", token));
+    insert_interpretation(VariableDecl(proj_field.clone()), format!("the entity is {}", token));
     fields.push(proj_field);
 
     /* Generate each property as a proof */
@@ -43,13 +43,13 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let __type = app!(term!(c_predicate.clone()), term!("e₁"));
         types.push(__type.clone());
         let postulate_entry = var_decl!(c_predicate.clone(), generate_function_header(1));
-        insert_interpretation(VariableDecl(postulate_entry.clone()), format!("is {}", p));
+        insert_interpretation(VariableDecl(postulate_entry.clone()), format!("the entity is {}", p));
         f.insert_postulate(VariableDecl(postulate_entry));
 
         /* Handle cases without negation */
         if negation_layers == 0 {
             let field = var_decl!(format!("p{}", to_unicode_subscript(counter)), __type);
-            insert_interpretation(VariableDecl(field.clone()), format!("is {}", c_predicate.get(2..).unwrap_or("")));
+            insert_interpretation(VariableDecl(field.clone()), format!("the entity is {}", c_predicate.get(2..).unwrap_or("")));
             fields.push(field);
             counter = counter + 1;
         }
@@ -60,6 +60,8 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     if negation_layers > 0 {
         let mut inner = generate_predicate_output(types.into_iter().map(|x| {Box::from(x)}).collect());
         for _ in (0..negation_layers) { inner = Box::from(function_type!(*inner, term!("⊥"))); }
+
+        // todo: handle interpretation. build string?
 
         let field = var_decl!(format!("p{}", to_unicode_subscript(0)), inner);
         fields.push(field);

@@ -184,8 +184,6 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     /* Prenex Normal Transformation (derive quantifiers and bind anaphora) */
     let (mut uquants, mut equants): (QVec, QVec) = (vec![], vec![]);
 
-    let p_before = p.clone();
-
     prenex(&mut p, &mut equants, &mut uquants);
 
 
@@ -222,7 +220,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
      */
     for (identifier, _type) in uquants.clone() {
         let pair = compose(_type, f, vec![]);
-        symbol_table.insert(identifier, pair);
+        symbol_table.insert(identifier.clone(), pair);
     }
 
 
@@ -241,7 +239,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         format!("_{}", symbol_table.get(v).unwrap().0.clone()) }));
 
     let mut inner = term!("Temporary");
-    let mut inner_str = "";
+    let mut inner_str = String::new();
 
     /* If there are no Universal Quantifiers, we compose is as a variable using props.
      * This handles cases such as `x is a adj noun`, `x is adj`, `x is noun`.
@@ -289,7 +287,9 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
              * a proof of this property for the given entity.
              */
             let mut rhs_property = convert_case(format!("is_{}", current_prop).as_str(), CaseStyle::CamelCase);
-            add_describer(current_prop, f);
+            add_describer(current_prop.clone(), f);
+
+            inner_str.push_str(format!("{} is {}", symbol_table.get(uquant_iden).unwrap().clone().0.replace("ᵣ", ""), current_prop).as_str());
 
 
             /* This constructs the `property` returned in the dependent function. If the current property `current_prop`
@@ -316,6 +316,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         /* Postulate the predicate as a function to Set. */
         let expr = VariableDecl(var_decl!(iden.clone(), generate_function_header(p.1.len())));
         f.insert_postulate(expr);
+        inner_str.push_str(&iden.to_string());
 
 
         /* Then, `inner` becomes the application of that function to the arguments */
@@ -325,6 +326,8 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
             |acc, name| {
                 let proj = symbol_table.get(name).unwrap().clone().1;
                 let app_proj = replace_innermost_simple(&proj, term!(name.clone()));
+
+                inner_str.push_str(format!("{}", symbol_table.get(name).unwrap().clone().0).as_str()  );
 
                 app!(acc, app_proj)
             }
@@ -337,18 +340,20 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     inner = uquants.clone().into_iter().rev()
         .fold(inner, |acc, (current, typ)| {
             let rec_name = symbol_table.get(&current).unwrap().0.clone();
-            let var_decl = var_decl!(current, term!(rec_name));
+            let var_decl = var_decl!(current.clone(), term!(rec_name.clone()));
+
+            /* Wrap universal quantifiers on the outside of the string. */
+            let prefix = format!("given a {}, ", rec_name.clone().as_str().replace("ᵣ", ""));
+            inner_str = format!("{}{}", prefix, inner_str);
             dependent_function!(var_decl, acc)
+
         });
 
 
     let var = var_decl!("p", inner);
     fields.push(var.clone());
 
-    println!("interpreting {:?}", p_before.clone());
-    println!("");
-
-    insert_interpretation_map(p_before.clone(), VariableDecl(var));
+    insert_interpretation(VariableDecl(var), inner_str);
 
 
     /* Format record and constructor names correctly. */
