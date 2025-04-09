@@ -277,7 +277,6 @@ async fn main() {
 
 /// Parse each hole filled in by Agsy and generate a natural language derivation.
 pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program) {
-    let mut interpretations = vec![vec![]];
 
     /* For each hole, If it has not been filled (None), continue
     Else, parse it. pass in the corresponding conclusion record to interpret_proof. */
@@ -292,7 +291,7 @@ pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program) {
 
                 /* Create a natural language interpretation of Agsy's proof. */
                 let interpretation = interpret_proof(hole, program);
-                interpretations.push(interpretation.contents);
+                // interpretations.push(interpretation.contents);
             }
         }
     }

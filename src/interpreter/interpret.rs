@@ -7,9 +7,9 @@ use crate::ast::record_decl::Record;
 use crate::ast::record_projection::RecordProjection;
 use crate::ast::theorem_decl::Theorem;
 use crate::ast::top_decl::TDeclaration;
-use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
+use crate::ast::top_decl::TDeclaration::{CommentSegment, PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
-use crate::interpreter::derivation::{print_derivations, Assumption, Derivation, Derivations};
+use crate::interpreter::derivation::{print_derivations, Assumption, Derivation, DerivationNode, Derivations};
 use crate::interpreter::interpretation_map::{get_interpretation, INTERPRETATIONS};
 use crate::lambda::variable::Variable;
 use crate::term;
@@ -21,7 +21,7 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> Derivations {
 
     if let AgdaExpr::Abs(abs) = expr {
         let assumptions = add_assumptions(program);
-        let mut derivations = Derivations {contents: vec![], assumptions: assumptions} ;
+        let mut derivations = Derivations {contents: DerivationNode{derivation: Derivation {contents: "Base".to_string(), expr: CommentSegment("Base".to_string()), Id: "-1".to_string()}, children: vec![]}, assumptions: assumptions} ;
 
         _interpret_proof(*abs.expr, program, &mut derivations, &mut counter);
 
@@ -133,7 +133,18 @@ pub fn interpret_term(term: String, program: &Program, derivations: &mut Derivat
             interpretable_record, formatted_fields
         );
 
-        derivations.contents.push(Derivation { contents: interpreted_string, expr: RecordDecl(record), Id: (*counter.to_string()).to_owned() });
+
+        let new_node = DerivationNode {
+            derivation: Derivation {
+                contents: interpreted_string,
+                expr: RecordDecl(record),
+                Id: counter.to_string(),
+            },
+            children: Vec::new(),
+        };
+
+        derivations.contents.children.push(new_node);
+
         *counter += 1;
     }
     else {
@@ -147,7 +158,14 @@ pub fn interpret_term(term: String, program: &Program, derivations: &mut Derivat
             println!("found theorem {:?}", theorem.clone());
             if let Some(interpretation) = get_interpretation(&TheoremDecl(theorem.clone())) {
                 println!("found interpretation: {:?}", interpretation.clone());
-                derivations.contents.push(Derivation {contents: interpretation, expr: TheoremDecl(theorem), Id: (*counter.to_string()).to_owned()})
+
+                let new_node = DerivationNode {
+                    derivation: Derivation {contents: interpretation, expr: TheoremDecl(theorem), Id: (*counter.to_string()).to_owned()},
+                    children: Vec::new(),
+                };
+
+                derivations.contents.children.push(new_node);
+                * counter +=1;
             }
         }
 
@@ -204,7 +222,7 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, deri
     for field in record.clone().fields {
         if field.iden == rhs {
             let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect(format!("Expecting interpretation for {:?}.", field.clone()).as_str());
-            let proof_lhs_id = derivations.find_id_by_contents(proof_lhs.clone().as_str()).expect("Expecting proof to have an ID.");
+            let proof_lhs_id = derivations.find_id_by_contents(proof_lhs.clone()).expect("Expecting proof to have an ID.");
             let derivation = match *field._type.clone() {
                 Term(term) => {
                     format!("Given from {} that {}, it is known that {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
@@ -223,7 +241,12 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, deri
                 }
                 _ => unimplemented!("{:?}", field)
             };
-            derivations.contents.push(Derivation { contents: derivation, expr: RecordDecl(record), Id: (*counter.to_string()).to_owned()  });
+
+            let new_node = DerivationNode {
+                derivation: Derivation { contents: derivation, expr: RecordDecl(record), Id: (*counter.to_string()).to_owned()  },
+                children: Vec::new(),
+            };
+            derivations.contents.children.push(new_node);
             *counter += 1;
             return;
         }
