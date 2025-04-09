@@ -397,7 +397,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
 
 
 // Helper function to convert a relation to infix form recursively
-fn to_infix_string(term: SemanticTree) -> String {
+pub fn to_infix_string(term: SemanticTree) -> String {
 
     match term {
         NonTerminal(relation) => {
