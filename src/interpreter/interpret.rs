@@ -9,32 +9,39 @@ use crate::ast::theorem_decl::Theorem;
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
-use crate::interpreter::derivation::{print_derivations, Derivation, Derivations};
+use crate::interpreter::derivation::{print_derivations, Assumption, Derivation, Derivations};
 use crate::interpreter::interpretation_map::{get_interpretation, INTERPRETATIONS};
 use crate::lambda::variable::Variable;
 use crate::term;
 
 /// Function to interpret Agsy's proof of a conclusion in natural language.
 pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> Derivations {
-    let mut derivations = Derivations {contents: vec![]} ;
+
     let mut counter = 1;
 
     if let AgdaExpr::Abs(abs) = expr {
-        add_assumptions(program, &mut derivations);
+        let assumptions = add_assumptions(program);
+        let mut derivations = Derivations {contents: vec![], assumptions: assumptions} ;
+
         _interpret_proof(*abs.expr, program, &mut derivations, &mut counter);
+
+        print_derivations(&derivations);
+        derivations
     }
     else {
         panic!("Expected proof to start with abstraction.");
     }
 
-    print_derivations(&derivations);
-    derivations
+
 }
 
 /// Function to gather assumptions from the knowledge base and
 /// add them as natural language assumptions.
 
-pub fn add_assumptions(program: &Program, derivations: &mut Derivations) {
+pub fn add_assumptions(program: &Program) -> Vec<Assumption> {
+
+    let mut assumptions= vec![];
+
     let kb = find_record(String::from("KnowledgeBaseᵣ"), program).expect("Expected record.");
     for (idx, field) in kb.fields.iter().enumerate() {
         if let Term(field_iden) = *field.clone()._type {
@@ -44,9 +51,11 @@ pub fn add_assumptions(program: &Program, derivations: &mut Derivations) {
             );
 
             let id = format!("A{}", idx);
-            derivations.contents.push(Derivation { contents: format!("{}", interpretation), expr: field_record, Id: id });
+            assumptions.push(Assumption { contents: format!("{}", interpretation), expr: field_record, Id: id });
         } else { panic!("Expected KB field to contain a term.") }
     }
+
+    assumptions
 }
 pub fn find_record(iden: String, program: &Program) -> Option<Record> {
     for decl in &program.declarations {
@@ -181,7 +190,7 @@ pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program
                         return;
                     } else {panic!("Failed to parse: {:?}", app_rhs)}
                 }
-                _ => unimplemented!()
+                _ => unimplemented!("{:?}", rec_proj)
             }
 
         }

@@ -4,9 +4,11 @@ use crate::brill::wordclass::Wordclass;
 use crate::{CONTEXTUAL_RULESET, LEXICAL_RULESET, WC_MAPPING};
 use crate::ast::top_decl::TDeclaration;
 
-/// A type to map terms to the derivation line they were declared.
-/// todo: more information, e.g. type?
-pub type SymbolTable = HashMap<String, String>;
+pub struct Assumption {
+    pub contents: String,
+    pub expr: TDeclaration,
+    pub Id: String,
+}
 
 pub struct Derivation {
     pub contents: String,
@@ -38,17 +40,30 @@ impl Derivation {
 }
 
 pub struct Derivations {
-    pub(crate) contents: Vec<Derivation>}
+    pub(crate) contents: Vec<Derivation>,
+    pub assumptions: Vec<Assumption>
+}
 
 impl Derivations {
     pub fn find_id_by_contents(&self, contents: &str) -> Option<&str> {
         self.contents.iter()
             .find(|d| d.contents == contents)
             .map(|d| d.Id.as_str())
+            .or_else(|| {
+                self.assumptions.iter()
+                    .find(|a| a.contents == contents)
+                    .map(|a| a.Id.as_str())
+            })
     }
+
     pub fn find_id_by_expr(&self, expr: TDeclaration) -> Option<&str> {
         self.contents.iter()
             .find(|d| d.expr == expr)
             .map(|d| d.Id.as_str())
+            .or_else(|| {
+                self.assumptions.iter()
+                    .find(|a| a.expr == expr)
+                    .map(|a| a.Id.as_str())
+            })
     }
 }
