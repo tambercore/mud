@@ -5,8 +5,9 @@ use crate::ast::application::Application;
 use crate::ast::program::Program;
 use crate::ast::record_decl::Record;
 use crate::ast::record_projection::RecordProjection;
+use crate::ast::theorem_decl::Theorem;
 use crate::ast::top_decl::TDeclaration;
-use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, VariableDecl};
+use crate::ast::top_decl::TDeclaration::{PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
 use crate::interpreter::derivation::{print_derivations, Derivation, Derivations};
 use crate::interpreter::interpretation_map::{get_interpretation, INTERPRETATIONS};
@@ -58,6 +59,18 @@ pub fn find_record(iden: String, program: &Program) -> Option<Record> {
     None
 }
 
+/// Given a theorem identifier, return the theorem.
+pub fn find_theorem(iden: String, program: &Program) -> Option<Theorem> {
+    for decl in &program.declarations {
+        if let TheoremDecl(theorem) = decl {
+            if theorem.iden == iden {
+                return Some(theorem.clone());
+            }
+        }
+    }
+    None
+}
+
 pub fn find_variable(iden: String, program: &Program) -> VarDecl {
     for decl in &program.declarations {
         if let PostulateDecl(postulate) = decl {
@@ -91,7 +104,10 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, derivations: &mut Der
 
 
 pub fn interpret_term(term: String, program: &Program, derivations: &mut Derivations, counter: &mut i32) {
+
+    /* Handle record constructions. */
     if term.ends_with("꜀") {
+
         let record = find_record(term.replace("꜀", "ᵣ"), program).expect("Expected record.");
         let interpretable_record = get_interpretation(&RecordDecl(record.clone())).expect(
             format!("Expected record to be interpretable: {:?}", record.clone()).as_str()
@@ -110,8 +126,22 @@ pub fn interpret_term(term: String, program: &Program, derivations: &mut Derivat
 
         derivations.contents.push(Derivation { contents: interpreted_string, expr: RecordDecl(record), Id: (*counter.to_string()).to_owned() });
         *counter += 1;
-    } else {
+    }
+    else {
         // todo: handle this properly
+
+        println!("searching for {:?}", term.clone());
+
+        /* Some terms are hardcoded, e.g. □-k. Check if the term has an interpretation. */
+        if let Some(theorem) = find_theorem(term.clone(), program) {
+
+            println!("found theorem {:?}", theorem.clone());
+            if let Some(interpretation) = get_interpretation(&TheoremDecl(theorem.clone())) {
+                println!("found interpretation: {:?}", interpretation.clone());
+                derivations.contents.push(Derivation {contents: interpretation, expr: TheoremDecl(theorem), Id: (*counter.to_string()).to_owned()})
+            }
+        }
+
     }
 }
 
@@ -164,7 +194,7 @@ pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program
 pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, derivations: &mut Derivations, counter: &mut i32) {
     for field in record.clone().fields {
         if field.iden == rhs {
-            let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect("Expecting interpretation.");
+            let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect(format!("Expecting interpretation for {:?}.", field.clone()).as_str());
             let proof_lhs_id = derivations.find_id_by_contents(proof_lhs.clone().as_str()).expect("Expecting proof to have an ID.");
             let derivation = match *field._type.clone() {
                 Term(term) => {
@@ -175,6 +205,11 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, deri
                 }
 
                 AgdaExpr::DepFun(function) => {
+                    format!("Given from {} that {}, {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
+                }
+
+                /* todo: is this always a modality? */
+                AgdaExpr::UnOp(operator) => {
                     format!("Given from {} that {}, {}.", proof_lhs_id, proof_lhs.clone(), proof_rhs.clone())
                 }
                 _ => unimplemented!("{:?}", field)

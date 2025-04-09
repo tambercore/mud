@@ -144,14 +144,19 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
     let mut relation = rel.clone();
     if relation.1.len() != 1 { panic!("`Necessity with more than one arg`") }
 
+    let interpretation = to_infix_string(NonTerminal(relation.clone()));
+
     let arg = relation.1.pop().unwrap();
-    let (prop_rec_name, prop_projection) = compose(arg, f, props);
+    let (prop_rec_name, prop_projection) = compose(arg.clone(), f, props);
 
     let mut iden = format!("{}_{}", rel.0, prop_rec_name.replace("ᵣ", ""));
     let mut record_name = format!("{}ᵣ", convert_case(&*iden, CaseStyle::PascalCase));
     let mut constructor_name = format!("{}꜀", convert_case(&*iden, CaseStyle::PascalCase));
 
     let operator = unop!(Necessity, term!(prop_rec_name.clone()));
+    let field = var_decl!("I", operator.clone());
+    insert_interpretation_map(*arg.clone(), VariableDecl(field.clone()));
+
     let mut fields = vec![var_decl!("I", operator)];
 
     let proj_func = replace_innermost_simple(&prop_projection, app!(
@@ -159,7 +164,9 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
         term!("I")
     ));
 
-    let interpretation = to_infix_string(NonTerminal(relation));
+
+
+
     let record = record!(record_name.clone(), constructor_name, fields, Some(interpretation.clone()));
 
     f.insert_definition(record.clone());
@@ -206,7 +213,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         // todo: cover everything
         match *_type.clone() {
             Terminal(var) => insert_interpretation(VariableDecl(field.clone()), var),
-            NonTerminal(rel) => insert_interpretation_map(rel, VariableDecl(field.clone())),
+            NonTerminal(rel) => insert_interpretation_map(NonTerminal(rel), VariableDecl(field.clone())),
             _ => panic!("Expecting a terminal or non terminal.")
         }
 
@@ -252,7 +259,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
 
                 /* Insert the natural language interpretation. */
                 let record = RecordDecl(find_record(rec_iden.clone(), f).expect("Expected record."));
-                insert_interpretation_map(relation, record);
+                insert_interpretation_map(NonTerminal(relation), record);
                 return (rec_iden, proj);
             }
             _ => { panic!("Invalid!") }
@@ -316,8 +323,10 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         /* Postulate the predicate as a function to Set. */
         let expr = VariableDecl(var_decl!(iden.clone(), generate_function_header(p.1.len())));
         f.insert_postulate(expr);
-        inner_str.push_str(&iden.to_string());
 
+        let mut relation_args = vec![];
+
+        // inner_str.push_str(&iden.to_string());
 
         /* Then, `inner` becomes the application of that function to the arguments */
 
@@ -327,11 +336,16 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
                 let proj = symbol_table.get(name).unwrap().clone().1;
                 let app_proj = replace_innermost_simple(&proj, term!(name.clone()));
 
-                inner_str.push_str(format!("{}", symbol_table.get(name).unwrap().clone().0).as_str()  );
+                // inner_str.push_str(format!(" {}", symbol_table.get(name).unwrap().clone().0).replace("ᵣ", "").as_str()  );
+                relation_args.push(Box::from(Terminal(format!("{}", symbol_table.get(name).unwrap().clone().0).replace("ᵣ", ""))));
+
 
                 app!(acc, app_proj)
             }
         );
+
+        let i_relation = (iden, relation_args);
+        inner_str.push_str(to_infix_string(NonTerminal(i_relation)).as_str());
     }
 
     /* If there are universal quantifiers, we need to bind these outside using Π-types. This
@@ -406,13 +420,13 @@ fn to_infix_string(term: SemanticTree) -> String {
 }
 
 /// Convert the relation to infix form and add this to the interpretation map.
-pub fn insert_interpretation_map(relation: Relation, expr: TDeclaration) {
+pub fn insert_interpretation_map(relation: SemanticTree, expr: TDeclaration) {
     /* Convert the relation to an infix string. */
     // e.g. relation.args[0] relation.iden relation.args[1] for args len 2
     // relation.args[0] relation.iden for args len 1
 
     // Convert the relation into infix notation
-    let infix_str = to_infix_string(NonTerminal(relation));
+    let infix_str = to_infix_string(relation);
 
     // Insert the interpretation into the map
     insert_interpretation(expr, infix_str.clone());

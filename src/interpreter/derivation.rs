@@ -1,7 +1,12 @@
+use std::collections::HashMap;
 use crate::brill::brill_tagger::tag_sentence;
 use crate::brill::wordclass::Wordclass;
 use crate::{CONTEXTUAL_RULESET, LEXICAL_RULESET, WC_MAPPING};
 use crate::ast::top_decl::TDeclaration;
+
+/// A type to map terms to the derivation line they were declared.
+/// todo: more information, e.g. type?
+pub type SymbolTable = HashMap<String, String>;
 
 pub struct Derivation {
     pub contents: String,

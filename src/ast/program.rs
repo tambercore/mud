@@ -10,12 +10,14 @@ use crate::AgdaExpr::Term;
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::top_decl::TDeclaration::{CommentSegment, PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
-use crate::{function_type, postulate, quant, term, theorem, unop, var_decl};
+use crate::{abstraction, app, function_type, postulate, quant, term, theorem, unop, var_decl};
 use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 use crate::ast::binary_op::BinOperator;
 use crate::ast::operator::Operator::{Necessity, Possibility, PropEq};
 use crate::ast::theorem_decl::Agdaify;
 use crate::interpreter::interpretation_map::insert_interpretation;
+use crate::ast::abstraction::Abstraction;
+use crate::ast::application::Application;
 
 /// Type to describe an Agda Program. Consists of a file name (String),
 /// and a list of Declarations.
@@ -72,12 +74,21 @@ pub fn initialise_agda_file() -> Program {
 
 pub trait DefinitionInserter {
     fn insert_definition(&mut self, entry: TDeclaration);
+    fn insert_modal_theorem(&mut self, entry: TDeclaration);
 }
 
 impl DefinitionInserter for Program {
     fn insert_definition(&mut self, entry: TDeclaration) {
         if !self.declarations.contains(&entry) {
             self.declarations.push(entry);
+        }
+    }
+
+    fn insert_modal_theorem(&mut self, entry: TDeclaration) {
+        // First, find the index of the first postulate
+        if let Some(idx) = self.declarations.iter().position(|decl| matches!(decl, PostulateDecl(_))) {
+            // Then insert after it
+            self.declarations.insert(idx + 1, entry);
         }
     }
 }
@@ -104,7 +115,7 @@ impl Program {
             .collect()
     }
 
-    pub fn create_postulate(&self) -> TDeclaration {
+    pub fn create_postulate(&mut self) -> TDeclaration {
         let mut fields: Vec<TDeclaration> = Vec::new();
 
         /* Define operators */
@@ -182,10 +193,88 @@ impl Program {
         fields.push(necessary_cobind_theorem.clone());
         insert_interpretation(necessary_cobind_theorem, format!("If a truth necessarily depends on a necessary condition, then it is also necessary."));
 
-
         postulate!(fields, None)
     }
-    pub fn agdaify(&self) -> String {
+
+    fn add_theorems(&mut self, code: &mut String) {
+
+        /* code.push_str("□-k : ∀ {A B : Set} → □ (A → B) → (□ A → □ B)\n");
+        code.push_str("□-k = λ z z₁ → □-fmap (λ z₂ → z₂ (□-extract z₁)) z\n"); */
+
+        let necessary_k_signature = function_type!(
+            unop!(Necessity, function_type!(term!("A"), term!("B"))),
+            function_type!(unop!(Necessity, term!("A")), unop!(Necessity, term!("B"))));
+
+        let necessary_k_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], necessary_k_signature.clone());
+        let necessary_k_body = abstraction!("z", abstraction!("z₁", app!(app!(term!("□-fmap"), abstraction!("z₂", app!(term!("z₂"), app!(term!("□-extract"), term!("z₁"))))), term!("z"))));
+        let necessary_k_theorem = theorem!("□-k", necessary_k_decl.clone(), Some(Box::from(necessary_k_body)), None);
+        insert_interpretation(necessary_k_theorem.clone(), format!("If it is necessary that one proposition follows from another, then if the first proposition is necessary, it follows that the second is necessary."));
+        self.insert_modal_theorem(necessary_k_theorem.clone());
+        // code.push_str(necessary_k_theorem.clone().agdaify().as_str());
+
+        /* code.push_str("□-t : ∀ {A : Set} → □ A → A\n");
+        code.push_str("□-t = □-extract\n");*/
+
+        let necessary_t_signature = function_type!(
+            unop!(Necessity, term!("A")),
+            term!("A")
+        );
+
+        let necessary_t_decl = quant!(
+            "∀",
+            vec![var_decl!("A", term!("Set"))],
+            necessary_t_signature.clone()
+        );
+
+        let necessary_t_body = term!("□-extract");
+        let necessary_t_theorem = theorem!("□-t", necessary_t_decl.clone(), Some(Box::from(necessary_t_body)), None);
+        insert_interpretation(necessary_t_theorem.clone(), "If a proposition is necessary, then it is the case.".into());
+        self.insert_modal_theorem(necessary_t_theorem.clone());
+        // code.push_str(necessary_t_theorem.clone().agdaify().as_str());
+
+
+        /* code.push_str("□-4 : ∀ {A : Set} → □ A → □ □ A\n");
+        code.push_str("□-4 = □-duplicate\n");*/
+
+        let box_four_signature = function_type!(
+            unop!(Necessity, term!("A")),
+            unop!(Necessity, unop!(Necessity, term!("A")))
+        );
+        let box_four_decl = quant!(
+            "∀",
+            vec![var_decl!("A", term!("Set"))],
+            box_four_signature.clone()
+        );
+        let box_four_body = term!("□-duplicate");
+        let box_four_theorem = theorem!("□-4", box_four_decl.clone(), Some(Box::from(box_four_body)), None);
+        insert_interpretation(box_four_theorem.clone(), "If a proposition is necessary, then it is necessarily necessary.".into());
+        self.insert_modal_theorem(box_four_theorem.clone());
+        // code.push_str(box_four_theorem.clone().agdaify().as_str());
+
+        /* code.push_str("□-d : ∀ {A : Set} → □ A → ◇ A\n");
+        code.push_str("□-d = λ z → ◇-pure (□-extract z)\n");*/
+
+        let box_d_signature = function_type!(
+            unop!(Necessity, term!("A")),
+            unop!(Possibility, term!("A"))
+        );
+        let box_d_decl = quant!(
+            "∀",
+            vec![var_decl!("A", term!("Set"))],
+            box_d_signature.clone()
+        );
+        let box_d_body = abstraction!(
+            "z",
+            app!(term!("◇-pure"), app!(term!("□-extract"), term!("z")))
+        );
+        let box_d_theorem = theorem!("□-d", box_d_decl.clone(), Some(Box::from(box_d_body)), None);
+        insert_interpretation(box_d_theorem.clone(), "If a proposition is necessary, then it is possible.".into());
+        self.insert_modal_theorem(box_d_theorem.clone());
+        // code.push_str(box_d_theorem.clone().agdaify().as_str());
+
+
+    }
+    pub fn agdaify(&mut self) -> String {
         let mut code = String::new();
         code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".agda", "")));
         code.push_str( &format!("open import Data.Product\n\n"));
@@ -215,19 +304,7 @@ impl Program {
         let postulate = self.create_postulate().agdaify();
         code.push_str(&postulate);
 
-        code.push_str("\n\n -- Derive S4 Modal Logic (as follows)\n");
-        code.push_str("□-k : ∀ {A B : Set} → □ (A → B) → (□ A → □ B)\n");
-        code.push_str("□-k = λ z z₁ → □-fmap (λ z₂ → z₂ (□-extract z₁)) z\n");
-
-        code.push_str("□-t : ∀ {A : Set} → □ A → A\n");
-        code.push_str("□-t = □-extract\n");
-
-        code.push_str("□-4 : ∀ {A : Set} → □ A → □ □ A\n");
-        code.push_str("□-4 = □-duplicate\n");
-
-        code.push_str("-- □-d says that if □ A then it is possible that A\n");
-        code.push_str("□-d : ∀ {A : Set} → □ A → ◇ A\n");
-        code.push_str("□-d = λ z → ◇-pure (□-extract z)\n");
+        self.add_theorems(&mut code);
 
         code.push_str("\n\n-- Now, introduce the relevant language constructions\npostulate\n");
 
