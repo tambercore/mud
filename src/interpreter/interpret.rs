@@ -1,3 +1,4 @@
+use once_cell::sync::Lazy;
 use crate::ast::abstraction::Abstraction;
 use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::agda_expr::AgdaExpr::{App, Term};
@@ -9,10 +10,13 @@ use crate::ast::theorem_decl::Theorem;
 use crate::ast::top_decl::TDeclaration;
 use crate::ast::top_decl::TDeclaration::{CommentSegment, PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
-use crate::interpreter::derivation::{print_assumptions, print_derivation_node, Assumption, Derivation, DerivationNode};
+use crate::brill::lex_rulespec_id::LexicalRulespec;
+use crate::brill::lexical_ruleset::parse_lexical_ruleset;
+use crate::interpreter::derivation::{get_derivation_id, print_assumptions, print_derivation_node, Assumption, Derivation, DerivationNode};
 use crate::interpreter::interpretation_map::{get_interpretation, INTERPRETATIONS};
 use crate::lambda::variable::Variable;
 use crate::term;
+
 
 /// Function to interpret Agsy's proof of a conclusion in natural language.
 pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> DerivationNode {
@@ -21,8 +25,8 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> DerivationNode {
 
     if let AgdaExpr::Abs(abs) = expr {
         let assumptions = add_assumptions(program);
-        let mut root = DerivationNode {derivation: Derivation{contents: "ROOT".to_string(), expr: CommentSegment("temp".to_string())}, children: vec![]};
-        let derivation_node = _interpret_proof(*abs.expr, program, &mut root, &mut counter);
+        let mut root = DerivationNode {derivation: Derivation{contents: "ROOT".to_string(), expr: CommentSegment("temp".to_string())}, children: vec![], parent: None};
+        let derivation_node = _interpret_proof(*abs.expr, program, &mut root, &assumptions);
         if let Some(node) = derivation_node {
             print_assumptions(&assumptions);
             print_derivation_node(&node);
@@ -50,7 +54,7 @@ pub fn add_assumptions(program: &Program) -> Vec<Assumption> {
             );
 
             let id = format!("A{}", idx);
-            assumptions.push(Assumption { contents: format!("{}", interpretation), expr: field_record, Id: id });
+            assumptions.push(Assumption { contents: format!("{}", interpretation), expr: field_record});
         } else { panic!("Expected KB field to contain a term.") }
     }
 
@@ -100,18 +104,18 @@ pub fn interpret_record_field(field: &VarDecl) -> String {
 
 
 
-pub fn _interpret_proof(expr: AgdaExpr, program: &Program, parent: &mut DerivationNode, counter: &mut i32) -> Option<DerivationNode>  {
+pub fn _interpret_proof(expr: AgdaExpr, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
     match expr {
-        AgdaExpr::Term(term) => interpret_term(term.clone(), program, parent, counter),
-        AgdaExpr::App(app) => interpret_application(app.clone(), program, parent, counter),
-        AgdaExpr::Abs(abs) => interpret_abstraction(abs.clone(), program, parent, counter),
-        AgdaExpr::RecProj(rec_proj) => interpret_record_projection(rec_proj.clone(), program, parent, counter),
+        AgdaExpr::Term(term) => interpret_term(term.clone(), program, parent, assumptions),
+        AgdaExpr::App(app) => interpret_application(app.clone(), program, parent, assumptions),
+        AgdaExpr::Abs(abs) => interpret_abstraction(abs.clone(), program, parent, assumptions),
+        AgdaExpr::RecProj(rec_proj) => interpret_record_projection(rec_proj.clone(), program, parent, assumptions),
         _ => unimplemented!()
     }
 }
 
 
-pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNode, counter: &mut i32) -> Option<DerivationNode>  {
+pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
 
     /* Handle record constructions. */
     if term.ends_with("꜀") {
@@ -137,13 +141,14 @@ pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNo
             derivation: Derivation {
                 contents: interpreted_string,
                 expr: RecordDecl(record),
+
             },
             children: Vec::new(),
+            parent: Some(Box::from(parent.clone())),
         };
 
         parent.children.push(new_node.clone());
 
-        *counter += 1;
         return Some(new_node);
     }
     else {
@@ -157,10 +162,10 @@ pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNo
                 let new_node = DerivationNode {
                     derivation: Derivation {contents: interpretation, expr: TheoremDecl(theorem)},
                     children: Vec::new(),
+                    parent: Some(Box::from(parent.clone())),
                 };
 
                 parent.children.push(new_node.clone());
-                * counter +=1;
                 return Some(new_node);
             }
         }
@@ -168,12 +173,12 @@ pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNo
     None
 }
 
-pub fn interpret_application(app: Application, program: &Program, parent: &mut DerivationNode, counter: &mut i32) -> Option<DerivationNode> {
+pub fn interpret_application(app: Application, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode> {
 
-    let derivation_node = _interpret_proof(*app.lhs.clone(), program, parent, counter);
+    let derivation_node = _interpret_proof(*app.lhs.clone(), program, parent, assumptions);
     match derivation_node {
         Some(mut node) => {
-            let rhs = _interpret_proof(*app.rhs.clone(), program, parent, counter);
+            let rhs = _interpret_proof(*app.rhs.clone(), program, parent, assumptions);
             match rhs {
                 Some(node_rhs) => {
                     node.children.push(node_rhs);
@@ -187,12 +192,12 @@ pub fn interpret_application(app: Application, program: &Program, parent: &mut D
 
 }
 
-pub fn interpret_abstraction(abs: Abstraction, program: &Program, parent: &mut DerivationNode, counter: &mut i32) -> Option<DerivationNode>  {
+pub fn interpret_abstraction(abs: Abstraction, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
     // todo: do this properly
-    _interpret_proof(*abs.expr.clone(), program, parent, counter)
+    _interpret_proof(*abs.expr.clone(), program, parent, assumptions)
 }
 
-pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program, parent: &mut DerivationNode, counter: &mut i32) -> Option<DerivationNode>  {
+pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
     /* Only consider records (terms come as a result). */
     if let Some(record) = find_record(rec_proj.lhs.clone(), program) {
         /* todo : use the knowledge base?. */
@@ -208,12 +213,12 @@ pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program
 
             match *rec_proj.rhs.clone() {
                 Term(rec_rhs) => {
-                    return construct_projection(record, rec_rhs, proof_lhs.clone(), parent, counter);
+                    return construct_projection(record, rec_rhs, proof_lhs.clone(), parent, assumptions);
                 }
                 App(app_rhs) => {
                     if let Term(app_lhs) = *app_rhs.lhs {
-                        _interpret_proof(*app_rhs.rhs, program, parent, counter);
-                        return construct_projection(record, app_lhs, proof_lhs.clone(), parent, counter);
+                        _interpret_proof(*app_rhs.rhs, program, parent, assumptions);
+                        return construct_projection(record, app_lhs, proof_lhs.clone(), parent, assumptions);
                     } else {panic!("Failed to parse: {:?}", app_rhs)}
                 }
                 _ => unimplemented!("{:?}", rec_proj)
@@ -223,28 +228,29 @@ pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program
     }
 
     /* Continue with the rest of the expression. */
-    _interpret_proof(*rec_proj.rhs, program, parent, counter)
+    _interpret_proof(*rec_proj.rhs, program, parent, assumptions)
 }
 
-pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, parent: &mut DerivationNode, counter: &mut i32) -> Option<DerivationNode> {
+pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode> {
     for field in record.clone().fields {
         if field.iden == rhs {
             let proof_rhs = get_interpretation(&VariableDecl(field.clone())).expect(format!("Expecting interpretation for {:?}.", field.clone()).as_str());
+            let id_str = get_derivation_id(parent, proof_lhs.clone(), assumptions);
             let derivation = match *field._type.clone() {
                 Term(term) => {
-                    format!("Given from {} that {}, it is known that {}.", "temp", proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given from {} that {}, it is known that {}.", id_str, proof_lhs.clone(), proof_rhs.clone())
                 }
                 AgdaExpr::App(app) => {
-                    format!("Given from {} that {}, it is known that {}.", "temp", proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given from {} that {}, it is known that {}.", id_str, proof_lhs.clone(), proof_rhs.clone())
                 }
 
                 AgdaExpr::DepFun(function) => {
-                    format!("Given from {} that {}, {}.", "temp", proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given from {} that {}, {}.", id_str, proof_lhs.clone(), proof_rhs.clone())
                 }
 
                 /* todo: is this always a modality? */
                 AgdaExpr::UnOp(operator) => {
-                    format!("Given from {} that {}, {}.", "temp", proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given from {} that {}, {}.", id_str, proof_lhs.clone(), proof_rhs.clone())
                 }
                 _ => unimplemented!("{:?}", field)
                };
@@ -252,9 +258,9 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, pare
             let new_node = DerivationNode {
                 derivation: Derivation { contents: derivation, expr: RecordDecl(record.clone()) },
                 children: Vec::new(),
+                parent: Some(Box::from(parent.clone())),
             };
             parent.children.push(new_node.clone());
-            *counter += 1;
 
             return Some(new_node.clone())
         }

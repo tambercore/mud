@@ -21,7 +21,7 @@ use crate::ast::application::Application;
 
 /// Type to describe an Agda Program. Consists of a file name (String),
 /// and a list of Declarations.
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Program {pub filepath : String, pub declarations : Vec<TDeclaration>}
 
 #[macro_export]
