@@ -248,7 +248,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("every man is mortal & socrates is a man -> socrates is mortal");
+    let config = Config::from_args("socrates is a man & every man is mortal -> socrates is mortal");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
@@ -267,7 +267,7 @@ async fn main() {
 
         print_interpretations();
 
-        interpret_holes(hole_contents.clone(), &agda_file);
+        interpret_holes(hole_contents.clone(), &agda_file, conclusions.clone());
 
         // println!("\n\nconclusions: {:?}", conclusions);
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally
@@ -276,7 +276,7 @@ async fn main() {
 
 
 /// Parse each hole filled in by Agsy and generate a natural language derivation.
-pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program) {
+pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, conclusions: Vec<AgdaConclusion>) {
 
     /* For each hole, If it has not been filled (None), continue
     Else, parse it. pass in the corresponding conclusion record to interpret_proof. */
@@ -290,7 +290,7 @@ pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program) {
                 println!("PARSED HOLE: {:?}", hole);
 
                 /* Create a natural language interpretation of Agsy's proof. */
-                let interpretation = interpret_proof(hole, program);
+                let interpretation = interpret_proof(hole, program, conclusions[idx].clone());
                 // interpretations.push(interpretation.contents);
             }
         }

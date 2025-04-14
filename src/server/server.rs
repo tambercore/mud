@@ -11,7 +11,7 @@ struct SentenceInput {
     knowledge: Vec<String>,
     conclusions: Vec<String>
 }
-
+    
 #[derive(Debug, Serialize)]
 struct AgdaResponse {
     agda: String,
@@ -25,7 +25,7 @@ pub struct AgdaPremise {
     pub(crate) ccg_tree: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct AgdaConclusion {
     pub(crate) text: String,
     pub(crate) ccg_tree: String,

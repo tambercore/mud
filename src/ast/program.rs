@@ -141,7 +141,7 @@ impl Program {
         fields.push(possible_pure_theorem.clone());
         insert_interpretation(possible_pure_theorem, format!("If a proposition is true, it is also possible"));
 
-        /* ◇-lift */
+            /* ◇-lift */
         let possible_lift_signature = function_type!(unop!(Possibility, function_type!(term!("A"), term!("B"))),function_type!(unop!(Possibility, term!("A")), unop!(Possibility, term!("B"))));
         let possible_lift_decl = quant!("∀", vec![var_decl!("A", term!("Set")), var_decl!("B", term!("Set"))], possible_lift_signature.clone());
         let possible_lift_theorem = theorem!("◇-lift", possible_lift_decl.clone(), None, None);

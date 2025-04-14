@@ -22,7 +22,7 @@ use crate::composer::case_converter::*;
 use crate::composer::compose_variable::compose_variable;
 use crate::composer::lambda_to_types::{compose, generate_function_header, replace_innermost_simple};
 use crate::composer::langtree::{Relation, SemanticTree, Token};
-use crate::composer::langtree::SemanticTree::{NonTerminal, Terminal};
+use crate::composer::langtree::SemanticTree::{Conj, NonTerminal, Terminal};
 use crate::composer::synonym_handler::handle_synonyms;
 use crate::interpreter::interpret::find_record;
 use crate::interpreter::interpretation_map::insert_interpretation;
@@ -415,7 +415,7 @@ pub fn to_infix_string(term: SemanticTree) -> String {
             }
         },
         Terminal(t) => return t,
-        _ => unimplemented!(),
+        Conj((lhs, rhs)) => format!("{} and {}", to_infix_string(*lhs), to_infix_string(*rhs))
     }
 }
 

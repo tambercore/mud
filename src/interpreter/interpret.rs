@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use crate::ast::abstraction::Abstraction;
 use crate::ast::agda_expr::AgdaExpr;
-use crate::ast::agda_expr::AgdaExpr::{App, Term};
+use crate::ast::agda_expr::AgdaExpr::{App, QuestionMark, Term};
 use crate::ast::application::Application;
 use crate::ast::program::Program;
 use crate::ast::record_decl::Record;
@@ -15,11 +15,12 @@ use crate::brill::lexical_ruleset::parse_lexical_ruleset;
 use crate::interpreter::derivation::{get_derivation_id, print_assumptions, print_derivation_node, Assumption, Derivation, DerivationNode};
 use crate::interpreter::interpretation_map::{get_interpretation, INTERPRETATIONS};
 use crate::lambda::variable::Variable;
+use crate::server::server::AgdaConclusion;
 use crate::term;
 
 
 /// Function to interpret Agsy's proof of a conclusion in natural language.
-pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> DerivationNode {
+pub fn interpret_proof(expr: AgdaExpr, program: &Program, agda_conclusion: AgdaConclusion) -> DerivationNode {
 
     let mut counter = 1;
 
@@ -27,8 +28,14 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program) -> DerivationNode {
         let assumptions = add_assumptions(program);
         let mut root = DerivationNode {derivation: Derivation{contents: "ROOT".to_string(), expr: CommentSegment("temp".to_string())}, children: vec![], parent: None};
         let derivation_node = _interpret_proof(*abs.expr, program, &mut root, &assumptions);
-        if let Some(node) = derivation_node {
+
+        if let Some(mut node) = derivation_node {
             print_assumptions(&assumptions);
+            node.children.push(DerivationNode{
+                derivation: Derivation { contents: format!("Therefore, {}", agda_conclusion.text), expr: CommentSegment("temp".to_string())  },
+                parent: None,
+                children: vec![],
+            });
             print_derivation_node(&node);
             return node;
         } else {panic!("Failed to generate derivation tree")}
@@ -238,19 +245,19 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, pare
             let id_str = get_derivation_id(parent, proof_lhs.clone(), assumptions);
             let derivation = match *field._type.clone() {
                 Term(term) => {
-                    format!("Given from {} that {}, it is known that {}.", id_str, proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given that {} ({}), it is known that {}", proof_lhs.clone(), id_str, proof_rhs.clone())
                 }
                 AgdaExpr::App(app) => {
-                    format!("Given from {} that {}, it is known that {}.", id_str, proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given that {} ({}), it is known that {}", proof_lhs.clone(), id_str, proof_rhs.clone())
                 }
 
                 AgdaExpr::DepFun(function) => {
-                    format!("Given from {} that {}, {}.", id_str, proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given that {} ({}), {}", proof_lhs.clone(), id_str, proof_rhs.clone())
                 }
 
                 /* todo: is this always a modality? */
                 AgdaExpr::UnOp(operator) => {
-                    format!("Given from {} that {}, {}.", id_str, proof_lhs.clone(), proof_rhs.clone())
+                    format!("Given that {} ({}), {}", proof_lhs.clone(), id_str, proof_rhs.clone())
                 }
                 _ => unimplemented!("{:?}", field)
                };

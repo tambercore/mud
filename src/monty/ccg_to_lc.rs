@@ -9,7 +9,7 @@ use crate::lambda::abstraction::Abstraction;
 use crate::{λAbs, λApp, λConj, λVar};
 use crate::ccg::rule::CCGRule;
 use crate::lambda::application::Application;
-use crate::monty::handle_lexical::lexical_to_lambda;
+use crate::monty::handle_lexical::convert_syntactic_type;
 
 /// Function to convert a CCG parse tree into a λ-term.
 pub fn ccg_to_lambda(root: &mut CCGNode) -> Box<LambdaEntity> {
@@ -65,7 +65,7 @@ pub fn ccg_to_lambda_recursive(current_node: CCGNode, root: &CCGNode) -> Box<Lam
 
         /* Generates λ-Terms */
         CCGRule::Lexical => {
-            let expr = lexical_to_lambda(current_node.clone());
+            let expr = convert_syntactic_type(current_node.clone());
             // println!("{} generated {}", current_node.word.unwrap().text, expr);
             expr
         }

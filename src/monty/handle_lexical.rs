@@ -10,11 +10,11 @@ use crate::lingo::quantifiers::EXISTENTIAL_QUANTIFIERS;
 use crate::monty::fresh_variable::{fresh_variable, reset_counter, to_unicode_subscript};
 
 /// Function to generate a λ-Predicate from a word and CCG type.
-pub fn gen_predicate(word: String, _typ: CCGType, depth: i64) -> Box<LambdaEntity> {
+pub fn convert_compound_syntactic_type(word: String, _typ: CCGType, depth: i64) -> Box<LambdaEntity> {
     match _typ {
         /* Functor Types (Inductive Case) */
         CCGType::ForwardsFunctor(l, r) | CCGType::BackwardsFunctor(r, l) => {
-            λAbs!(λVar!(fresh_variable()), gen_predicate(word, *l, depth + 1))
+            λAbs!(λVar!(fresh_variable()), convert_compound_syntactic_type(word, *l, depth + 1))
         }
 
         /* Non-Functor Type (Base Case) */
@@ -32,7 +32,7 @@ pub fn gen_predicate(word: String, _typ: CCGType, depth: i64) -> Box<LambdaEntit
 
 
 /// Function to convert a lexical CCG node into a λ-term.
-pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
+pub fn convert_syntactic_type(node: CCGNode) -> Box<LambdaEntity> {
     /* Ensure the node is Lexical, this function shouldn't be called on a non-lexical node. */
     if node.rule != CCGRule::Lexical {
         panic!("Function `lexical_to_lambda` called on Non-Lexical Node");
@@ -79,7 +79,7 @@ pub fn lexical_to_lambda(node: CCGNode) -> Box<LambdaEntity> {
 
             /* Handle normal predicates as usual */
             reset_counter();
-            gen_predicate(word, node.clone().node_type, 0)
+            convert_compound_syntactic_type(word, node.clone().node_type, 0)
         }
 
         _ => panic!("Not yet implemented!"),
