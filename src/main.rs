@@ -47,6 +47,7 @@ use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
 use crate::interpreter::derivation::DerivationNode;
 use crate::interpreter::interpretation_map::print_interpretations;
 use crate::interpreter::interpret::interpret_proof;
+use crate::ast::literate_prose::Literate;
 use crate::lambda::etalike::Eliminator;
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::parser::parse_agda::parse_agda;
@@ -259,6 +260,13 @@ async fn main() {
         create_endpoint(config.output_file).await;
     } else {
         let (mut agda_file, premises, mut conclusions) = english_to_agda(knowledge.clone(), conclusions.clone());
+
+        let mut intro_literate = format!("\\section{{Premises (Assumptions)}}\n\n\\begin{{itemize}}");
+        for (idx, assumption) in knowledge.iter().enumerate() {
+            intro_literate.push_str(format!("\\item A{}: {}\n", idx, assumption).as_str());
+        }
+        intro_literate.push_str(format!("\\end{{itemize}}").as_str());
+        agda_file.declarations.push(literate!(intro_literate));
 
         let write_tsk = create_task(1, "Writing to Agda File.");
         agda_file.write_to_file(config.output_file.clone());

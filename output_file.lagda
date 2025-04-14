@@ -1,5 +1,16 @@
 \begin{code}
 
+
+\end{code} 
+
+ \section{Premises (Assumptions)}
+
+\begin{itemize}\item A0: socrates is a man
+\item A1: every man is mortal
+\end{itemize} 
+
+ \begin{code}
+
 module output_file where
 
 open import Data.Product

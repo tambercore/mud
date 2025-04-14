@@ -277,8 +277,9 @@ impl Program {
     }
     pub fn agdaify(&mut self) -> String {
         let mut code = String::new();
-        code.push_str(&format!("\\begin{{code}}\n\n"));
-        code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".lagda", "")));
+        code.push_str(&format!("\\begin{{code}}\n\n\n"));
+        code.push_str(&*self.declarations.pop().unwrap().agdaify());
+        code.push_str(&format!("\n\nmodule {} where\n\n", &self.filepath.replace(".lagda", "")));
         code.push_str( &format!("open import Data.Product\n\n"));
         code.push_str(&format!("open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)\n\n"));
 

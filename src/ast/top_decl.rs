@@ -29,6 +29,7 @@ impl TDeclaration {
             VariableDecl(variable) => {variable.clone().agdaify()}
             RecordDecl(record) => {record.clone().agdaify()}
             CommentSegment(comment) => { format!("-- {}\n", comment.clone()) }
+            TDeclaration::LiterateProse(prose) => prose.clone().agdaify(),
             _ => unimplemented!()
         }
     }
