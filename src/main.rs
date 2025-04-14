@@ -90,8 +90,6 @@ fn sentence_to_agda(sentence: String, f: &mut Program) -> ((String, AgdaExpr), S
     update_task(brill_task_id);
 
     let lc_task_id = create_task(1, "Converting CCG to λ-Calculus");
-    // println!("tag mapping: {:?}", TAG_MAPPING.get().unwrap());
-
     let (mut ccg, json_tree) = if SERVER_RUNNING.load(Ordering::SeqCst) {
         let ccg = SENTENCE_TO_CCG.read().unwrap().iter().find(|(s, _)| *s == sentence).map(|(_, ccg)| ccg.clone()).expect("Failed to map sentence to ccg.");
         let json_tree = SENTENCE_TO_JSON.read().unwrap().iter().find(|(s, _)| *s == sentence).map(|(_, json)| json.clone()).expect("Failed to map sentence to json.");
@@ -101,36 +99,18 @@ fn sentence_to_agda(sentence: String, f: &mut Program) -> ((String, AgdaExpr), S
     };
 
     let lambda_expression = ccg_to_lambda(&mut ccg);
-    //println!("Result: \n{}", lambda_expression);
     update_task(lc_task_id);
-
-    println!("Lambda Expr: {lambda_expression}");
 
     let lc_task_id2 = create_task(1, "β-Reduction, η-Reduction & Expansions");
     let reduction = (*lambda_expression).beta_reduce();
-    //println!("\n\nReduces to: \n{}", reduction);
-
-    println!("Lambda Expr pre-eta: {reduction}");
 
     let eta_reduction = (reduction).eliminate_leftovers();
-    //println!("\n\nEta Reduces to: \n{}", eta_reduction);
-
-    println!("Reduced Expr: {eta_reduction}");
-
     let expansion = eta_reduction.expand();
-
-    println!("Expanded Expr: {expansion}");
-
     let expanded_expression: Box<LambdaEntity> = Box::from(expansion);
-    //println!("\n\nExpands to: {}", expanded_expression);
     update_task(lc_task_id2);
-
-    println!("Expanded Expr: {expanded_expression}");
 
     let semtree_id = create_task(1, "Converting to Semantic Tree");
     let semantic_tree = lambda_to_semantic(Box::from(expanded_expression.clone())).expect("Failed to parse semantic tree.");
-
-    println!("Semantic Tree: {}", semantic_tree);
 
     update_task(semtree_id);
 
@@ -276,8 +256,6 @@ async fn main() {
         let (hole_contents, agda_file_str) = fill_holes(config.output_file.clone(), &mut conclusions);
         update_task(hole_tsk);
 
-        print_interpretations();
-
         interpret_holes(hole_contents.clone(), &agda_file, conclusions.clone(), agda_file_str);
 
         // println!("\n\nconclusions: {:?}", conclusions);
@@ -334,7 +312,6 @@ pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, co
     for (idx, contents) in hole_contents.iter().enumerate() {
         let thm_name = format!("thm{}", to_unicode_subscript(idx+1));
         let thm_placeholder = format!("{}_lp", thm_name);
-        println!("replacing {}", thm_placeholder);
 
 
         match contents {
@@ -343,13 +320,11 @@ pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, co
                 /* Parse the agda file into a Program struct. */
                 let hole = parse_agda(hole.clone());
 
-                println!("PARSED HOLE: {:?}", hole);
 
                 /* Create a natural language interpretation of Agsy's proof. */
                 let interpretation = interpret_proof(hole, program, conclusions[idx].clone());
 
                 let ltx  = derivation_to_latex(&interpretation);
-                println!("{}", ltx);
 
                 file_contents = file_contents.replace(thm_placeholder.as_str(), &ltx);
 

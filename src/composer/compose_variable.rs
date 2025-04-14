@@ -27,11 +27,11 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let mut predicate_iden = convert_case(format!("is_{}", token).as_str(), CaseStyle::CamelCase);
 
     let field =var_decl!("e₁", term!("Entity"));
-    insert_interpretation(VariableDecl(field.clone()), String::from("entity"));
+    insert_interpretation(VariableDecl(field.clone()), String::from("an entity"));
     let mut fields= vec![field ];
     let app: AgdaExpr = app!(term!(predicate_iden.clone()), term!("e₁"));
     let proj_field = var_decl!("p₁", app);
-    insert_interpretation(VariableDecl(proj_field.clone()), format!("the entity is {}", token));
+    insert_interpretation(VariableDecl(proj_field.clone()), format!("evidence that the entity is {}", token));
     fields.push(proj_field);
 
     /* Generate each property as a proof */
@@ -49,7 +49,7 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         /* Handle cases without negation */
         if negation_layers == 0 {
             let field = var_decl!(format!("p{}", to_unicode_subscript(counter)), __type);
-            insert_interpretation(VariableDecl(field.clone()), format!("the entity is {}", c_predicate.get(2..).unwrap_or("")));
+            insert_interpretation(VariableDecl(field.clone()), format!("evidence that the entity is {}", c_predicate.get(2..).unwrap_or("")));
             fields.push(field);
             counter = counter + 1;
         }

@@ -357,7 +357,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
             let var_decl = var_decl!(current.clone(), term!(rec_name.clone()));
 
             /* Wrap universal quantifiers on the outside of the string. */
-            let prefix = format!("given a {}, ", rec_name.clone().as_str().replace("ᵣ", ""));
+            let prefix = format!("for every {}, that the ", rec_name.clone().as_str().replace("ᵣ", ""));
             inner_str = format!("{}{}", prefix, inner_str);
             dependent_function!(var_decl, acc)
 

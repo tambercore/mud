@@ -112,18 +112,19 @@ record KnowledgeBaseᵣ : Set where
  \section{Theorems}
 \subsection{Theorem 1: `socrates is mortal'}
 
-To know that socrates is mortal, it must be known that entity, and the entity is Socrates, and the entity is Mortal
+To provide evidence of 'socrates is mortal', there must exist an entity, and evidence that the entity is Socrates, and evidence that the entity is Mortal
 \begin{enumerate}
-  \item Given that socrates is man (A0), it is known that entity
-  \item Given that socrates is man (A0), it is known that the entity is Socrates
-  \item Given that every man is mortal (A1), given a Man, Man is mortal
+  \item Given that socrates is man (A0), there exists an entity
+  \item Given that socrates is man (A0), there exists evidence that the entity is Socrates
+  \item Given that every man is mortal (A1), it is known that for every Man, that the Man is mortal
   \begin{enumerate}
-    \item To know that man, it must be known that entity, and the entity is man
+    \item To provide evidence of 'man', there must exist an entity, and evidence that the entity is man
     \begin{enumerate}
-      \item Given that socrates is man (A0), it is known that entity
-      \item Given that socrates is man (A0), it is known that the entity is Man
+      \item Given that socrates is man (A0), there exists an entity
+      \item Given that socrates is man (A0), there exists evidence that the entity is Man
     \end{enumerate}
   \end{enumerate}
+  \item Therefore, socrates is mortal
 \end{enumerate}
  
 

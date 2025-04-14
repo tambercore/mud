@@ -31,11 +31,11 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program, agda_conclusion: AgdaC
 
         if let Some(mut node) = derivation_node {
             print_assumptions(&assumptions);
-            /*node.children.push(DerivationNode{
+            node.children.push(DerivationNode{
                 derivation: Derivation { contents: format!("Therefore, {}", agda_conclusion.text), expr: CommentSegment("temp".to_string())  },
                 parent: None,
                 children: vec![],
-            });*/
+            });
             print_derivation_node(&node);
             return node;
         } else {panic!("Failed to generate derivation tree")}
@@ -137,7 +137,7 @@ pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNo
 
 
         let interpreted_string = format!(
-            "To know that {}, it must be known that {}",
+            "To provide evidence of '{}', there must exist {}",
             interpretable_record, formatted_fields
         );
 
@@ -242,14 +242,14 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, pare
             let id_str = get_derivation_id(parent, proof_lhs.clone(), assumptions);
             let derivation = match *field._type.clone() {
                 Term(term) => {
-                    format!("Given that {} ({}), it is known that {}", proof_lhs.clone(), id_str, proof_rhs.clone())
+                    format!("Given that {} ({}), there exists {}", proof_lhs.clone(), id_str, proof_rhs.clone())
                 }
                 AgdaExpr::App(app) => {
-                    format!("Given that {} ({}), it is known that {}", proof_lhs.clone(), id_str, proof_rhs.clone())
+                    format!("Given that {} ({}), there exists {}", proof_lhs.clone(), id_str, proof_rhs.clone())
                 }
 
                 AgdaExpr::DepFun(function) => {
-                    format!("Given that {} ({}), {}", proof_lhs.clone(), id_str, proof_rhs.clone())
+                    format!("Given that {} ({}), it is known that {}", proof_lhs.clone(), id_str, proof_rhs.clone())
                 }
 
                 /* todo: is this always a modality? */
