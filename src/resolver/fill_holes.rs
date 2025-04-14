@@ -143,12 +143,12 @@ pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) -> (V
 
     /* Update the file with holes filled in. */
     let (updated_content, file_content) = replace_holes_in_file(&filepath, &filled_holes);
-    fs::write(&filepath, updated_content).expect("Failed to write updated file");
+    fs::write(&filepath, updated_content.clone()).expect("Failed to write updated file");
     // println!("Updated file with filled holes");
 
     agda.kill().expect("Failed to terminate Agda");
 
-    (filled_holes, file_content)
+    (filled_holes, updated_content)
 
 
 }
