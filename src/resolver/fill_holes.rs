@@ -86,7 +86,7 @@ fn find_question_mark_positions(filepath: &str) ->Vec<(i32, i32)> {
 }
 
 /* Replaces the '?' marks in the file with the corresponding filled hole values. */
-fn replace_holes_in_file(filepath: &str, filled_holes: &Vec<Option<String>>) -> String {
+fn replace_holes_in_file(filepath: &str, filled_holes: &Vec<Option<String>>) -> (String, String) {
     let positions = find_question_mark_positions(filepath);
     if filled_holes.len() != positions.len() {
         panic!("Number of holes and filled values do not match");
@@ -110,11 +110,11 @@ fn replace_holes_in_file(filepath: &str, filled_holes: &Vec<Option<String>>) -> 
 
     updated_content.push_str(&file_content[last_pos..]);
 
-    updated_content
+    (updated_content, file_content)
 }
 
 /* Main function to fill holes in the Agda file. */
-pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) -> Vec<Option<String>> {
+pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) -> (Vec<Option<String>>, String) {
     let mut agda = start_agda();
     let stdin = agda.stdin.as_mut().expect("Failed to get stdin");
     let stdout = agda.stdout.as_mut().expect("Failed to get stdout");
@@ -126,7 +126,7 @@ pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) -> Ve
 
     if hole_info.is_empty() {
         println!("No holes found in {}", filepath);
-        return vec![];
+        return (vec![], "".to_string());
     }
 
     /* Attempt to fill in each hole */
@@ -142,13 +142,13 @@ pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) -> Ve
     }
 
     /* Update the file with holes filled in. */
-    let updated_content = replace_holes_in_file(&filepath, &filled_holes);
+    let (updated_content, file_content) = replace_holes_in_file(&filepath, &filled_holes);
     fs::write(&filepath, updated_content).expect("Failed to write updated file");
     // println!("Updated file with filled holes");
 
     agda.kill().expect("Failed to terminate Agda");
 
-    filled_holes
+    (filled_holes, file_content)
 
 
 }

@@ -32,8 +32,8 @@ impl Config {
                 .short('o')
                 .long("output")
                 .value_name("FILE")
-                .help("Specify output file location (must have .agda extension)")
-                .default_value("output_file.agda")
+                .help("Specify output file location (must have .lagda extension)")
+                .default_value("output_file.lagda")
                 .num_args(1))
             .arg(Arg::new("version")
                 .short('v')
@@ -65,8 +65,8 @@ impl Config {
         let output_file = matches.get_one::<String>("output").unwrap().to_string();
 
         /* Validate that the output file has a .agda extension */
-        if !output_file.ends_with(".agda") {
-            eprintln!("Error: Output file must have a .agda extension.");
+        if !output_file.ends_with(".lagda") {
+            eprintln!("Error: Output file must have a .lagda extension.");
             std::process::exit(1);
         }
 

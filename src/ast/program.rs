@@ -8,7 +8,7 @@ use std::path::Path;
 use crate::ast::postulate_decl::Postulate;
 use crate::AgdaExpr::Term;
 use crate::ast::top_decl::TDeclaration;
-use crate::ast::top_decl::TDeclaration::{CommentSegment, PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
+use crate::ast::top_decl::TDeclaration::{CommentSegment, LiterateProse, PostulateDecl, RecordDecl, TheoremDecl, VariableDecl};
 use crate::ast::var_declaration::VarDecl;
 use crate::{abstraction, app, function_type, postulate, quant, term, theorem, unop, var_decl};
 use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
@@ -110,6 +110,7 @@ impl Program {
             .filter_map(|decl| match decl {
                 RecordDecl(inner) => Some(TDeclaration::RecordDecl(inner)),
                 TheoremDecl(inner) => Some(TDeclaration::TheoremDecl(inner)),
+                LiterateProse(inner) => Some(TDeclaration::LiterateProse(inner)),
                 _ => None,
             }) // Assuming Postulate is (Vec<VarDecl>, Option<String>), cloning may be required
             .collect()
@@ -276,7 +277,8 @@ impl Program {
     }
     pub fn agdaify(&mut self) -> String {
         let mut code = String::new();
-        code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".agda", "")));
+        code.push_str(&format!("\\begin{{code}}\n\n"));
+        code.push_str(&format!("module {} where\n\n", &self.filepath.replace(".lagda", "")));
         code.push_str( &format!("open import Data.Product\n\n"));
         code.push_str(&format!("open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)\n\n"));
 
@@ -348,9 +350,11 @@ impl Program {
             match def {
                 RecordDecl(rec) => { code.push_str( &format!("\n{}\n", rec.agdaify())) }
                 TheoremDecl(func) => { code.push_str(&format!("\n{}\n", func.agdaify())) }
+                LiterateProse(literate ) => { code.push_str(&format!("\n{}\n", literate.agdaify())) }
                 _ => {}
             }
         }
+        code.push_str(&format!("\\end{{code}}"));
         code
     }
 

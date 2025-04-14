@@ -31,11 +31,11 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program, agda_conclusion: AgdaC
 
         if let Some(mut node) = derivation_node {
             print_assumptions(&assumptions);
-            node.children.push(DerivationNode{
+            /*node.children.push(DerivationNode{
                 derivation: Derivation { contents: format!("Therefore, {}", agda_conclusion.text), expr: CommentSegment("temp".to_string())  },
                 parent: None,
                 children: vec![],
-            });
+            });*/
             print_derivation_node(&node);
             return node;
         } else {panic!("Failed to generate derivation tree")}
@@ -67,6 +67,7 @@ pub fn add_assumptions(program: &Program) -> Vec<Assumption> {
 
     assumptions
 }
+
 pub fn find_record(iden: String, program: &Program) -> Option<Record> {
     for decl in &program.declarations {
         if let RecordDecl(record) = decl {
@@ -109,8 +110,6 @@ pub fn interpret_record_field(field: &VarDecl) -> String {
     get_interpretation(&VariableDecl(field.clone())).expect(format!("Missing interpretation: {:?}", field).as_str())
 }
 
-
-
 pub fn _interpret_proof(expr: AgdaExpr, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
     match expr {
         AgdaExpr::Term(term) => interpret_term(term.clone(), program, parent, assumptions),
@@ -120,7 +119,6 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, parent: &mut Derivati
         _ => unimplemented!()
     }
 }
-
 
 pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
 
@@ -196,7 +194,6 @@ pub fn interpret_application(app: Application, program: &Program, parent: &mut D
         }
         None => None
     }
-
 }
 
 pub fn interpret_abstraction(abs: Abstraction, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
@@ -267,8 +264,8 @@ pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, pare
                 children: Vec::new(),
                 parent: Some(Box::from(parent.clone())),
             };
-            parent.children.push(new_node.clone());
 
+            parent.children.push(new_node.clone());
             return Some(new_node.clone())
         }
     }

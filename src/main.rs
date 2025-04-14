@@ -14,6 +14,7 @@ mod interpreter;
 
 use crate::ast::program::{initialise_agda_file, Program};
 use std::collections::{HashMap, HashSet};
+use std::fs;
 use std::sync::atomic::{AtomicBool, Ordering};
 use serde::{Deserialize, Serialize};
 use warp::Filter;
@@ -43,9 +44,11 @@ use crate::ccg::sentence_parser::english_to_ccg;
 use crate::command_line::output_handler::{create_task, show_header, update_task};
 use crate::composer::conclusions::compose_conclusions;
 use crate::composer::langtree::{lambda_to_semantic, SemanticTree};
+use crate::interpreter::derivation::DerivationNode;
 use crate::interpreter::interpretation_map::print_interpretations;
 use crate::interpreter::interpret::interpret_proof;
 use crate::lambda::etalike::Eliminator;
+use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::parser::parse_agda::parse_agda;
 use crate::resolver::fill_holes::fill_holes;
 use crate::server::server::{create_endpoint, AgdaConclusion, AgdaPremise};
@@ -262,25 +265,70 @@ async fn main() {
         update_task(write_tsk);
 
         let hole_tsk = create_task(1, "Synthesise Holes with Agsy.");
-        let hole_contents = fill_holes(config.output_file.clone(), &mut conclusions);
+        let (hole_contents, agda_file_str) = fill_holes(config.output_file.clone(), &mut conclusions);
         update_task(hole_tsk);
 
         print_interpretations();
 
-        interpret_holes(hole_contents.clone(), &agda_file, conclusions.clone());
+        interpret_holes(hole_contents.clone(), &agda_file, conclusions.clone(), agda_file_str);
 
         // println!("\n\nconclusions: {:?}", conclusions);
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally
     }
 }
 
+pub fn derivation_to_latex(root: &DerivationNode) -> String {
+    // Start with the root derivation content printed outside any enumerate.
+    let mut latex = String::new();
+    latex.push_str(&format!("{}\n", root.derivation.contents));
+
+    // If the root has children, print them inside an enumerate.
+    if !root.children.is_empty() {
+        latex.push_str("\\begin{enumerate}\n");
+        for child in &root.children {
+            latex.push_str(&child_to_latex(child, "  "));
+        }
+        latex.push_str("\\end{enumerate}\n");
+    }
+    latex
+}
+
+fn child_to_latex(node: &DerivationNode, indent: &str) -> String {
+    let mut latex = String::new();
+    // Create a new item for this child.
+    latex.push_str(&format!("{}\\item {}\n", indent, node.derivation.contents));
+
+    // If this child has further children, create a nested enumerate.
+    if !node.children.is_empty() {
+        latex.push_str(&format!("{}\\begin{{enumerate}}\n", indent));
+        for child in &node.children {
+            // Increase the indentation for nested items.
+            latex.push_str(&child_to_latex(child, &format!("{}  ", indent)));
+        }
+        latex.push_str(&format!("{}\\end{{enumerate}}\n", indent));
+    }
+    latex
+}
+
+
+
 
 /// Parse each hole filled in by Agsy and generate a natural language derivation.
-pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, conclusions: Vec<AgdaConclusion>) {
+pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, conclusions: Vec<AgdaConclusion>, agda_file_str: String) {
+
+    if agda_file_str == "" {
+        return
+    }
+    let mut file_contents = agda_file_str.clone();
 
     /* For each hole, If it has not been filled (None), continue
     Else, parse it. pass in the corresponding conclusion record to interpret_proof. */
     for (idx, contents) in hole_contents.iter().enumerate() {
+        let thm_name = format!("thm{}", to_unicode_subscript(idx+1));
+        let thm_placeholder = format!("{}_lp", thm_name);
+        println!("replacing {}", thm_placeholder);
+
+
         match contents {
             None => continue,
             Some(hole) => {
@@ -291,9 +339,17 @@ pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, co
 
                 /* Create a natural language interpretation of Agsy's proof. */
                 let interpretation = interpret_proof(hole, program, conclusions[idx].clone());
-                // interpretations.push(interpretation.contents);
+
+                let ltx  = derivation_to_latex(&interpretation);
+                println!("{}", ltx);
+
+                file_contents = file_contents.replace(thm_placeholder.as_str(), &ltx);
+
             }
         }
     }
 
+    // write file contents to output_file.lagda
+    std::fs::write("output_file.lagda", file_contents).expect("Unable to write file");
 }
+
