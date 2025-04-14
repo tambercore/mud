@@ -98,13 +98,8 @@ record KnowledgeBaseᵣ : Set where
 
 \end{code} 
 
- \section{Theorems} 
-
- \begin{code}
-
-\end{code} 
-
- \subsection{Theorem 1: `MortalSocratesᵣ'}
+ \section{Theorems}
+\subsection{Theorem 1: `socrates is mortal'}
 
 To know that socrates is mortal, it must be known that entity, and the entity is Socrates, and the entity is Mortal
 \begin{enumerate}
