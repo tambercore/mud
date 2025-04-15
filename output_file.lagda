@@ -5,8 +5,7 @@
 
  \section{Premises (Assumptions)}
 
-\begin{itemize}\item A0: socrates is man
-\item A1: every man is mortal
+\begin{itemize}\item A0: every man is every woman
 \end{itemize} 
 
  \begin{code}
@@ -39,9 +38,9 @@ postulate
 -- Now, introduce the relevant language constructions
 postulate
     Entity : Set
-    isSocrates : Entity → Set
     isMan : Entity → Set
-    isMortal : Entity → Set
+    isEvery : Entity → Set
+    isWoman : Entity → Set
 
 □-d : ∀ { A : Set } → (□ A → ◇ A)
 □-d = λ z → ◇-pure (□-extract z)
@@ -59,23 +58,6 @@ postulate
 □-k = λ z → λ z₁ → □-fmap (λ z₂ → z₂ (□-extract z₁)) z
 
 
--- Record declaration for 'socrates'
-record Socratesᵣ : Set where
-  constructor Socrates꜀
-  field
-    e₁ : Entity
-    p₁ : isSocrates e₁
-
-
--- Record declaration for 'Socrates is man'
-record ManSocratesᵣ : Set where
-  constructor ManSocrates꜀
-  field
-    e₁ : Entity
-    p₁ : isSocrates e₁
-    p₀ : isMan e₁
-
-
 -- Record declaration for 'man'
 record Manᵣ : Set where
   constructor Man꜀
@@ -84,58 +66,16 @@ record Manᵣ : Set where
     p₁ : isMan e₁
 
 
--- Record declaration for 'every man is mortal'
-record IsManMortalᵣ : Set where
-  constructor IsManMortal꜀
+-- Record declaration for 'every man is every woman'
+record IsManEveryWomanᵣ : Set where
+  constructor IsManEveryWoman꜀
   field
-    p : (a₁ : Manᵣ) → isMortal (Manᵣ.e₁ a₁)
-
-
--- Record declaration for 'Socrates is mortal'
-record MortalSocratesᵣ : Set where
-  constructor MortalSocrates꜀
-  field
-    e₁ : Entity
-    p₁ : isSocrates e₁
-    p₀ : isMortal e₁
+    p : (a₁ : Manᵣ) → isWoman (Manᵣ.e₁ a₁) × isEvery (Manᵣ.e₁ a₁)
 
 
 record KnowledgeBaseᵣ : Set where
   constructor KnowledgeBase꜀
   field
-    j₁ : ManSocratesᵣ
-    j₂ : IsManMortalᵣ
-
-
-\end{code} 
-
- \section{Theorems}
-\subsection{Theorem 1: `socrates is mortal'}
-
-To provide evidence of 'socrates is mortal', there must exist an entity, and evidence that the entity is Socrates, and evidence that the entity is Mortal
-\begin{enumerate}
-  \item Given that socrates is man (A0), there exists an entity
-  \item Given that socrates is man (A0), there exists evidence that the entity is Socrates
-  \item Given that every man is mortal (A1), it is known that for every Man, that the Man is mortal
-  \begin{enumerate}
-    \item To provide evidence of 'man', there must exist an entity, and evidence that the entity is man
-    \begin{enumerate}
-      \item Given that socrates is man (A0), there exists an entity
-      \item Given that socrates is man (A0), there exists evidence that the entity is Man
-    \end{enumerate}
-  \end{enumerate}
-  \item Therefore, socrates is mortal
-\end{enumerate}
- 
-
- \begin{code}
-
-thm₁ : KnowledgeBaseᵣ → MortalSocratesᵣ
-thm₁ = λ z →
-  MortalSocrates꜀ (z .KnowledgeBaseᵣ.j₁ .ManSocratesᵣ.e₁)
-  (z .KnowledgeBaseᵣ.j₁ .ManSocratesᵣ.p₁)
-  (z .KnowledgeBaseᵣ.j₂ .IsManMortalᵣ.p
-   (Man꜀ (z .KnowledgeBaseᵣ.j₁ .ManSocratesᵣ.e₁)
-    (z .KnowledgeBaseᵣ.j₁ .ManSocratesᵣ.p₀)))
+    j₁ : IsManEveryWomanᵣ
 
 \end{code}
