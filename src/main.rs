@@ -229,10 +229,9 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 }
 
 
-
 #[tokio::main]
 async fn main() {
-    let config = Config::from_args("socrates is a man & every man is mortal -> socrates is mortal");
+    let config = Config::from_args("every man walks & necessarily jogh");
     let knowledge = config.knowledge;
     let conclusions = config.conclusions;
 
@@ -256,7 +255,7 @@ async fn main() {
         let (hole_contents, agda_file_str) = fill_holes(config.output_file.clone(), &mut conclusions);
         update_task(hole_tsk);
 
-        interpret_holes(hole_contents.clone(), &agda_file, conclusions.clone(), agda_file_str);
+        let new_contents = interpret_holes(hole_contents.clone(), &agda_file, conclusions.clone(), agda_file_str);
 
         // println!("\n\nconclusions: {:?}", conclusions);
         SERVER_RUNNING.store(false, Ordering::SeqCst); // Ensure it's false if running locally
@@ -300,10 +299,10 @@ fn child_to_latex(node: &DerivationNode, indent: &str) -> String {
 
 
 /// Parse each hole filled in by Agsy and generate a natural language derivation.
-pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, conclusions: Vec<AgdaConclusion>, agda_file_str: String) {
+pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, conclusions: Vec<AgdaConclusion>, agda_file_str: String) -> String {
 
     if agda_file_str == "" {
-        return
+        return "".to_string()
     }
     let mut file_contents = agda_file_str.clone();
 
@@ -333,6 +332,7 @@ pub fn interpret_holes(hole_contents: Vec<Option<String>>, program: &Program, co
     }
 
     // write file contents to output_file.lagda
-    std::fs::write("output_file.lagda", file_contents).expect("Unable to write file");
+    std::fs::write("output_file.lagda", file_contents.clone()).expect("Unable to write file");
+    file_contents.clone()
 }
 

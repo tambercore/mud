@@ -1,9 +1,10 @@
+use crate::Literate;
+use crate::TDeclaration;
 use std::fs;
 use serde::{Deserialize, Serialize};
 use warp::{http::Method, Filter};
-use crate::english_to_agda;
-use warp::reply::Reply;
-use warp::cors;
+use crate::{english_to_agda, interpret_holes, literate};
+use crate::command_line::output_handler::{create_task, update_task};
 use crate::resolver::fill_holes::fill_holes;
 
 #[derive(Debug, Deserialize)]
@@ -48,13 +49,20 @@ pub async fn create_endpoint(output_location: String) {
         .map(move |input: SentenceInput| {
             let output_loc = output_location_clone.clone();
 
-            let (mut agda_file, premises, mut conclusions) = english_to_agda(input.knowledge, input.conclusions);
+            let (mut agda_file, premises, mut conclusions) = english_to_agda(input.knowledge.clone(), input.conclusions.clone());
 
-            /* Write to file to fill in the hole. */
-            let _ = agda_file.write_to_file(output_loc.clone());
+            let mut intro_literate = format!("\\section{{Premises (Assumptions)}}\n\n\\begin{{itemize}}");
+            for (idx, assumption) in input.knowledge.iter().enumerate() {
+                intro_literate.push_str(format!("\\item A{}: {}\n", idx, assumption).as_str());
+            }
+            intro_literate.push_str(format!("\\end{{itemize}}").as_str());
+            agda_file.declarations.push(literate!(intro_literate));
 
-            fill_holes(output_loc.clone(), &mut conclusions);
+            agda_file.write_to_file(output_loc.clone());
 
+            let (hole_contents, agda_file_str) = fill_holes(output_loc.clone(), &mut conclusions);
+
+            let new_contents = interpret_holes(hole_contents.clone(), &agda_file, conclusions.clone(), agda_file_str);
             /* Read the file as a string. */
             let agda_str = fs::read_to_string(output_loc).expect("Failed to read file");
 

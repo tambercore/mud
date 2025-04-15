@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
+use once_cell::sync::Lazy;
 use crate::ast::agda_expr::AgdaExpr;
 use crate::ast::top_decl::TDeclaration;
 
-lazy_static::lazy_static! {
-    pub static ref INTERPRETATIONS: Mutex<HashMap<TDeclaration, String>> = Mutex::new(HashMap::new());
-}
+pub static INTERPRETATIONS: Lazy<Mutex<HashMap<TDeclaration, String>>> = Lazy::new(|| {
+    Mutex::new(HashMap::new())
+});
 
 pub fn get_interpretation(agda_expr: &TDeclaration) -> Option<String> {
     let map = INTERPRETATIONS.lock().unwrap();

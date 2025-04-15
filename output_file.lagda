@@ -5,7 +5,7 @@
 
  \section{Premises (Assumptions)}
 
-\begin{itemize}\item A0: socrates is a man
+\begin{itemize}\item A0: socrates is man
 \item A1: every man is mortal
 \end{itemize} 
 
