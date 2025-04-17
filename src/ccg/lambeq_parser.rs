@@ -6,13 +6,13 @@ use lazy_static::lazy_static;
 use crate::ccg::node::CCGNode;
 use anyhow::Result;
 
+/// Global HashSets for storing parsed CCG structures and their JSON representations
 lazy_static! {
-    /* Global HashSets for storing parsed CCG structures and their JSON representations */
     pub static ref SENTENCE_TO_CCG: RwLock<HashSet<(String, CCGNode)>> = RwLock::new(HashSet::new());
     pub static ref SENTENCE_TO_JSON: RwLock<HashSet<(String, String)>> = RwLock::new(HashSet::new());
 }
 
-/* Sends sentences to the REST API and populates the global hashsets */
+/// Function to send sentences to the REST API and populate the global hashsets
 pub fn sentences_to_ccg_hashsets(sentences: Vec<String>) -> Result<()> {
     let url = "http://127.0.0.1:20041/sentences"; /* Define the API endpoint */
 

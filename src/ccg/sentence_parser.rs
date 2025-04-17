@@ -56,6 +56,5 @@ pub(crate) fn ccgnode_parse(file_path: &str) -> Result<CCGNode, String> {
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
     // Deserialize the JSON content into a CCGNode.
-    // println!("Raw CCG Output:\n {}", content);
     serde_json::from_str(&content).map_err(|e: SerdeError| format!("Failed to parse CCG from JSON: {}", e))
 }
