@@ -126,8 +126,6 @@ fn sentence_to_agda(sentence: String, f: &mut Program) -> ((String, AgdaExpr), S
     (encoded_sentence, json_tree)
 }
 
-
-
 fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program, Vec<AgdaPremise>, Vec<AgdaConclusion>) {
 
     println!();
@@ -227,7 +225,6 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
     (f, premises, conclusion_trees)
 }
-
 
 #[tokio::main]
 async fn main() {
