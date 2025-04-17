@@ -28,6 +28,15 @@ use crate::interpreter::interpret::find_record;
 use crate::interpreter::interpretation_map::insert_interpretation;
 use crate::lambda::predicate::Predicate;
 
+
+
+type QVec = Vec<(Token, Box<SemanticTree>)>;
+
+
+
+/// Adds a describer for a given property, converting it into an adjective form,
+/// creating a new variable declaration for it, and inserting it as a postulate.
+/// Also adds the interpretation to the program and handles any relevant synonyms.
 pub fn add_describer(current_prop: Token, f: &mut Program) {
 
     /* Add the describer as an Adjective */
@@ -42,6 +51,7 @@ pub fn add_describer(current_prop: Token, f: &mut Program) {
 
 
 
+/// Function to recursively check whether the provided semantic tree contains a universal quantifier (every).
 pub fn contains_uquant(l: Box<SemanticTree>) -> bool {
     match *l {
         SemanticTree::NonTerminal(relation) => {
@@ -58,8 +68,11 @@ pub fn contains_uquant(l: Box<SemanticTree>) -> bool {
     }
 }
 
-// When we handle 'is' predicates, we need to 'unwrap' them. This means we recursively peel
-// out each variable/predicate on the right into props. i.e. is(john, lovely(man)) [] -> is(john) [lovely, man]
+
+
+/// Recursively "unwraps" a relation, peeling out each predicate or variable from the right-hand side of the relation into a list of properties.
+///
+/// This handles cases where the relation contains nested predicates or variables and returns the modified relation and properties.
 pub fn unwrap(mut p: Relation, f: &mut Program, props: Vec<Token>) -> (Relation, Vec<Token>) {
 
     /* Base Case */
@@ -90,7 +103,6 @@ pub fn unwrap(mut p: Relation, f: &mut Program, props: Vec<Token>) -> (Relation,
 }
 
 
-type QVec = Vec<(Token, Box<SemanticTree>)>;
 
 /// Convert to Prenex Normal Form (i.e. P(T1, T2) -> {(a,T1), (b,T2)} P(a, b) .
 pub fn prenex(p: &mut Relation, equants: &mut QVec, uquants: &mut QVec) -> () {
@@ -125,6 +137,9 @@ pub fn prenex(p: &mut Relation, equants: &mut QVec, uquants: &mut QVec) -> () {
 }
 
 
+
+/// Generates the output expression for a predicate by combining a list of returned proofs into a single expression.
+/// If there are multiple proofs, they are combined into a product (using the Product operator).
 pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaExpr>>) -> Box<AgdaExpr> {
     if returned_proofs.len() == 0 { panic!("Something has gone wrong!") }
     if returned_proofs.len() == 1 { returned_proofs.pop().unwrap() }
@@ -139,6 +154,9 @@ pub fn generate_predicate_output(mut returned_proofs: Vec<Box<AgdaExpr>>) -> Box
     }
 }
 
+
+
+/// Handles modal necessity (□) for a given relation by generating a record for the modal operator and returning the associated projection function.
 pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 
     let mut relation = rel.clone();
@@ -175,6 +193,12 @@ pub fn handle_modal_necessity(rel: Relation, f: &mut Program, props: Vec<Token>)
     (record_name, proj_func)
 }
 
+
+
+/// Handles the composition of a predicate.
+/// This function performs multiple steps, including dealing with modal necessity, unwrapping predicates,
+/// transforming them into Prenex Normal Form, and generating corresponding Agda records and functions.
+/// It also handles universal quantifiers and negations in the predicate's arguments.
 pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 
     let mut is_negated: i32 = 0;
@@ -187,12 +211,10 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
     let (mut p, props) = unwrap(relation.clone(), f, props.clone());
 
 
-
     /* Prenex Normal Transformation (derive quantifiers and bind anaphora) */
     let (mut uquants, mut equants): (QVec, QVec) = (vec![], vec![]);
 
     prenex(&mut p, &mut equants, &mut uquants);
-
 
     /* Admin (boring) */
     let mut iden = format!("{}", p.0);
@@ -210,7 +232,6 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
         symbol_table.insert(identifier.clone(), pair.clone());
         let field = var_decl!(identifier, term!(pair.0.clone()));
 
-        // todo: cover everything
         match *_type.clone() {
             Terminal(var) => insert_interpretation(VariableDecl(field.clone()), var),
             NonTerminal(rel) => insert_interpretation_map(NonTerminal(rel), VariableDecl(field.clone())),
@@ -326,10 +347,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
 
         let mut relation_args = vec![];
 
-        // inner_str.push_str(&iden.to_string());
-
         /* Then, `inner` becomes the application of that function to the arguments */
-
         inner = var_idens.iter().fold(
             term!(iden.clone()),
             |acc, name| {
@@ -377,6 +395,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
 
     let interpretation = to_infix_string(NonTerminal(relation));
     let record = record!(record_name.clone(), constructor_name, fields.clone(), Some(interpretation.clone()));
+
     /* Insert Definition */
     f.insert_definition(record.clone());
 
@@ -394,6 +413,7 @@ pub fn compose_predicate(relation: Relation, f: &mut Program, props: Vec<Token>)
 
     (record_name, projection)
 }
+
 
 
 // Helper function to convert a relation to infix form recursively
@@ -419,12 +439,10 @@ pub fn to_infix_string(term: SemanticTree) -> String {
     }
 }
 
+
+
 /// Convert the relation to infix form and add this to the interpretation map.
 pub fn insert_interpretation_map(relation: SemanticTree, expr: TDeclaration) {
-    /* Convert the relation to an infix string. */
-    // e.g. relation.args[0] relation.iden relation.args[1] for args len 2
-    // relation.args[0] relation.iden for args len 1
-
     // Convert the relation into infix notation
     let infix_str = to_infix_string(relation);
 

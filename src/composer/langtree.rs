@@ -4,12 +4,14 @@ use std::fmt;
 
 
 
-/* Semantic Tree, in this definition has relations, tokens and joins */
-
+/// Types used for Semantic Tree construction.
 pub type Relation = (String, Vec<Box<SemanticTree>>);
 pub type Token = String;
 pub type Join = (Box<SemanticTree>, Box<SemanticTree>);
 
+
+
+/// `SemanticTree` is an enum that represents a syntactic or semantic structure for an expression.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SemanticTree {
     NonTerminal(Relation),
@@ -19,7 +21,7 @@ pub enum SemanticTree {
 
 
 
-/* Implementing fmt::Display for the semantic tree */
+/// Implements the `fmt::Display` trait for `SemanticTree`, which allows the tree to be displayed in ASCII format.
 impl fmt::Display for SemanticTree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fn to_ascii_tree(node: &SemanticTree) -> Tree {
@@ -55,7 +57,8 @@ impl fmt::Display for SemanticTree {
 }
 
 
-/* Conversion of LC Expressions to Semantic Trees */
+
+/// Converts a `LambdaEntity` expression to a `SemanticTree` representation.
 pub fn lambda_to_semantic(node: Box<LambdaEntity>) -> Result<SemanticTree, String> {
     match *node {
         LambdaEntity::Var(v) => Ok(SemanticTree::Terminal(v.name.clone())),

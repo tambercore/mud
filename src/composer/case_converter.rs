@@ -1,3 +1,6 @@
+
+/// Represents different styles of casing for strings.
+/// Useful for transforming identifiers or formatting keys across naming conventions.
 #[derive(Debug)]
 pub enum CaseStyle {
     PascalCase,
@@ -5,6 +8,8 @@ pub enum CaseStyle {
     SnakeCase,
 }
 
+
+/// Converts a `snake_case` string to a specified `CaseStyle`.
 pub fn convert_case(input: &str, style: CaseStyle) -> String {
     match style {
         CaseStyle::PascalCase => input

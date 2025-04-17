@@ -11,9 +11,11 @@ use crate::interpreter::interpretation_map::insert_interpretation;
 
 pub type KnowledgeBase = Vec<(String, AgdaExpr)>;
 
+
+/// Composes a knowledge base (KB) from a vector of records and inserts it into the program.
 pub fn compose_kb(kb: KnowledgeBase, f: &mut Program) -> TDeclaration {
 
-    /* KB is a vector of records, each representing a premesis in the system */
+    /* KB is a vector of records, each representing a premise in the system */
     let mut assumptions = vec![];
     let mut assumtion_index = 1;
 

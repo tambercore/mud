@@ -17,6 +17,12 @@ use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::{app, function_type, record, record_projection, term, var_decl};
 use crate::interpreter::interpretation_map::insert_interpretation;
 
+
+
+/// Composes a variable predicate, creating related fields, postulates, and records.
+///
+/// This function processes the token representing the variable and its associated properties (such as predicates),
+/// handling negation layers, generating fields and proofs, and updating the provided `Program` with new postulates and definitions.
 pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 
     /* Handle negation layers and remove instances of negation from props */
@@ -61,8 +67,6 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let mut inner = generate_predicate_output(types.into_iter().map(|x| {Box::from(x)}).collect());
         for _ in (0..negation_layers) { inner = Box::from(function_type!(*inner, term!("⊥"))); }
 
-        // todo: handle interpretation. build string?
-
         let field = var_decl!(format!("p{}", to_unicode_subscript(0)), inner);
         fields.push(field);
     }
@@ -88,6 +92,8 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
     let projection = app!(proj, term!("e₁"));
     (record_name, projection)
 }
+
+
 
 /// Function to convert the variable to a string.
 pub fn tokens_to_str(subject: Token, modifiers: Vec<Token>) -> String {

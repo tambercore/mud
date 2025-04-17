@@ -12,6 +12,8 @@ use crate::{function_type, literate, term, theorem};
 use crate::interpreter::interpret::find_record;
 use crate::interpreter::interpretation_map::get_interpretation;
 
+
+/// Composes a list of conclusions into theorems, including their proof structure and associated literate prose.
 pub fn compose_conclusions(conclusions: Vec<(String, AgdaExpr)>, f: &mut Program) -> Vec<TDeclaration> {
 
     let mut conclusion_records = vec![];

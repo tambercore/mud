@@ -14,6 +14,8 @@ use crate::composer::compose_variable::compose_variable;
 use crate::composer::langtree::{Join, SemanticTree, Token};
 use crate::interpreter::interpretation_map::insert_interpretation;
 
+
+/// Generates a function header for a given arity.
 pub fn generate_function_header(arity: usize) -> AgdaExpr {
     if arity == 0 {
         term!("Set")
@@ -22,6 +24,9 @@ pub fn generate_function_header(arity: usize) -> AgdaExpr {
     }
 }
 
+
+
+/// Replaces the innermost simple expression in a given Agda expression with a new value.
 pub fn replace_innermost_simple(expr: &AgdaExpr, new_value: AgdaExpr) -> AgdaExpr {
     match expr {
         AgdaExpr::App(app) => {
@@ -32,6 +37,9 @@ pub fn replace_innermost_simple(expr: &AgdaExpr, new_value: AgdaExpr) -> AgdaExp
     }
 }
 
+
+
+/// Composes a product of two terms (a conjunction of two components) and inserts it into the program.
 pub fn compose_product(c: Join, f: &mut Program) -> (String, AgdaExpr) {
 
     /* Extract projections */
@@ -74,6 +82,12 @@ pub fn compose_product(c: Join, f: &mut Program) -> (String, AgdaExpr) {
     }
 
 
+
+/// Composes an Agda expression based on a given semantic tree and inserts it into the program.
+///
+/// This function processes a semantic tree (`SemanticTree`) by recursively composing the appropriate Agda expressions
+/// based on whether the tree contains a terminal (a token), a non-terminal (a relation), or a conjunction (a product
+/// of two components). The composed expression is then inserted into the program.
 pub fn compose(e: Box<SemanticTree>, f: &mut Program, props: Vec<Token>) -> (String, AgdaExpr) {
 
     match *e {
