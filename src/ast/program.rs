@@ -19,12 +19,14 @@ use crate::interpreter::interpretation_map::insert_interpretation;
 use crate::ast::abstraction::Abstraction;
 use crate::ast::application::Application;
 
-/// Type to describe an Agda Program. Consists of a file name (String),
-/// and a list of Declarations.
+/// A struct representing an Agda program, consisting of a file path and a list of declarations.
 #[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Program {pub filepath : String, pub declarations : Vec<TDeclaration>}
 
+
+
 #[macro_export]
+/// Macro to generate a new `Program` with the specified filepath and declarations.
 macro_rules! program {
     ($filepath:expr, $decl:expr) => {
         Program {
@@ -34,14 +36,16 @@ macro_rules! program {
     }
 }
 
-/* Trait to insert a postulate entry into an AgdaFile */
+
+
+/// Trait to insert a postulate entry into an Agda program.
 pub trait PostulateInserter {
     fn insert_postulate(&mut self, entry: TDeclaration);
 }
 
 
 
-/* Implement the trait for AgdaFile */
+/// Implementation of `PostulateInserter` for the `Program` struct.
 impl PostulateInserter for Program {
     fn insert_postulate(&mut self, entry: TDeclaration) {
         for decl in &mut self.declarations.iter_mut().rev() {
@@ -55,6 +59,9 @@ impl PostulateInserter for Program {
     }
 }
 
+
+
+/// Initializes an Agda file, creating an empty `Program` with a sample `Entity` declaration.
 pub fn initialise_agda_file() -> Program {
     let mut f = Program{
         filepath: "test".to_string(),
@@ -72,11 +79,17 @@ pub fn initialise_agda_file() -> Program {
 }
 
 
+
+/// Trait for inserting definitions and modal theorems into an Agda program.
 pub trait DefinitionInserter {
     fn insert_definition(&mut self, entry: TDeclaration);
     fn insert_modal_theorem(&mut self, entry: TDeclaration);
 }
 
+
+
+
+/// Implementation of `DefinitionInserter` for the `Program` struct.
 impl DefinitionInserter for Program {
     fn insert_definition(&mut self, entry: TDeclaration) {
         if !self.declarations.contains(&entry) {
@@ -96,12 +109,16 @@ impl DefinitionInserter for Program {
 /* Converts the AgdaFile's postulate entries into Agda code. */
 impl Program {
 
+
+
+    /// Converts the postulate declarations into Agda code.
     fn get_postulates(&self) -> Vec<Postulate> {
         <Vec<TDeclaration> as Clone>::clone(&self.declarations)
             .into_iter()
             .filter_map(|decl| if let PostulateDecl(inner) = decl { Some(inner) } else { None })
             .collect()
     }
+
 
 
     fn get_definitions(&self) -> Vec<TDeclaration> {
@@ -112,10 +129,13 @@ impl Program {
                 TheoremDecl(inner) => Some(TDeclaration::TheoremDecl(inner)),
                 LiterateProse(inner) => Some(TDeclaration::LiterateProse(inner)),
                 _ => None,
-            }) // Assuming Postulate is (Vec<VarDecl>, Option<String>), cloning may be required
+            })
             .collect()
     }
 
+
+
+    /// Creates and returns a postulate with modal logic rules (e.g., S4 Modal Logic).
     pub fn create_postulate(&mut self) -> TDeclaration {
         let mut fields: Vec<TDeclaration> = Vec::new();
 
@@ -197,11 +217,10 @@ impl Program {
         postulate!(fields, None)
     }
 
+
+
+    /// Add modal logic theorems (e.g., □-k, □-4, □-d)
     fn add_theorems(&mut self, code: &mut String) {
-
-        /* code.push_str("□-k : ∀ {A B : Set} → □ (A → B) → (□ A → □ B)\n");
-        code.push_str("□-k = λ z z₁ → □-fmap (λ z₂ → z₂ (□-extract z₁)) z\n"); */
-
         let necessary_k_signature = function_type!(
             unop!(Necessity, function_type!(term!("A"), term!("B"))),
             function_type!(unop!(Necessity, term!("A")), unop!(Necessity, term!("B"))));
@@ -211,10 +230,6 @@ impl Program {
         let necessary_k_theorem = theorem!("□-k", necessary_k_decl.clone(), Some(Box::from(necessary_k_body)), None);
         insert_interpretation(necessary_k_theorem.clone(), format!("If it is necessary that one proposition follows from another, then if the first proposition is necessary, it follows that the second is necessary."));
         self.insert_modal_theorem(necessary_k_theorem.clone());
-        // code.push_str(necessary_k_theorem.clone().agdaify().as_str());
-
-        /* code.push_str("□-t : ∀ {A : Set} → □ A → A\n");
-        code.push_str("□-t = □-extract\n");*/
 
         let necessary_t_signature = function_type!(
             unop!(Necessity, term!("A")),
@@ -231,11 +246,6 @@ impl Program {
         let necessary_t_theorem = theorem!("□-t", necessary_t_decl.clone(), Some(Box::from(necessary_t_body)), None);
         insert_interpretation(necessary_t_theorem.clone(), "If a proposition is necessary, then it is the case.".into());
         self.insert_modal_theorem(necessary_t_theorem.clone());
-        // code.push_str(necessary_t_theorem.clone().agdaify().as_str());
-
-
-        /* code.push_str("□-4 : ∀ {A : Set} → □ A → □ □ A\n");
-        code.push_str("□-4 = □-duplicate\n");*/
 
         let box_four_signature = function_type!(
             unop!(Necessity, term!("A")),
@@ -250,10 +260,6 @@ impl Program {
         let box_four_theorem = theorem!("□-4", box_four_decl.clone(), Some(Box::from(box_four_body)), None);
         insert_interpretation(box_four_theorem.clone(), "If a proposition is necessary, then it is necessarily necessary.".into());
         self.insert_modal_theorem(box_four_theorem.clone());
-        // code.push_str(box_four_theorem.clone().agdaify().as_str());
-
-        /* code.push_str("□-d : ∀ {A : Set} → □ A → ◇ A\n");
-        code.push_str("□-d = λ z → ◇-pure (□-extract z)\n");*/
 
         let box_d_signature = function_type!(
             unop!(Necessity, term!("A")),
@@ -271,10 +277,11 @@ impl Program {
         let box_d_theorem = theorem!("□-d", box_d_decl.clone(), Some(Box::from(box_d_body)), None);
         insert_interpretation(box_d_theorem.clone(), "If a proposition is necessary, then it is possible.".into());
         self.insert_modal_theorem(box_d_theorem.clone());
-        // code.push_str(box_d_theorem.clone().agdaify().as_str());
-
-
     }
+
+
+
+    /// Converts the Agda program into a string of Agda code.
     pub fn agdaify(&mut self) -> String {
         let mut code = String::new();
         code.push_str(&format!("\\begin{{code}}\n\n\n"));
@@ -284,25 +291,6 @@ impl Program {
         code.push_str(&format!("open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; sym; cong)\n\n"));
 
         code.push_str("infix 9 □_ \ninfix 10 ◇_ \n\n");
-
-        /* let postulate = "postulate
-        -- rule in S4 Modal Logic
-        □_   : Set → Set
-        ◇_   : Set → Set
-
-        -- ◇ as a monad
-        ◇-fmap : ∀ {A B : Set}   → (A → B) → ◇ A → ◇ B
-        ◇-pure : ∀ {A : Set}     → A → ◇ A
-        ◇-lift : ∀ {A B : Set}   → ◇ (A → B) → ◇ A → ◇ B
-        ◇-bind : ∀ {A B : Set}   → (◇ A) → (A → ◇ B) → ◇ B
-
-        -- □ as a comonad
-        □-fmap : ∀ {A B : Set} → (A → B) → □ A → □ B
-        □-extract : ∀ {A : Set} → □ A → A
-        □-duplicate : ∀ {A : Set} → □ A → □ □ A
-        □-cobind : ∀ {A B : Set} → □ B → (□ B → A) → □ A ";
-
-        code.push_str(postulate);*/
 
         let postulate = self.create_postulate().agdaify();
         code.push_str(&postulate);
@@ -359,6 +347,9 @@ impl Program {
         code
     }
 
+
+
+    /// Writes the generated Agda code to a file.
     pub fn write_to_file(&mut self, filepath: String) -> std::io::Result<()> {
         // Update the internal filename attribute
         self.filepath = filepath.to_string();

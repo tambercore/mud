@@ -3,7 +3,6 @@ use crate::ast::top_decl::TDeclaration::{CommentSegment, RecordDecl, TheoremDecl
 
 /// A type to denote literate segments in an AgdaFile.
 /// LaTeX segments will be parsed as Strings.
-///
 #[derive(Eq, Hash, Clone, Debug, PartialEq)]
 pub struct Literate {pub content : String}
 

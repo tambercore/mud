@@ -2,7 +2,6 @@ use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 
 /// A type to denote Theorems in Agda.
 /// Consists of an identifier, hypothesis (type signature), proof (body), and an optional comment.
-
 #[derive(Eq, Hash, Clone, Debug)]
 pub struct Theorem {
     pub iden : String,

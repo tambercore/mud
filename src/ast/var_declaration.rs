@@ -3,7 +3,6 @@ use crate::ast::agda_expr::{format_agda_type, AgdaExpr};
 
 /// A type to denote variable declarations in Agda.
 /// These take the form e : t where e is an identifier and t is an AgdaExpr.
-
 #[derive(Eq, Hash, Debug, Clone)]
 pub struct VarDecl {pub iden : String, pub _type : Box<AgdaExpr>}
 

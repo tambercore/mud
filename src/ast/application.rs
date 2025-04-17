@@ -5,12 +5,17 @@ use crate::ast::agda_expr::AgdaExpr;
 #[derive(Eq, Hash, Debug, Clone)]
 pub struct Application {pub lhs: Box<AgdaExpr>, pub rhs: Box<AgdaExpr>}
 
+
+
 impl PartialEq for Application {
     fn eq(&self, other: &Self) -> bool {
         self.lhs == other.lhs && self.rhs == other.rhs
     }
 }
 
+
+
+/// A macro to simplify the creation of `Application` expressions.
 #[macro_export]
 macro_rules! app {
     ($lhs:expr, $rhs:expr) => {

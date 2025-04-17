@@ -4,7 +4,6 @@ use crate::ast::top_decl::TDeclaration::VariableDecl;
 use crate::ast::var_declaration::VarDecl;
 /// A type to denote Records in Agda.
 /// Consists of Record name, Constructor name, a list of record fields, and an optional comment.
-///
 #[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub struct Record {
     pub record_iden : String,
