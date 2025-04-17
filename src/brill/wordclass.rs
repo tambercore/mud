@@ -1,27 +1,7 @@
 use std::fmt;
 
 
-/*
-pub enum UPOS {
-    ADJ,      // Adjective
-    ADP,      // Adposition
-    ADV,      // Adverb
-    AUX,      // Auxiliary
-    CCONJ,    // Coordinating conjunction
-    DET,      // Determiner
-    INTJ,     // Interjection
-    NOUN,     // Noun
-    NUM,      // Numeral
-    PART,     // Particle
-    PRON,     // Pronoun
-    PROPN,    // Proper noun
-    PUNCT,    // Punctuation
-    SCONJ,    // Subordinating conjunction
-    SYM,      // Symbol
-    VERB,     // Verb
-    X,        // Other
-}
- */
+/// Enumeration of part-of-speech (POS) tags used for lexical classification.
 #[derive(Debug, Clone, Hash, Eq, PartialEq, serde::Deserialize, Copy)]
 pub enum Wordclass {
     CC,     // Coordinating conjunction
@@ -66,6 +46,8 @@ pub enum Wordclass {
 }
 
 
+
+/// Converts a `Wordclass` enum variant into a human-readable string.
 impl fmt::Display for Wordclass {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let wordclass_str = match self {

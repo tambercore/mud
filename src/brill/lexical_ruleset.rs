@@ -5,13 +5,16 @@ use std::io::Error;
 use super::lex_rulespec_id::{map_lexical_rule_id, LexicalRulespec};
 use super::wordclass::{map_pos_tag, Wordclass};
 
-/// ...
+/// Parses a lexical ruleset from a file into a vector of `LexicalRulespec` structs.
+///
+/// Lexical rules are Brill-style transformation templates that define how a token’s tag
+/// may change based on affix or substring information. Each line in the file represents
+/// a rule with a specific format. This parser is designed to tolerate minor variations
+/// in rule syntax by identifying the rulestring and target tag heuristically.
 pub fn parse_lexical_ruleset(path: &str) -> Result<Vec<LexicalRulespec>, io::Error>
 {
     let mut result: Vec<LexicalRulespec> = Vec::new();
     for line in read_to_string(path)?.lines() {
-
-        //println!("Parsing line {0}", line);
 
         let parts: Vec<&str> = line.split_whitespace().collect();
 

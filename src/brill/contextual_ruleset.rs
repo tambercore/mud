@@ -5,7 +5,18 @@ use super::rulespec_id::*;
 use super::contextual_rulespec::*;
 use std::collections::HashMap;
 
-/// ...
+/// Parses a file of contextual tagging rules and returns a mapping from source Wordclasses
+/// to their corresponding transformation rules. Each rule maps a source tag to a target tag
+/// via a named rule type and optional parameters.
+///
+/// # Arguments
+///
+/// * `path` - The path to the file containing contextual rules, one per line.
+///
+/// # Returns
+///
+/// A `Result` containing a map from `Wordclass` to a list of `ContextualRulespec`s,
+/// or an `Error` if the file cannot be read or is malformed.
 pub fn parse_contextual_ruleset(path: &str) -> Result<HashMap<Wordclass, Vec<ContextualRulespec>>, Error>
 {
     let mut result: HashMap<Wordclass, Vec<ContextualRulespec>> = HashMap::new();

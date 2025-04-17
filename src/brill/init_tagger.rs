@@ -5,10 +5,24 @@ use std::collections::HashMap;
 use std::{fs, io};
 
 
-
+/// A mapping from string tokens to a vector of possible `Wordclass` enumerations.
 pub(crate) type WordclassMap = HashMap<String, Vec<Wordclass>>;
 
-/// ...
+
+/// Initializes a tagger lexicon from a file, returning a map from word forms to their
+/// corresponding parts of speech (`Wordclass` values).
+///
+/// Each line in the file should contain a word followed by one or more POS tags,
+/// separated by whitespace. For example: `beans NN NNS`.
+///
+/// # Arguments
+///
+/// * `path` - Path to the lexicon file.
+///
+/// # Returns
+///
+/// A `Result` containing the `WordclassMap` if successful, or an `io::Error` if the file cannot be read
+/// or the contents are malformed.
 pub fn initialize_tagger(path: &str) -> Result<WordclassMap, io::Error>
 {
     // This attempts to read the file, then creates an instance of the WordclassMap.
@@ -40,7 +54,7 @@ pub fn initialize_tagger(path: &str) -> Result<WordclassMap, io::Error>
 }
 
 
-
+/// Formats a vector of `Wordclass` values as a comma-separated string.
 fn format_vec(wordclasses: &Vec<Wordclass>) -> String {
     let wordclass_str: Vec<String> = wordclasses.iter().map(|wc| wc.to_string()).collect();
     wordclass_str.join(", ")

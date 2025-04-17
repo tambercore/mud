@@ -3,7 +3,7 @@ use std::{fmt};
 use std::io::{Error, ErrorKind};
 use super::wordclass::{Wordclass};
 
-
+/// Represents a lexical rule used in transformation-based tagging.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct LexicalRulespec {
     pub ruleset_id: LexicalRuleID,

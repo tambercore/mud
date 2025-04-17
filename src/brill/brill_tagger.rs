@@ -8,6 +8,7 @@ use super::contractions::find_contractions;
 use super::lex_rulespec_id::LexicalRulespec;
 use super::lexical_rulespec::lexical_rule_apply;
 
+/// Function to get the tags of a `sentence`.
 pub fn get_sentence_tags(sentence: &str, wc_mapping: &mut WordclassMap) -> Vec<(String, Vec<Wordclass>)> {
     let tokenised_sentence = tokenize_sentence(sentence);
     get_possible_tags(tokenised_sentence, wc_mapping)
@@ -20,31 +21,11 @@ pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, cont
     let tokenised_sentence = tokenize_sentence(sentence);
     let words_to_tags: Vec<(String, Vec<Wordclass>)> = get_possible_tags(tokenised_sentence, wc_mapping);
 
-    /* Add possible tags to interpretations */
-    /*for (word, tags) in words_to_tags.clone() {
-
-        /* Join the tags with " or " */
-        let tags_str = tags.iter().map(|t| t.to_string()).collect::<Vec<String>>().join(", or ");
-
-        /* Format the statement */
-        let statement = format!("'{}' may be {}", word, tags_str);
-
-        /* Insert the interpretation */
-        insert_interpretation(Interpretation {
-            statement: statement.clone(),
-            source: "Brill Tagger".to_string(),
-        });
-    }*/
-
-    //println!("possible tags: {:?}", words_to_tags);
     let mut sentence_to_tag: Vec<(String, Wordclass)> = retrieve_sentence_to_tag(words_to_tags.clone());
 
     // Apply lexical and contextual rules.
     apply_lexical_rules(&mut sentence_to_tag, &lexical_ruleset, &words_to_tags, &wc_mapping, 10);
     apply_contextual_rules(&mut sentence_to_tag, &words_to_tags, &contextual_ruleset, 100).ok_or("Max iterations reached in contextual rules");
-
-
-
 
     // After applying all rules, change any `Wordclass::ANY` tags to `Wordclass::NN`
     sentence_to_tag.iter_mut().for_each(|(_, tag)| {
@@ -52,20 +33,6 @@ pub fn tag_sentence(sentence: &str, lexical_ruleset: &Vec<LexicalRulespec>, cont
             *tag = Wordclass::NNP;
         }
     });
-
-    /* Add tags to interpretations */
-    /*for (word, tag) in sentence_to_tag.clone() {
-
-        /* Format the statement */
-        let statement = format!("'{}' is a {}", word, tag);
-
-        /* Insert the interpretation */
-        insert_interpretation(Interpretation {
-            statement: statement.clone(),
-            source: "Brill Tagger".to_string(),
-        });
-    }*/
-
 
     return sentence_to_tag;
 }
@@ -85,13 +52,11 @@ fn apply_lexical_rules(sentence_to_tag: &mut Vec<(String, Wordclass)>, lexical_r
                 if !is_tag_contained_in_word_possible_tags(&possible_tags, &word, &rule.target_tag) { continue; }
                 match lexical_rule_apply(sentence_to_tag, index as i32, rule, wc_mapping){
                     Some(true) => {
-                        //println!("LEXICAL {:?} tagged {:?} -> tag {:?}: ",word, tag, &rule.target_tag);
                         rules_applied += 1},
                     _ => {},
                 }
             }
         }
-        //if are_tags_valid(&sentence_to_tag, &possible_tags) {return Some(true)}
         if iterations == max_iterations || rules_applied == 0 {return}
         iterations +=1;
     }
@@ -122,7 +87,6 @@ fn apply_contextual_rules(sentence_to_tag: &mut Vec<(String, Wordclass)>, possib
                 None => continue
             }
         }
-        //if are_tags_valid(&sentence_to_tag, &possible_tags) {return Some(true)}
         if iterations == threshold || rules_applied == 0 {return Some(true)}
         iterations +=1;
     }

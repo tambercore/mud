@@ -2,9 +2,24 @@ use std::collections::HashMap;
 use crate::brill::wordclass::Wordclass;
 use std::sync::OnceLock;
 
+
+/// Lazily initialized static containing a merged mapping of words to their
+/// possible and chosen tags.
+///
+/// Each entry is a tuple `(word, possible_tags, chosen_tag)`.
+/// This is initialized once and reused for subsequent calls to `create_tag_mapping`.
 pub static TAG_MAPPING: OnceLock<Vec<(String, Vec<Wordclass>, Wordclass)>> = OnceLock::new();
 
-/* Merge the mappings of words to possible tags, words to chosen tags, to a single vector containing a tuple of a word, its possible tags, and its chosen tag. */
+
+
+/// Constructs a global mapping of words to their possible and chosen part-of-speech tags.
+///
+/// This function merges two input vectors:
+/// - A vector mapping words to possible `Wordclass` tags (e.g. from a lexicon).
+/// - A vector mapping words to their selected `Wordclass` tag (e.g. from a gold standard).
+///
+/// The result is a vector of tuples for each word with both its possible tags and chosen tag,
+/// returned as a static reference. Only entries found in both maps are included.
 pub fn create_tag_mapping(possible_tags: Vec<(String, Vec<Wordclass>)>, chosen_tags: Vec<(String, Wordclass)>) -> &'static Vec<(String, Vec<Wordclass>, Wordclass)> {
     TAG_MAPPING.get_or_init(|| {
         let possible_map: HashMap<String, Vec<Wordclass>> = possible_tags.into_iter().collect();
