@@ -3,7 +3,9 @@ use std::process::{Command, Stdio, Child, ChildStdin, ChildStdout};
 use std::io::{Write, BufRead, BufReader};
 use serde_json::Value;
 use crate::server::server::AgdaConclusion;
-/* Starts Agda in interaction mode and returns the child process. */
+
+
+/// Starts Agda in interaction mode and returns the child process.
 fn start_agda() -> Child {
     Command::new("agda")
         .args(["--interaction-json"])
@@ -14,7 +16,7 @@ fn start_agda() -> Child {
         .expect("Failed to start Agda")
 }
 
-/* Sends a command to Agda, reads the response, and checks for stop keys. */
+/// Sends a command to Agda, reads the response, and checks for stop keys.
 fn send_command(stdin: &mut ChildStdin, stdout: &mut ChildStdout, command: &str, stop_keys: Vec<&str>) -> Vec<String> {
     writeln!(stdin, "{}", command).expect("Failed to write to Agda");
     stdin.flush().expect("Failed to flush stdin");
@@ -41,7 +43,7 @@ fn send_command(stdin: &mut ChildStdin, stdout: &mut ChildStdout, command: &str,
     response
 }
 
-/* Parses Agda JSON response to extract hole IDs and their positions. */
+/// Parses Agda JSON response to extract hole IDs and their positions.
 fn parse_holes(response: Vec<String>) -> Vec<(u32, (i32, i32))> {
     response.iter().filter_map(|line| {
         if let Ok(json) = serde_json::from_str::<Value>(line) {
@@ -60,7 +62,7 @@ fn parse_holes(response: Vec<String>) -> Vec<(u32, (i32, i32))> {
     }).flatten().collect()
 }
 
-/* Sends a command to fill a specific hole in an Agda file. */
+/// Sends a command to fill a specific hole in an Agda file.
 fn fill_hole(stdin: &mut ChildStdin, stdout: &mut ChildStdout, file: String, hole_id: u32) -> Option<String> {
     /* Command to fill in a hole (hole_id) in a given file. Uses parameter -m. */
     let command = format!("IOTCM \"{}\" None Direct (Cmd_autoOne Simplified {} noRange \" -m \")", file, hole_id);
@@ -70,7 +72,7 @@ fn fill_hole(stdin: &mut ChildStdin, stdout: &mut ChildStdout, file: String, hol
         .find_map(|line| serde_json::from_str::<Value>(line).ok().and_then(|json| json.get("giveResult")?.get("str")?.as_str().map(String::from)))
 }
 
-/* Finds the positions of '?' in the Agda file. */
+/// Finds the positions of '?' in the Agda file.
 fn find_question_mark_positions(filepath: &str) ->Vec<(i32, i32)> {
     let file = fs::File::open(filepath).expect("Failed to open file.");
     let reader = BufReader::new(file);
@@ -85,7 +87,7 @@ fn find_question_mark_positions(filepath: &str) ->Vec<(i32, i32)> {
     positions
 }
 
-/* Replaces the '?' marks in the file with the corresponding filled hole values. */
+/// Replaces the '?' marks in the file with the corresponding filled hole values.
 fn replace_holes_in_file(filepath: &str, filled_holes: &Vec<Option<String>>) -> (String, String) {
     let positions = find_question_mark_positions(filepath);
     if filled_holes.len() != positions.len() {
@@ -113,7 +115,7 @@ fn replace_holes_in_file(filepath: &str, filled_holes: &Vec<Option<String>>) -> 
     (updated_content, file_content)
 }
 
-/* Main function to fill holes in the Agda file. */
+/// Main function to fill holes in the Agda file.
 pub fn fill_holes(filepath: String, conclusions: &mut Vec<AgdaConclusion>) -> (Vec<Option<String>>, String) {
     let mut agda = start_agda();
     let stdin = agda.stdin.as_mut().expect("Failed to get stdin");

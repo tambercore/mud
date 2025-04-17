@@ -47,7 +47,6 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program, agda_conclusion: AgdaC
 
 /// Function to gather assumptions from the knowledge base and
 /// add them as natural language assumptions.
-
 pub fn add_assumptions(program: &Program) -> Vec<Assumption> {
 
     let mut assumptions= vec![];
@@ -68,6 +67,7 @@ pub fn add_assumptions(program: &Program) -> Vec<Assumption> {
     assumptions
 }
 
+/// Given a record identifier, return the record.
 pub fn find_record(iden: String, program: &Program) -> Option<Record> {
     for decl in &program.declarations {
         if let RecordDecl(record) = decl {
@@ -91,6 +91,9 @@ pub fn find_theorem(iden: String, program: &Program) -> Option<Theorem> {
     None
 }
 
+
+
+/// Given a variable identifier, return the variable.
 pub fn find_variable(iden: String, program: &Program) -> VarDecl {
     for decl in &program.declarations {
         if let PostulateDecl(postulate) = decl {
@@ -106,6 +109,11 @@ pub fn find_variable(iden: String, program: &Program) -> VarDecl {
     panic!("Could not find Variable");
 }
 
+
+
+
+
+
 pub fn interpret_record_field(field: &VarDecl) -> String {
     get_interpretation(&VariableDecl(field.clone())).expect(format!("Missing interpretation: {:?}", field).as_str())
 }
@@ -120,6 +128,8 @@ pub fn _interpret_proof(expr: AgdaExpr, program: &Program, parent: &mut Derivati
     }
 }
 
+
+/// Interpret a term in Agda and return the corresponding derivation node.
 pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
 
     /* Handle record constructions. */
@@ -157,8 +167,6 @@ pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNo
         return Some(new_node);
     }
     else {
-        // todo: handle this properly
-
         /* Some terms are hardcoded, e.g. □-k. Check if the term has an interpretation. */
         if let Some(theorem) = find_theorem(term.clone(), program) {
 
@@ -178,6 +186,7 @@ pub fn interpret_term(term: String, program: &Program, parent: &mut DerivationNo
     None
 }
 
+/// Interpret an application of two terms in Agda and return the resulting derivation node.
 pub fn interpret_application(app: Application, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode> {
 
     let derivation_node = _interpret_proof(*app.lhs.clone(), program, parent, assumptions);
@@ -196,15 +205,19 @@ pub fn interpret_application(app: Application, program: &Program, parent: &mut D
     }
 }
 
+
+
+/// Interpret an abstraction (i.e., a lambda function) in Agda and return the resulting derivation node.
 pub fn interpret_abstraction(abs: Abstraction, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
-    // todo: do this properly
     _interpret_proof(*abs.expr.clone(), program, parent, assumptions)
 }
 
+
+
+/// Interpret a record projection in Agda and return the resulting derivation node.
 pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode>  {
     /* Only consider records (terms come as a result). */
     if let Some(record) = find_record(rec_proj.lhs.clone(), program) {
-        /* todo : use the knowledge base?. */
 
         if rec_proj.lhs.clone() != "KnowledgeBaseᵣ" {
             /* Find the record field whose name is rec_proj.rhs */
@@ -235,6 +248,9 @@ pub fn interpret_record_projection(rec_proj: RecordProjection, program: &Program
     _interpret_proof(*rec_proj.rhs, program, parent, assumptions)
 }
 
+
+
+/// Construct the derivation for a record field given the record and proof information.
 pub fn construct_projection(record: Record, rhs: String, proof_lhs: String, parent: &mut DerivationNode, assumptions: &Vec<Assumption>) -> Option<DerivationNode> {
     for field in record.clone().fields {
         if field.iden == rhs {

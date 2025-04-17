@@ -7,12 +7,20 @@ use crate::{CONTEXTUAL_RULESET, LEXICAL_RULESET, WC_MAPPING};
 use crate::ast::program::Program;
 use crate::ast::top_decl::TDeclaration;
 
+
+
+/// Represents an assumption in a derivation system.
+///
+/// Contains the content (description) of the assumption and its associated expression.
 #[derive(Debug, Clone)]
 pub struct Assumption {
     pub contents: String,
     pub expr: TDeclaration,
 }
 
+
+
+/// Holds information about a derivation, including assumptions and the program being used.
 #[derive(Debug, Clone)]
 pub struct DerivationInformation {
     pub assumptions: Vec<Assumption>,
@@ -20,6 +28,12 @@ pub struct DerivationInformation {
     pub program: Program
 }
 
+
+
+/// Represents a node in the derivation tree.
+///
+/// A `DerivationNode` contains a derivation, its parent node (if any), and any child nodes.
+/// It forms part of the hierarchical structure that represents a proof or logical derivation.
 #[derive(Debug, Clone)]
 pub struct DerivationNode {
     pub derivation: Derivation,
@@ -27,6 +41,11 @@ pub struct DerivationNode {
     pub children: Vec<DerivationNode>,
 }
 
+
+
+/// Represents a single derivation within a derivation tree.
+///
+/// A `Derivation` contains the contents (description) of the derivation and the associated Agda expression.
 #[derive(Debug, Clone)]
 pub struct Derivation {
     pub contents: String,
@@ -34,17 +53,24 @@ pub struct Derivation {
 }
 
 
-pub fn print_assumptions(assumptions: &Vec<Assumption>) {
 
+/// Prints out all assumptions in a human-readable format.
+pub fn print_assumptions(assumptions: &Vec<Assumption>) {
     for (idx, assumption) in assumptions.iter().enumerate() {
         println!("A{} : {}", idx, assumption.contents);
     }
 }
 
+
+
+/// Prints the derivation tree starting from the root node.
 pub fn print_derivation_node(node: &DerivationNode) {
     _print_derivation_node(node, String::from("1"), 0);
 }
 
+
+
+/// Recursively prints the derivation tree, including child nodes.
 pub fn _print_derivation_node(node: &DerivationNode, ind: String, pos: i32) {
     let mut judgment_id_least_sig: String;
     if pos == 0 {
@@ -61,6 +87,7 @@ pub fn _print_derivation_node(node: &DerivationNode, ind: String, pos: i32) {
 
 
 
+/// Gets the derivation ID for a target expression from a derivation tree.
 pub fn get_derivation_id(node: &DerivationNode, target: String, assumptions: &Vec<Assumption>) -> String {
 
     for (idx, assumption) in assumptions.iter().enumerate() {
@@ -84,6 +111,9 @@ pub fn get_derivation_id(node: &DerivationNode, target: String, assumptions: &Ve
     _get_derivation_id(root, String::from("1"), 0, target)
 }
 
+
+
+/// Recursively finds and returns the derivation ID for a target expression from the derivation tree.
 pub fn _get_derivation_id(node: &DerivationNode, ind: String, pos: i32, target: String) -> String {
 
     if target == node.derivation.contents {
@@ -106,26 +136,3 @@ pub fn _get_derivation_id(node: &DerivationNode, ind: String, pos: i32, target: 
     }
     return String::from("Unknown");
 }
-
-
-
-
-
-
-
-impl Derivation {
-    pub fn get_tag(&self, word: &str) -> Option<Wordclass> {
-        /* Access the global references for the brill tagger! */
-        let lexical_ruleset = &*LEXICAL_RULESET;
-        let contextual_ruleset = &*CONTEXTUAL_RULESET;
-        let mut wc_mapping = WC_MAPPING.lock().unwrap();
-
-        let vec_of_word_tag_tuples = tag_sentence(&self.contents, lexical_ruleset, contextual_ruleset, &mut wc_mapping);
-
-        // Find the tuple where the word matches, and return the associated tag
-        vec_of_word_tag_tuples.iter()
-            .find(|(w, _)| w == word)
-            .map(|(_, tag)| *tag)
-    }
-}
-
