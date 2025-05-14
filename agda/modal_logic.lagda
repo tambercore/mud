@@ -10,7 +10,7 @@
 
  \begin{code}
 
-module output_file where
+module modal_logic where
 
 open import Data.Product
 
@@ -67,10 +67,19 @@ record Johnᵣ : Set where
     e₁ : Entity
     p₁ : isJohn e₁
 
-
 quick_syn_fast_pointwise : (e : Entity) → isQuick e → isFast e
 quick_syn_fast_pointwise = λ e → λ m → subst (λ X → X e) quick_syn_fast m
 
+fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
+fast_syn_quick_pointwise = λ e → λ m → subst (λ X → X e) fast_syn_quick m
+
+{-
+quick_syn_fast_pointwise : (e : Entity) → isQuick e → isFast e
+quick_syn_fast_pointwise = λ e m → subst ( λ X → X e) quick_syn_fast m
+
+fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
+fast_syn_quick_pointwise = λ e m → subst ( λ X → X e) fast_syn_quick m
+-}
 
 -- Record declaration for 'John is quick'
 record QuickJohnᵣ : Set where
@@ -79,11 +88,6 @@ record QuickJohnᵣ : Set where
     e₁ : Entity
     p₁ : isJohn e₁
     p₀ : isQuick e₁
-
-
-fast_syn_quick_pointwise : (e : Entity) → isFast e → isQuick e
-fast_syn_quick_pointwise = λ e → λ m → subst (λ X → X e) fast_syn_quick m
-
 
 -- Record declaration for 'John is fast'
 record FastJohnᵣ : Set where
@@ -105,15 +109,11 @@ record KnowledgeBaseᵣ : Set where
  \section{Theorems}
 \subsection{Theorem 1: `john is fast'}
 
-...
+thm₁_lp 
 
  \begin{code}
 
 thm₁ : KnowledgeBaseᵣ → FastJohnᵣ
-thm₁ = λ z →
-  FastJohn꜀ (z .KnowledgeBaseᵣ.j₁ .QuickJohnᵣ.e₁)
-  (z .KnowledgeBaseᵣ.j₁ .QuickJohnᵣ.p₁)
-  (quick_syn_fast_pointwise (z .KnowledgeBaseᵣ.j₁ .QuickJohnᵣ.e₁)
-   (z .KnowledgeBaseᵣ.j₁ .QuickJohnᵣ.p₀))
+thm₁ = {!   !}
 
 \end{code}

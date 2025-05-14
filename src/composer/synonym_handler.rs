@@ -55,31 +55,29 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
      * `λ (e) → λ (m) → subst (λ (X) → X e) identity_proof m`
      */
     let ast = Box::from(abstraction!(
-        "e",
-        abstraction!(
-            "m",
+    "e",
+    abstraction!(
+        "m",
         app!(
+            app!(
                 app!(
                     term!("subst"),
                     abstraction!(
                         "X",
-                        app!(
-                            term!("X"),
-                            term!("e")
-                        )
+                        app!( term!("X"), term!("e") )
                     )
                 ),
-                app!(
-                    term!(equality_identifier.clone()),
-                    term!("m")
-                )
-            )
+                term!( equality_identifier.clone() )
+            ),
+            term!("m")
         )
+    )
     ));
+
 
     /* Next, the type header for this, following `(e : Entity) → is_p1 e → is_p2 e` */
     let type_header = dependent_function!(var_decl!("e", term!("Entity")),
-        function_type!(app!(term!(is_synonym.clone()), term!("e")), app!(term!(is_property.clone()), term!("e"))));
+        function_type!(app!(term!(is_property.clone()), term!("e")), app!(term!(is_synonym.clone()), term!("e"))));
 
     let theorem = theorem!(format!("{}_syn_{}_pointwise", property, synonym), type_header, Some(ast), None);
     let function_def = theorem;
