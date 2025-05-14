@@ -5,7 +5,7 @@
 
  \section{Premises (Assumptions)}
 
-\begin{itemize}\item A0: john must eat
+\begin{itemize}\item A0: john is quick
 \end{itemize} 
 
  \begin{code}
@@ -39,7 +39,10 @@ postulate
 postulate
     Entity : Set
     isJohn : Entity → Set
-    eat : Entity → Set
+    isQuick : Entity → Set
+    isFast : Entity → Set
+    quick_syn_fast : isQuick ≡ isFast
+    fast_syn_quick : isFast ≡ isQuick
 
 □-d : ∀ { A : Set } → (□ A → ◇ A)
 □-d = λ z → ◇-pure (□-extract z)
@@ -65,48 +68,48 @@ record Johnᵣ : Set where
     p₁ : isJohn e₁
 
 
--- Record declaration for 'eat john'
-record EatJohnᵣ : Set where
-  constructor EatJohn꜀
+quick_syn_fast_pointwise : (e : Entity) → isFast e → isQuick e
+quick_syn_fast_pointwise = λ e → λ m → subst (λ X → X e) (quick_syn_fast m)
+
+
+-- Record declaration for 'John is quick'
+record QuickJohnᵣ : Set where
+  constructor QuickJohn꜀
   field
-    e₁ : Johnᵣ
-    p : eat (Johnᵣ.e₁ e₁)
+    e₁ : Entity
+    p₁ : isJohn e₁
+    p₀ : isQuick e₁
 
 
--- Record declaration for 'must eat john'
-record MustEatJohnᵣ : Set where
-  constructor MustEatJohn꜀
+fast_syn_quick_pointwise : (e : Entity) → isQuick e → isFast e
+fast_syn_quick_pointwise = λ e → λ m → subst (λ X → X e) (fast_syn_quick m)
+
+
+-- Record declaration for 'John is fast'
+record FastJohnᵣ : Set where
+  constructor FastJohn꜀
   field
-    I : □ EatJohnᵣ
-
-
--- Record declaration for 'necessarily must eat john'
-record NecessarilyMustEatJohnᵣ : Set where
-  constructor NecessarilyMustEatJohn꜀
-  field
-    I : □ MustEatJohnᵣ
+    e₁ : Entity
+    p₁ : isJohn e₁
+    p₀ : isFast e₁
 
 
 record KnowledgeBaseᵣ : Set where
   constructor KnowledgeBase꜀
   field
-    j₁ : MustEatJohnᵣ
+    j₁ : QuickJohnᵣ
 
 
 \end{code} 
 
  \section{Theorems}
-\subsection{Theorem 1: `necessarily must eat john'}
+\subsection{Theorem 1: `john is fast'}
 
-...
- 
+thm₁_lp 
 
  \begin{code}
 
-thm₁ : KnowledgeBaseᵣ → NecessarilyMustEatJohnᵣ
-thm₁ = λ z →
-  NecessarilyMustEatJohn꜀
-  (□-cobind (z .KnowledgeBaseᵣ.j₁ .MustEatJohnᵣ.I)
-   (λ z₁ → z .KnowledgeBaseᵣ.j₁))
+thm₁ : KnowledgeBaseᵣ → FastJohnᵣ
+thm₁ = ?
 
 \end{code}
