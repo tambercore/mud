@@ -105,7 +105,18 @@ record KnowledgeBaseᵣ : Set where
  \section{Theorems}
 \subsection{Theorem 1: `john is fast'}
 
-...
+To provide evidence of 'john is fast', there must exist an entity, and evidence that the entity is John, and evidence that the entity is Fast
+\begin{enumerate}
+  \item Given that john is quick (A0), there exists an entity
+  \item Given that john is quick (A0), there exists evidence that the entity is John
+  \item quick is synonymous with fast
+  \begin{enumerate}
+    \item Given that john is quick (A0), there exists an entity
+    \item Given that john is quick (A0), there exists evidence that the entity is Quick
+  \end{enumerate}
+  \item Therefore, john is fast
+\end{enumerate}
+ 
 
  \begin{code}
 

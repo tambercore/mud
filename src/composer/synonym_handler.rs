@@ -80,7 +80,9 @@ pub fn build_agda_synonym(property: &str, synonym: &str, f: &mut Program) {
         function_type!(app!(term!(is_property.clone()), term!("e")), app!(term!(is_synonym.clone()), term!("e"))));
 
     let theorem = theorem!(format!("{}_syn_{}_pointwise", property, synonym), type_header, Some(ast), None);
-    let function_def = theorem;
+    let function_def = theorem.clone();
+
+    insert_interpretation(theorem, format!("Wordnet states that '{}' is synonymous with '{}', therefore", property, synonym));
 
     /* These definitions are bundled as the full function, and inserted into the file */
     f.insert_definition(function_def);
