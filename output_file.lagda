@@ -5,7 +5,7 @@
 
  \section{Premises (Assumptions)}
 
-\begin{itemize}\item A0: every man is every woman
+\begin{itemize}\item A0: john is quick
 \end{itemize} 
 
  \begin{code}
@@ -38,9 +38,11 @@ postulate
 -- Now, introduce the relevant language constructions
 postulate
     Entity : Set
-    isMan : Entity → Set
-    isEvery : Entity → Set
-    isWoman : Entity → Set
+    isJohn : Entity → Set
+    isQuick : Entity → Set
+    isFast : Entity → Set
+    quick_syn_fast : isQuick ≡ isFast
+    fast_syn_quick : isFast ≡ isQuick
 
 □-d : ∀ { A : Set } → (□ A → ◇ A)
 □-d = λ z → ◇-pure (□-extract z)
@@ -58,24 +60,56 @@ postulate
 □-k = λ z → λ z₁ → □-fmap (λ z₂ → z₂ (□-extract z₁)) z
 
 
--- Record declaration for 'man'
-record Manᵣ : Set where
-  constructor Man꜀
+-- Record declaration for 'john'
+record Johnᵣ : Set where
+  constructor John꜀
   field
     e₁ : Entity
-    p₁ : isMan e₁
+    p₁ : isJohn e₁
 
 
--- Record declaration for 'every man is every woman'
-record IsManEveryWomanᵣ : Set where
-  constructor IsManEveryWoman꜀
+quick_syn_fast_pointwise : (e : Entity) → isFast e → isQuick e
+quick_syn_fast_pointwise = λ e → λ m → subst (λ X → X e) (quick_syn_fast m)
+
+
+-- Record declaration for 'John is quick'
+record QuickJohnᵣ : Set where
+  constructor QuickJohn꜀
   field
-    p : (a₁ : Manᵣ) → isWoman (Manᵣ.e₁ a₁) × isEvery (Manᵣ.e₁ a₁)
+    e₁ : Entity
+    p₁ : isJohn e₁
+    p₀ : isQuick e₁
+
+
+fast_syn_quick_pointwise : (e : Entity) → isQuick e → isFast e
+fast_syn_quick_pointwise = λ e → λ m → subst (λ X → X e) (fast_syn_quick m)
+
+
+-- Record declaration for 'John is fast'
+record FastJohnᵣ : Set where
+  constructor FastJohn꜀
+  field
+    e₁ : Entity
+    p₁ : isJohn e₁
+    p₀ : isFast e₁
 
 
 record KnowledgeBaseᵣ : Set where
   constructor KnowledgeBase꜀
   field
-    j₁ : IsManEveryWomanᵣ
+    j₁ : QuickJohnᵣ
+
+
+\end{code} 
+
+ \section{Theorems}
+\subsection{Theorem 1: `john is fast'}
+
+thm₁_lp 
+
+ \begin{code}
+
+thm₁ : KnowledgeBaseᵣ → FastJohnᵣ
+thm₁ = ?
 
 \end{code}

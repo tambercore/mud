@@ -115,6 +115,7 @@ pub fn handle_synonyms(property: &str, f: &mut Program) {
 
             /* Often, it's possible to prune the search by only looking for other words used in the sentence */
             if matches!(SYNRELEVANT, SynsetRelevancyStrategy::Relevant) && !words_in_existence_snapshot.contains(&synonym) {
+                println!("\tEvaluating Synonym '{synonym}'");
                 continue;
             } else {
                 /* Build the agda synonym to the file */

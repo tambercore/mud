@@ -15,6 +15,7 @@ use crate::composer::langtree::{Relation, Token};
 use crate::monty::fresh_variable::to_unicode_subscript;
 use crate::composer::case_converter::{convert_case, CaseStyle};
 use crate::{app, function_type, record, record_projection, term, var_decl};
+use crate::composer::synonym_handler::handle_synonyms;
 use crate::interpreter::interpretation_map::insert_interpretation;
 
 
@@ -51,6 +52,8 @@ pub fn compose_variable(token: Token, f: &mut Program, props: Vec<Token>) -> (St
         let postulate_entry = var_decl!(c_predicate.clone(), generate_function_header(1));
         insert_interpretation(VariableDecl(postulate_entry.clone()), format!("the entity is {}", p));
         f.insert_postulate(VariableDecl(postulate_entry));
+
+        handle_synonyms(p.as_str(), f);
 
         /* Handle cases without negation */
         if negation_layers == 0 {

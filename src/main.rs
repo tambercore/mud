@@ -149,7 +149,7 @@ fn english_to_agda(knowledge: Vec<String>, derivations: Vec<String>) -> (Program
 
     /* Initialize Wordnet */
     let wordnet_task_id = create_task(1, "Initializing Wordnet.");
-    // init_wordnet();
+    init_wordnet();
     update_task(wordnet_task_id);
 
     let global_wordset_task_id = create_task(1, "Computing Global Wordset.");
