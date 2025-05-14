@@ -38,7 +38,17 @@ pub fn interpret_proof(expr: AgdaExpr, program: &Program, agda_conclusion: AgdaC
             });
             print_derivation_node(&node);
             return node;
-        } else {panic!("Failed to generate derivation tree")}
+
+        } else {
+            /* If we don't know what the node is! */
+            let node = DerivationNode{
+                derivation: Derivation { contents: format!("..."), expr: CommentSegment("temp".to_string())  },
+                parent: None,
+                children: vec![],
+            };
+            println!("Failed to generate derivation tree");
+            return node;
+        }
     }
     else {
         panic!("Expected proof to start with abstraction.");
